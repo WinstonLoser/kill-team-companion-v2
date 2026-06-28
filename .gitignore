@@ -8,6 +8,11 @@ coverage/
 # IP 护栏（D-29）：官方规则转 md 不入公开仓库
 docs/rules/
 
+# 开发工具（非 app，不入公开仓库；保留 _bmad-output/ 规划产物）
+_bmad/
+.claude/
+.codegraph/
+
 # OS / 编辑器
 .DS_Store
 Thumbs.db
