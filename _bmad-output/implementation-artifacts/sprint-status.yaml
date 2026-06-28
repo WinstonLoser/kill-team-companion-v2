@@ -49,8 +49,8 @@ development_status:
   1-3-angels-data-pack-golden-tests: ready-for-dev
   1-4-two-layer-attrs-enforcer: review
   1-5-dice-source-agnostic: review
-  1-6-shooting-pipeline: ready-for-dev
-  1-7-melee-pipeline: ready-for-dev
+  1-6-shooting-pipeline: review
+  1-7-melee-pipeline: review
   1-8-geometry-eligibility: ready-for-dev
   1-9-turn-state-machine: ready-for-dev
   1-10-resolution-log-rollback: ready-for-dev
