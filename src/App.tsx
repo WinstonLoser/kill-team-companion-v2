@@ -1,4 +1,9 @@
 import { useViewStore, type View } from './state/viewStore'
+import { ResolveDemo } from './ui/ResolveDemo'
+import { loadPack } from './'
+import angelsPack from './data/packs/angels_of_death.v1.json'
+
+const pack = loadPack(angelsPack)
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'roster', label: '建队' },
@@ -27,7 +32,41 @@ export function App() {
         </nav>
       </header>
       <main className="content">
-        <p>当前视图：<strong>{currentView}</strong>（占位，后续 story 实现）</p>
+        {currentView === 'roster' && (
+          <section>
+            <h2>{pack.faction.name}（阵营：死亡天使）</h2>
+            <h3>特工</h3>
+            <ul className="list">
+              {pack.operatives.map((o) => (
+                <li key={o.operativeId}>
+                  <strong>{o.name}</strong> — 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}" APL{o.stats.apl}
+                </li>
+              ))}
+            </ul>
+            <h3>武器</h3>
+            <ul className="list">
+              {pack.weapons.map((w) => (
+                <li key={w.weaponId}>
+                  <strong>{w.name}</strong>（{w.kind === 'RANGED' ? '射击' : '近战'}）— 攻击{w.profile.attacks} 命中{w.profile.hit}+ 伤{w.profile.normalDamage}/{w.profile.criticalDamage}{w.profile.range ? ` 射程${w.profile.range}` : ''}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {currentView === 'match' && <ResolveDemo />}
+        {currentView === 'rules' && (
+          <section>
+            <h2>规则查询（引擎参数化，不显示 GW 原文 D-29）</h2>
+            <ul className="list">
+              {pack.effects.map((e) => (
+                <li key={e.effectId}>
+                  <strong>{e.label}</strong> — {e.modifier.kind} @ {e.trigger.point}
+                  {e.rulesRef && <em>（见 {e.rulesRef.doc}#{e.rulesRef.section}）</em>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
     </div>
   )

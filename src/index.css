@@ -48,3 +48,23 @@ button {
 button.active { border-color: var(--accent); color: var(--accent); }
 
 .content { padding: 1rem; }
+
+/* 结算演练 / 列表 */
+.demo { display: flex; flex-direction: column; gap: 0.75rem; }
+.demo h2, .content h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; }
+label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--muted); }
+label.cover { flex-direction: row; align-items: center; gap: 0.4rem; }
+select, input[type=text], input:not([type]) {
+  background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+  padding: 0.4rem; border-radius: 6px; min-height: 44px;
+}
+button.primary { background: var(--accent); color: #0b0d10; border-color: var(--accent); font-weight: 600; }
+.error { color: #ff6b6b; }
+.result { margin-top: 0.5rem; }
+.outcome { font-size: 1.05rem; }
+.outcome strong { color: var(--accent); }
+.trace { margin: 0.5rem 0; padding-left: 1.2rem; font-size: 0.85rem; line-height: 1.6; }
+.trace .sid { display: inline-block; min-width: 11rem; color: var(--accent); font-family: ui-monospace, monospace; font-size: 0.78rem; }
+.trace .sum { color: var(--fg); }
+.list { line-height: 1.7; }
