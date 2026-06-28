@@ -52,7 +52,7 @@ development_status:
   1-6-shooting-pipeline: review
   1-7-melee-pipeline: review
   1-8-geometry-eligibility: review
-  1-9-turn-state-machine: ready-for-dev
+  1-9-turn-state-machine: review
   1-10-resolution-log-rollback: ready-for-dev
   1-11-roster-building: ready-for-dev
   1-12-setup-map-deploy: ready-for-dev

@@ -1,0 +1,205 @@
+// 回合/激活状态机（FR-11/FR-12）。用可测 reducer 表达分层状态；XState 可作生产包装。
+// 行动合法性 guard 是 FR-12 的可测核心。
+
+export type Order = 'ENGAGED' | 'CONCEALED'
+export type ActionType = 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE' | 'SHOOT' | 'FIGHT'
+
+export const ACTION_AP: Record<ActionType, number> = {
+  MOVE: 1,
+  DASH: 1,
+  FALL_BACK: 2,
+  CHARGE: 1,
+  SHOOT: 1,
+  FIGHT: 1,
+}
+
+export interface OperativeActivation {
+  order: Order
+  ready: boolean
+  apUsed: number
+  actionsThisActivation: ActionType[]
+  fallBackDone: boolean
+  chargeDone: boolean
+  moveDone: boolean
+}
+
+export type Phase = 'DEPLOYMENT' | 'STRATEGY' | 'ENGAGEMENT' | 'TURNING_POINT_END' | 'BATTLE_END'
+
+export interface TurnState {
+  phase: Phase
+  turningPoint: number // 1..4
+  activePlayer: 'a' | 'b'
+  cp: { a: number; b: number }
+  ployUses: Record<string, { used: number; perBattle?: number; perTurningPoint?: number }>
+  operatives: Record<string, OperativeActivation>
+}
+
+export interface ActionContext {
+  apl: number
+  isAstartes: boolean
+  inEngagementRange: boolean // 该特工位于敌方控制范围内
+  enemyInEngagement: boolean // 近战目标在控制范围内
+}
+
+export interface LegalityResult {
+  ok: boolean
+  reason?: string
+}
+
+/** 行动合法性（FR-12）。纯函数。 */
+export function canDoAction(
+  state: TurnState,
+  opId: string,
+  action: ActionType,
+  ctx: ActionContext,
+): LegalityResult {
+  const op = state.operatives[opId]
+  if (!op) return { ok: false, reason: '特工不存在' }
+  if (!op.ready) return { ok: false, reason: '特工已待机（非就绪）' }
+
+  // AP ≤ APL
+  if (op.apUsed + ACTION_AP[action] > ctx.apl) {
+    return { ok: false, reason: `AP 不足（需${ACTION_AP[action]}，剩${ctx.apl - op.apUsed}）` }
+  }
+
+  // 后撤后禁转移/冲锋
+  if (op.fallBackDone && (action === 'MOVE' || action === 'CHARGE' || action === 'DASH')) {
+    return { ok: false, reason: '后撤后该激活禁转移/冲锋' }
+  }
+  // 冲锋后禁冲刺/转移
+  if (op.chargeDone && (action === 'DASH' || action === 'MOVE')) {
+    return { ok: false, reason: '冲锋后禁冲刺/转移' }
+  }
+  // 转移/冲锋后禁冲刺（简化：moveDone 后禁 DASH）
+  if (op.moveDone && action === 'DASH') {
+    return { ok: false, reason: '转移后禁冲刺' }
+  }
+
+  // 同激活不重复同行动（阿斯塔特双近战/双射击例外）
+  const count = op.actionsThisActivation.filter((a) => a === action).length
+  const isAstartesDouble =
+    ctx.isAstartes && (action === 'SHOOT' || action === 'FIGHT') && count < 2
+  if (count >= 1 && !isAstartesDouble) {
+    return { ok: false, reason: '同激活不可重复同一行动' }
+  }
+
+  // 行动专属前置
+  if (action === 'FALL_BACK' && !ctx.inEngagementRange) {
+    return { ok: false, reason: '后撤须正位于敌方控制范围内' }
+  }
+  if (action === 'SHOOT') {
+    if (op.order === 'CONCEALED') return { ok: false, reason: '隐匿命令禁射击' }
+    if (ctx.inEngagementRange) return { ok: false, reason: '控制范围内禁射击' }
+  }
+  if (action === 'FIGHT' && !ctx.enemyInEngagement) {
+    return { ok: false, reason: '近战需敌方在控制范围内' }
+  }
+
+  return { ok: true }
+}
+
+/** CP/计谋次数追踪（FR-11）。 */
+export function canUsePloy(state: TurnState, ployId: string): LegalityResult {
+  const ploy = state.ployUses[ployId]
+  if (!ploy) return { ok: true } // 未登记计谋不拦
+  const used = ploy.used
+  if (ploy.perBattle !== undefined && used >= ploy.perBattle) {
+    return { ok: false, reason: `计谋 ${ployId} 达每场上限 ${ploy.perBattle}` }
+  }
+  if (ploy.perTurningPoint !== undefined && used >= ploy.perTurningPoint) {
+    return { ok: false, reason: `计谋 ${ployId} 达每转折点上限 ${ploy.perTurningPoint}` }
+  }
+  return { ok: true }
+}
+
+// ===== reducer（激活流） =====
+export type TurnEvent =
+  | { type: 'START_BATTLE' }
+  | { type: 'START_ENGAGEMENT' }
+  | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
+  | { type: 'SELECT_ORDER'; opId: string; order: Order }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType }
+  | { type: 'END_ACTIVATION'; opId: string }
+  | { type: 'END_TURNING_POINT' }
+  | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
+
+export function createInitialTurnState(): TurnState {
+  return {
+    phase: 'DEPLOYMENT',
+    turningPoint: 1,
+    activePlayer: 'a',
+    cp: { a: 2, b: 2 },
+    ployUses: {},
+    operatives: {},
+  }
+}
+
+export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
+  switch (event.type) {
+    case 'START_BATTLE':
+      return { ...state, phase: 'STRATEGY', turningPoint: 1, cp: { a: 3, b: 3 } }
+    case 'START_ENGAGEMENT':
+      return { ...state, phase: 'ENGAGEMENT' }
+    case 'ACTIVATE': {
+      const op = state.operatives[event.opId]
+      return {
+        ...state,
+        activePlayer: event.player,
+        operatives: op
+          ? { ...state.operatives, [event.opId]: { ...op, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false } }
+          : state.operatives,
+      }
+    }
+    case 'SELECT_ORDER': {
+      const op = state.operatives[event.opId]
+      if (!op) return state
+      return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, order: event.order } } }
+    }
+    case 'DO_ACTION': {
+      const op = state.operatives[event.opId]
+      if (!op) return state
+      const next: OperativeActivation = {
+        ...op,
+        apUsed: op.apUsed + ACTION_AP[event.action],
+        actionsThisActivation: [...op.actionsThisActivation, event.action],
+        fallBackDone: op.fallBackDone || event.action === 'FALL_BACK',
+        chargeDone: op.chargeDone || event.action === 'CHARGE',
+        moveDone: op.moveDone || event.action === 'MOVE',
+      }
+      return { ...state, operatives: { ...state.operatives, [event.opId]: next } }
+    }
+    case 'END_ACTIVATION': {
+      const op = state.operatives[event.opId]
+      if (!op) return state
+      return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } }
+    }
+    case 'USE_PLOY': {
+      const ploy = state.ployUses[event.ployId]
+      const next = {
+        ...state,
+        cp: { ...state.cp, [event.player]: state.cp[event.player] - event.cpCost },
+        ployUses: {
+          ...state.ployUses,
+          [event.ployId]: { used: (ploy?.used ?? 0) + 1, perBattle: ploy?.perBattle, perTurningPoint: ploy?.perTurningPoint },
+        },
+      }
+      return next
+    }
+    case 'END_TURNING_POINT': {
+      const next = state.turningPoint + 1
+      // 翻回就绪 + CP 发放（先手+1/非先手+2，简化：双方 +2）
+      const ops = Object.fromEntries(
+        Object.entries(state.operatives).map(([id, o]) => [id, { ...o, ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false }]),
+      )
+      return {
+        ...state,
+        turningPoint: next,
+        phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
+        cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
+        operatives: ops,
+      }
+    }
+    default:
+      return state
+  }
+}
