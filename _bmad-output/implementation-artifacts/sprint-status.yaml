@@ -46,7 +46,7 @@ development_status:
   epic-1: in-progress
   1-1-scaffold-and-deploy: review
   1-2-rules-schema-packloader: review
-  1-3-angels-data-pack-golden-tests: ready-for-dev
+  1-3-angels-data-pack-golden-tests: review
   1-4-two-layer-attrs-enforcer: review
   1-5-dice-source-agnostic: review
   1-6-shooting-pipeline: review
