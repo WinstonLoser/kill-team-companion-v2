@@ -12,6 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "xstate": "^5.32.2",

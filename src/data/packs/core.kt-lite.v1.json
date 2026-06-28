@@ -1,0 +1,13 @@
+{
+  "packId": "core.kt-lite",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "core",
+    "name": "KT Lite 核心",
+    "keywords": []
+  },
+  "operatives": [],
+  "weapons": [],
+  "effects": []
+}

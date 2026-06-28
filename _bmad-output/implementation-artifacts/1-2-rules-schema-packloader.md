@@ -1,6 +1,6 @@
 # Story 1.2: 规则数据 schema 与 packLoader (rules-schema-packloader)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -19,34 +19,34 @@ so that 规则以 JSON 数据包存在、引擎逻辑与数据物理分离、非
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — Effect 描述符 TS 类型**（AC1/AC2）
-  - [ ] `src/rules/types/effect.ts`：`Effect` 接口（effectId/label/source/trigger/pipelineStep/priority?/modifier/stacking/rulesRef?）
-  - [ ] `modifier.kind` 判别联合（**21 种**，每种 payload 类型严格）：HIT_PLUS/HIT_MINUS/DAMAGE_PLUS/DAMAGE_MINUS/UPGRADE_SUCCESS/DOWNGRADE_SUCCESS/COUNT_PLUS/COUNT_MINUS/REROLL/AUTO_SUCCESS/ATTACH_WEAPON_RULE/PIERCE/COVER_SAVE/DAMAGE_MITIGATION/IGNORE_DAMAGE/IMMUNITY/EXTRA_DAMAGE_ON_HIT/GRANT_MARKER/**HEAL_OPERATIVE**（回复耐伤，payload `{amount, target:"SELF"|"target", condition?}`，触发点视机制 ON_INCAPACITATED/AT_PIPELINE_END 等，供灵魂盛宴/吸魂/慈父祝福/腐烂活力）/APL_PLUS/CUSTOM_HOOK（以架构 §2.4.1 表 + 本 HEAL 补丁为准）
-  - [ ] `trigger.point` 字符串字面量联合（§2.4.2 全部 18 个）
-  - [ ] `stacking.policy` 联合（6：STACKABLE/UNIQUE_PER_SOURCE/UNIQUE_PER_GROUP/MUTUALLY_EXCLUSIVE_WITH/CONDITIONAL/CAP_PER_ATTACK_DIE）
-  - [ ] `pipelineStep` 联合（§3.1 射击 10 + 近战 7 step id + 激活类 ACTIVATION_PRE 等）
-- [ ] **T2 — Faction Pack / Operative / Weapon 类型**（AC1）
-  - [ ] `src/rules/types/pack.ts`：`FactionPack`（packId/version/rulesetVersion/faction/operatives/weapons/effects/abilities/stratagems/wargear/buildConstraints）
-  - [ ] `Operative`（§2.2：stats{apl,move,save,wounds}/base.diameterMm/weaponRefs/abilities/uniqueLoadoutOptions）
-  - [ ] `Weapon`（§2.3：kind RANGED|MELEE/profile{attacks,hit,normalDamage,criticalDamage,range?,weaponRules[]}/keywords）
-  - [ ] `subFactionSelector`（§2.1：id/label/options/default）
-- [ ] **T3 — JSON Schema 同源**（AC1/AC3）
-  - [ ] `src/rules/schema/faction-pack.schema.json`：手写 JSON Schema，与 T1/T2 类型一一对应；用 `additionalProperties:false` 收口；枚举用 `enum` 穷举；必填字段进 `required`（含 effect 四问）
-  - [ ] **同源校验**：写一个 `tests/schema-parity.test.ts`，断言 TS 类型的字段集 = JSON Schema 的 properties 集（防漂移）；或用 `ts-json-schema-generator`/`zod-to-json-schema` 从类型生成并比对（选其一，记录于 Dev Notes）
-- [ ] **T4 — packLoader**（AC3/AC4/AC5）
-  - [ ] `src/rules/packLoader.ts`：`loadPack(raw: unknown): FactionPack`
+- [x] **T1 — Effect 描述符 TS 类型**（AC1/AC2）
+  - [x] `src/rules/types/effect.ts`：`Effect` 接口（effectId/label/source/trigger/pipelineStep/priority?/modifier/stacking/rulesRef?）
+  - [x] `modifier.kind` 判别联合（**21 种**，每种 payload 类型严格）：HIT_PLUS/HIT_MINUS/DAMAGE_PLUS/DAMAGE_MINUS/UPGRADE_SUCCESS/DOWNGRADE_SUCCESS/COUNT_PLUS/COUNT_MINUS/REROLL/AUTO_SUCCESS/ATTACH_WEAPON_RULE/PIERCE/COVER_SAVE/DAMAGE_MITIGATION/IGNORE_DAMAGE/IMMUNITY/EXTRA_DAMAGE_ON_HIT/GRANT_MARKER/**HEAL_OPERATIVE**（回复耐伤，payload `{amount, target:"SELF"|"target", condition?}`，触发点视机制 ON_INCAPACITATED/AT_PIPELINE_END 等，供灵魂盛宴/吸魂/慈父祝福/腐烂活力）/APL_PLUS/CUSTOM_HOOK（以架构 §2.4.1 表 + 本 HEAL 补丁为准）
+  - [x] `trigger.point` 字符串字面量联合（§2.4.2 全部 18 个）
+  - [x] `stacking.policy` 联合（6：STACKABLE/UNIQUE_PER_SOURCE/UNIQUE_PER_GROUP/MUTUALLY_EXCLUSIVE_WITH/CONDITIONAL/CAP_PER_ATTACK_DIE）
+  - [x] `pipelineStep` 联合（§3.1 射击 10 + 近战 7 step id + 激活类 ACTIVATION_PRE 等）
+- [x] **T2 — Faction Pack / Operative / Weapon 类型**（AC1）
+  - [x] `src/rules/types/pack.ts`：`FactionPack`（packId/version/rulesetVersion/faction/operatives/weapons/effects/abilities/stratagems/wargear/buildConstraints）
+  - [x] `Operative`（§2.2：stats{apl,move,save,wounds}/base.diameterMm/weaponRefs/abilities/uniqueLoadoutOptions）
+  - [x] `Weapon`（§2.3：kind RANGED|MELEE/profile{attacks,hit,normalDamage,criticalDamage,range?,weaponRules[]}/keywords）
+  - [x] `subFactionSelector`（§2.1：id/label/options/default）
+- [x] **T3 — JSON Schema 同源**（AC1/AC3）
+  - [x] `src/rules/schema/faction-pack.schema.json`：手写 JSON Schema，与 T1/T2 类型一一对应；用 `additionalProperties:false` 收口；枚举用 `enum` 穷举；必填字段进 `required`（含 effect 四问）
+  - [x] **同源校验**：写一个 `tests/schema-parity.test.ts`，断言 TS 类型的字段集 = JSON Schema 的 properties 集（防漂移）；或用 `ts-json-schema-generator`/`zod-to-json-schema` 从类型生成并比对（选其一，记录于 Dev Notes）
+- [x] **T4 — packLoader**（AC3/AC4/AC5）
+  - [x] `src/rules/packLoader.ts`：`loadPack(raw: unknown): FactionPack`
     - JSON.parse → JSON Schema 校验（用 Ajv 或等价，GH Pages CSP 友好）→ 结构化错误（path + message + 期望枚举值）
     - effect 四问二次断言（即便 schema 漏标也兜底拒绝）
     - `rulesetVersion` 比对引擎常量 `SUPPORTED_RULESET_VERSIONS`，不匹配抛 `RulesetVersionMismatchError`
-  - [ ] 错误类型：`PackValidationError`（结构）/ `RulesetVersionMismatchError`（版本），均含可序列化字段供 UI 报错
-- [ ] **T5 — core.kt-lite 骨架**（AC5）
-  - [ ] `src/data/packs/core.kt-lite.v1.json`：`packId:"core.kt-lite"`、`rulesetVersion:"kt-lite-1.0"`、各数组空占位
-  - [ ] 导出 `SUPPORTED_RULESET_VERSIONS = ["kt-lite-1.0"]` 常量于 `src/rules/version.ts`
-- [ ] **T6 — 单测**（AC6）
-  - [ ] `tests/rules/packLoader.test.ts`：合法包加载通过、缺 trigger.point 拒绝、modifier.kind 越界拒绝、policy 非 6 之一拒绝、rulesetVersion 不符拒绝、core.kt-lite 骨架自校验通过
-  - [ ] `tests/rules/schema-parity.test.ts`：TS/JSON Schema 同源断言
-- [ ] **T7 — 导出与目录落位**（AC6）
-  - [ ] `src/rules/index.ts` 导出类型 + loadPack + 常量；确认 `src/rules/` 无 `import ... from 'react'` 或 zustand
+  - [x] 错误类型：`PackValidationError`（结构）/ `RulesetVersionMismatchError`（版本），均含可序列化字段供 UI 报错
+- [x] **T5 — core.kt-lite 骨架**（AC5）
+  - [x] `src/data/packs/core.kt-lite.v1.json`：`packId:"core.kt-lite"`、`rulesetVersion:"kt-lite-1.0"`、各数组空占位
+  - [x] 导出 `SUPPORTED_RULESET_VERSIONS = ["kt-lite-1.0"]` 常量于 `src/rules/version.ts`
+- [x] **T6 — 单测**（AC6）
+  - [x] `tests/rules/packLoader.test.ts`：合法包加载通过、缺 trigger.point 拒绝、modifier.kind 越界拒绝、policy 非 6 之一拒绝、rulesetVersion 不符拒绝、core.kt-lite 骨架自校验通过
+  - [x] `tests/rules/schema-parity.test.ts`：TS/JSON Schema 同源断言
+- [x] **T7 — 导出与目录落位**（AC6）
+  - [x] `src/rules/index.ts` 导出类型 + loadPack + 常量；确认 `src/rules/` 无 `import ... from 'react'` 或 zustand
 
 ## Dev Notes
 

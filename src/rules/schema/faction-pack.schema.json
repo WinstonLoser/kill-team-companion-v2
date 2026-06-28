@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FactionPack",
+  "type": "object",
+  "required": ["packId", "version", "rulesetVersion", "faction", "operatives", "weapons", "effects"],
+  "additionalProperties": true,
+  "properties": {
+    "packId": { "type": "string" },
+    "version": { "type": "string" },
+    "rulesetVersion": { "type": "string" },
+    "faction": {
+      "type": "object",
+      "required": ["id", "name", "keywords"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "keywords": { "type": "array", "items": { "type": "string" } },
+        "subFactionSelector": {
+          "type": "object",
+          "required": ["id", "label", "options"],
+          "properties": {
+            "id": { "type": "string" },
+            "label": { "type": "string" },
+            "options": { "type": "array", "items": { "type": "string" } },
+            "default": { "type": "string" }
+          }
+        }
+      }
+    },
+    "operatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["operativeId", "name", "keywords", "stats", "base", "weaponRefs"],
+        "properties": {
+          "operativeId": { "type": "string" },
+          "name": { "type": "string" },
+          "keywords": { "type": "array", "items": { "type": "string" } },
+          "stats": {
+            "type": "object",
+            "required": ["apl", "move", "save", "wounds"],
+            "properties": {
+              "apl": { "type": "integer", "minimum": 1 },
+              "move": { "type": "integer", "minimum": 0 },
+              "save": { "type": "integer", "minimum": 2, "maximum": 6 },
+              "wounds": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "base": { "type": "object", "required": ["diameterMm"], "properties": { "diameterMm": { "type": "number", "minimum": 1 } } },
+          "weaponRefs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "weapons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["weaponId", "name", "kind", "profile", "keywords"],
+        "properties": {
+          "weaponId": { "type": "string" },
+          "name": { "type": "string" },
+          "kind": { "type": "string", "enum": ["RANGED", "MELEE"] },
+          "profile": {
+            "type": "object",
+            "required": ["attacks", "hit", "normalDamage", "criticalDamage", "weaponRules"],
+            "properties": {
+              "attacks": { "type": "integer", "minimum": 0 },
+              "hit": { "type": "integer", "minimum": 2, "maximum": 6 },
+              "normalDamage": { "type": "integer", "minimum": 0 },
+              "criticalDamage": { "type": "integer", "minimum": 0 },
+              "range": { "type": "integer", "minimum": 0 },
+              "weaponRules": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "keywords": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "effects": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/effect" }
+    }
+  },
+  "$defs": {
+    "triggerPoint": {
+      "type": "string",
+      "enum": ["BEFORE_PIPELINE","BEFORE_HIT_ROLL","ON_HIT_ROLL","AFTER_HIT_ROLL","BEFORE_DEFENCE_ROLL","ON_DEFENCE_ROLL","AFTER_DEFENCE_ROLL","ON_PARRY_ALLOCATION","ON_DAMAGE_PER_DIE","ON_DAMAGE_TOTAL","BEFORE_WOUNDS_REDUCE","AT_PIPELINE_END","ON_ACTIVATION_START","ON_ACTIVATION_END","ON_REACTION","ON_INCAPACITATED","ON_TURNING_POINT_END"]
+    },
+    "pipelineStep": {
+      "type": "string",
+      "enum": ["WEAPON_SELECT","TARGET_VALIDATE","HIT_ROLL","ATTACK_UPGRADE","DEFENCE_ROLL","DEFENCE_UPGRADE","PARRY_ALLOCATE","DAMAGE_PER_DIE","DAMAGE_TOTAL_MITIGATE","WOUNDS_APPLY_AND_AFTER","MELEE_TARGET_SELECT","MELEE_WEAPON_SELECT","MELEE_SIMULTANEOUS_ROLL","MELEE_ALTERNATING_RESOLVE","MELEE_PARRY_RULES","MELEE_DAMAGE_AND_MITIGATE","MELEE_AFTER","ACTIVATION_PRE"]
+    },
+    "stackingPolicy": {
+      "type": "string",
+      "enum": ["STACKABLE","UNIQUE_PER_SOURCE","UNIQUE_PER_GROUP","MUTUALLY_EXCLUSIVE_WITH","CONDITIONAL","CAP_PER_ATTACK_DIE"]
+    },
+    "modifierKind": {
+      "type": "string",
+      "enum": ["HIT_PLUS","HIT_MINUS","DAMAGE_PLUS","DAMAGE_MINUS","UPGRADE_SUCCESS","DOWNGRADE_SUCCESS","COUNT_PLUS","COUNT_MINUS","REROLL","AUTO_SUCCESS","ATTACH_WEAPON_RULE","PIERCE","COVER_SAVE","DAMAGE_MITIGATION","IGNORE_DAMAGE","IMMUNITY","EXTRA_DAMAGE_ON_HIT","GRANT_MARKER","HEAL_OPERATIVE","APL_PLUS","CUSTOM_HOOK"]
+    },
+    "effect": {
+      "type": "object",
+      "required": ["effectId", "label", "source", "trigger", "pipelineStep", "modifier", "stacking"],
+      "additionalProperties": true,
+      "properties": {
+        "effectId": { "type": "string" },
+        "label": { "type": "string" },
+        "source": { "type": "string" },
+        "priority": { "type": "number" },
+        "trigger": {
+          "type": "object",
+          "required": ["point"],
+          "properties": { "point": { "$ref": "#/$defs/triggerPoint" } }
+        },
+        "pipelineStep": { "$ref": "#/$defs/pipelineStep" },
+        "modifier": {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": { "kind": { "$ref": "#/$defs/modifierKind" }, "payload": { "type": "object" } }
+        },
+        "stacking": {
+          "type": "object",
+          "required": ["policy"],
+          "properties": {
+            "policy": { "$ref": "#/$defs/stackingPolicy" },
+            "groupKeys": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "rulesRef": {
+          "type": "object",
+          "required": ["doc", "section"],
+          "properties": { "doc": { "type": "string" }, "section": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
