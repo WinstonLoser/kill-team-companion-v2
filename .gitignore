@@ -1,0 +1,16 @@
+# 依赖与产物
+node_modules/
+dist/
+.vite/
+coverage/
+*.local
+
+# IP 护栏（D-29）：官方规则转 md 不入公开仓库
+docs/rules/
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

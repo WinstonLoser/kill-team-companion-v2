@@ -1,0 +1,50 @@
+/* 视觉基调兜底（D-31 后置美学，v1 用 token 兜底，后续 4.3 收口） */
+:root {
+  color-scheme: dark;
+  --bg: #14171c;
+  --panel: #1c2027;
+  --border: #2a2f38;
+  --fg: #e6e9ef;
+  --muted: #9aa3b2;
+  --accent: #4a9eff;      /* 强调色仅给「需立即关注态」 */
+  --side-a: #c75d3a;      /* 阵营 A 暖 */
+  --side-b: #3a7bc7;      /* 阵营 B 冷 */
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.app { min-height: 100%; display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.topbar h1 { font-size: 1rem; margin: 0; color: var(--muted); }
+.topbar nav { display: flex; gap: 0.5rem; }
+
+button {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 44px;   /* 触控友好 NFR-9 */
+  min-width: 44px;
+}
+button.active { border-color: var(--accent); color: var(--accent); }
+
+.content { padding: 1rem; }

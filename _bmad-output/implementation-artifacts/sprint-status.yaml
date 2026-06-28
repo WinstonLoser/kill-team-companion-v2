@@ -1,0 +1,83 @@
+# generated: 2026-06-28
+# last_updated: 2026-06-28
+# project: kill-team-companion
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-06-28
+last_updated: 2026-06-28
+project: kill-team-companion
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: 核心引擎 + 死亡天使完整对局（垂直切片）
+  epic-1: in-progress
+  1-1-scaffold-and-deploy: in-progress
+  1-2-rules-schema-packloader: ready-for-dev
+  1-3-angels-data-pack-golden-tests: ready-for-dev
+  1-4-two-layer-attrs-enforcer: ready-for-dev
+  1-5-dice-source-agnostic: ready-for-dev
+  1-6-shooting-pipeline: ready-for-dev
+  1-7-melee-pipeline: ready-for-dev
+  1-8-geometry-eligibility: ready-for-dev
+  1-9-turn-state-machine: ready-for-dev
+  1-10-resolution-log-rollback: ready-for-dev
+  1-11-roster-building: ready-for-dev
+  1-12-setup-map-deploy: ready-for-dev
+  1-13-match-ui-one-tap-resolve: ready-for-dev
+  1-14-board-interaction-viz: ready-for-dev
+  1-15-audit-ui-feedback: ready-for-dev
+  1-16-objectives-vp-victory: ready-for-dev
+  1-17-rules-query-touch-visuals: ready-for-dev
+  epic-1-retrospective: optional
+
+  # Epic 2: 军团兵扩展
+  epic-2: in-progress
+  2-1-legionaries-data-pack: ready-for-dev
+  2-2-predicate-extension-audit: ready-for-dev
+  epic-2-retrospective: optional
+
+  # Epic 3: 瘟疫战士扩展
+  epic-3: in-progress
+  3-1-plague-data-pack: ready-for-dev
+  3-2-predicate-extension-audit: ready-for-dev
+  epic-3-retrospective: optional
+
+  # Epic 4: 打磨与 NFR 加固（可选）
+  epic-4: in-progress
+  4-1-tablet-gestures-perf: ready-for-dev
+  4-2-routing-offline-sw: ready-for-dev
+  4-3-visual-polish: ready-for-dev
+  epic-4-retrospective: optional
