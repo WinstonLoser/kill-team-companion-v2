@@ -180,8 +180,17 @@ export interface EligibilityResult {
   findings: GeometryFinding[]
 }
 
+/** validateTarget 扩展参数（P13，FR-10）：目标命令 + 己方位置。均可选，向后兼容。 */
+export interface ValidateTargetOptions {
+  /** 目标命令：CONCEALED 目标不可射击 */
+  targetOrder?: 'ENGAGED' | 'CONCEALED'
+  /** 己方特工位置：目标控制范围内有己方（近战纠缠）则禁射击，避免误伤 */
+  friendlyPositions?: Point[]
+}
+
 /**
- * 有效目标资格判定（FR-10）。综合 LOS + 掩护 + 遮挡 + 射程 + 控制范围内无己方。
+ * 有效目标资格判定（FR-10）。综合 LOS + 掩护 + 遮挡 + 射程 + 攻击方不在敌方控制范围
+ * + 目标命令（P13）+ 目标控制范围内无己方（P13）。
  * 不合法 → 列出缺哪条（先验拦截，FR-14）。
  */
 export function validateTarget(
@@ -190,6 +199,7 @@ export function validateTarget(
   range: number,
   board: Board,
   otherOperatives: Point[],
+  options?: ValidateTargetOptions,
 ): EligibilityResult {
   const los = losFinding(attacker.pos, target.pos, board)
   const cover = coverFinding(target.pos, board, otherOperatives)
@@ -202,6 +212,15 @@ export function validateTarget(
   if (obscured.finalValue) missing.push('目标被遮挡')
   if (!rangeF.finalValue) missing.push('超出射程')
   if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
+  // P13：目标隐匿命令不可射击
+  if (options?.targetOrder === 'CONCEALED') missing.push('目标隐匿命令（不可射击）')
+  // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
+  const friendlies = options?.friendlyPositions ?? []
+  const friendlyEngaged = friendlies.some((fp) => {
+    const center = Math.hypot(target.pos.x - fp.x, target.pos.y - fp.y)
+    return Math.max(0, center - target.baseRadius) <= 1
+  })
+  if (friendlyEngaged) missing.push('目标控制范围内有己方（近战纠缠，避免误伤）')
 
   return {
     ok: missing.length === 0,

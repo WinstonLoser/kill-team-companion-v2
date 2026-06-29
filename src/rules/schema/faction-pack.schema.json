@@ -92,7 +92,7 @@
     },
     "stackingPolicy": {
       "type": "string",
-      "enum": ["STACKABLE","UNIQUE_PER_SOURCE","UNIQUE_PER_GROUP","MUTUALLY_EXCLUSIVE_WITH","CONDITIONAL","CAP_PER_ATTACK_DIE"]
+      "enum": ["STACKABLE","UNIQUE_PER_SOURCE","UNIQUE_PER_GROUP","MUTUALLY_EXCLUSIVE_WITH","CONDITIONAL","CAP_PER_ATTACK_DIE","UNIQUE_PER_ACTION"]
     },
     "modifierKind": {
       "type": "string",

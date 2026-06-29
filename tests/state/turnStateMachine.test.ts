@@ -112,3 +112,59 @@ describe('turnReducer 激活流', () => {
     expect(s.phase).toBe('BATTLE_END')
   })
 })
+
+describe('turnReducer 内嵌 guard（DN6：reducer 自防御）', () => {
+  it('DO_ACTION 带 ctx 且 guard 失败 → 不变更（防御性 no-op）', () => {
+    const s0 = stateWithOp({ apUsed: 2 }) // APL 3 剩 1，FALL_BACK 需 2
+    const before = JSON.parse(JSON.stringify(s0))
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'FALL_BACK', ctx: ctx() })
+    expect(s).toEqual(before) // apUsed 仍 2，未应用
+  })
+
+  it('DO_ACTION 带 ctx 且 guard 通过 → 应用', () => {
+    const s0 = stateWithOp()
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'MOVE', ctx: ctx() })
+    expect(s.operatives.op1?.apUsed).toBe(1)
+  })
+
+  it('DO_ACTION 无 ctx → 向后兼容不拦（调用方已 guard）', () => {
+    const s0 = stateWithOp({ apUsed: 2 })
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'FALL_BACK' })
+    expect(s.operatives.op1?.apUsed).toBe(4) // 无 guard，2+2
+  })
+
+  it('USE_PLOY 超 perBattle 上限 → 不变更', () => {
+    let s = createInitialTurnState()
+    s.ployUses = { p1: { used: 1, perBattle: 1 } }
+    s.cp = { a: 4, b: 4 }
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'p1', player: 'a', cpCost: 1 })
+    expect(s.cp.a).toBe(4) // 未扣
+    expect(s.ployUses.p1?.used).toBe(1) // 未增
+  })
+
+  it('USE_PLOY CP clamp 防负', () => {
+    let s = createInitialTurnState()
+    s.cp = { a: 1, b: 4 }
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'x', player: 'a', cpCost: 3 })
+    expect(s.cp.a).toBe(0) // 非 -2
+  })
+
+  it('END_TURNING_POINT 重置 perTurningPoint 计谋 used（战斗级保持）', () => {
+    let s = createInitialTurnState()
+    s.ployUses = {
+      perTP: { used: 1, perTurningPoint: 1 },
+      perBattle: { used: 1, perBattle: 3 },
+    }
+    s = turnReducer(s, { type: 'END_TURNING_POINT' })
+    expect(s.ployUses.perTP?.used).toBe(0) // 跨 TP 重置
+    expect(s.ployUses.perBattle?.used).toBe(1) // 战斗级保持
+  })
+
+  it('USE_PLOY perTurningPoint 跨 TP 后可再用', () => {
+    let s = createInitialTurnState()
+    s.ployUses = { perTP: { used: 1, perTurningPoint: 1 } }
+    s = turnReducer(s, { type: 'END_TURNING_POINT' }) // 重置 used→0
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'perTP', player: 'a', cpCost: 1 })
+    expect(s.ployUses.perTP?.used).toBe(1) // 重置后再次使用成功
+  })
+})
