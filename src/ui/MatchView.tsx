@@ -22,9 +22,14 @@ interface Token {
   wounds: number
   alive: boolean
 }
-const TERRAIN: TerrainFeature[] = [
-  { id: 'ruin', kind: 'BLOCKING', polygon: [{ x: 13, y: 6 }, { x: 17, y: 6 }, { x: 17, y: 14 }, { x: 13, y: 14 }] },
-]
+const MAPS: Record<string, TerrainFeature[]> = {
+  open: [],
+  ruin: [{ id: 'ruin', kind: 'BLOCKING', polygon: [{ x: 13, y: 6 }, { x: 17, y: 6 }, { x: 17, y: 14 }, { x: 13, y: 14 }] }],
+  corridor: [
+    { id: 'w1', kind: 'BLOCKING', polygon: [{ x: 8, y: 2 }, { x: 10, y: 2 }, { x: 10, y: 9 }, { x: 8, y: 9 }] },
+    { id: 'w2', kind: 'BLOCKING', polygon: [{ x: 20, y: 11 }, { x: 22, y: 11 }, { x: 22, y: 18 }, { x: 20, y: 18 }] },
+  ],
+}
 const mk = (side: 'a' | 'b', i: number, x: number, y: number): Token => ({ uid: `${side}${i}`, side, name: `战术兵${side.toUpperCase()}${i}`, pos: { x, y }, wounds: 13, alive: true })
 const initialTokens = (): Token[] => [mk('a', 1, 3, 6), mk('a', 2, 3, 14), mk('b', 1, 27, 6), mk('b', 2, 27, 14)]
 
@@ -36,12 +41,14 @@ export function MatchView() {
   const [log, setLog] = useState<string[]>(['战斗开始（占领目标点）'])
   const [selected, setSelected] = useState<string | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
+  const [mapKey, setMapKey] = useState('ruin')
+  const terrain = MAPS[mapKey] ?? MAPS.ruin!
   const [lastRes, setLastRes] = useState<{ result: ShootResult; target: string } | null>(null)
   const [winner, setWinner] = useState<string | null>(null)
 
   const active = tokens.find((t) => t.uid === selected) ?? null
   const pushLog = (s: string) => setLog((l) => [s, ...l].slice(0, 40))
-  const toBoard = (): Board => ({ terrain: TERRAIN, operatives: tokens.filter((t) => t.alive).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: BASE_R })) })
+  const toBoard = (): Board => ({ terrain, operatives: tokens.filter((t) => t.alive).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: BASE_R })) })
 
   // push 引导（1.13）
   const guidance = !active
@@ -134,6 +141,11 @@ export function MatchView() {
         <button onClick={activate} disabled={!active || active.side !== turn.activePlayer}>激活选中</button>
         <button onClick={endActivation} disabled={!active}>结束激活</button>
         <button className="primary" onClick={scoreAndEndTP}>结束转折点（计分）</button>
+        <label>地图
+          <select value={mapKey} onChange={(e) => setMapKey(e.target.value)}>
+            {Object.keys(MAPS).map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+        </label>
         <span className="muted">TP {turn.turningPoint}/4 · 主动 {turn.activePlayer.toUpperCase()} · VP A:{vp.a} B:{vp.b}</span>
       </div>
 
@@ -156,7 +168,7 @@ export function MatchView() {
             return <line key={t.uid} x1={active.pos.x * SCALE} y1={active.pos.y * SCALE} x2={t.pos.x * SCALE} y2={t.pos.y * SCALE} stroke={stroke} strokeWidth={2} strokeDasharray={los.confidence === 'AMBIGUOUS' ? '4 3' : 'none'} opacity={0.7} />
           })}
         </svg>
-        {TERRAIN.filter((t) => t.kind === 'BLOCKING').map((t) => {
+        {terrain.filter((t) => t.kind === 'BLOCKING').map((t) => {
           const xs = t.polygon.map((p) => p.x); const ys = t.polygon.map((p) => p.y)
           return <div key={t.id} className="terrain" style={{ left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE, width: (Math.max(...xs) - Math.min(...xs)) * SCALE, height: (Math.max(...ys) - Math.min(...ys)) * SCALE }} />
         })}
