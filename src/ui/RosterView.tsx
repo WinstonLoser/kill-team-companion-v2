@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { loadPack } from '../'
 import { useViewStore } from '../state/viewStore'
+import { useRosterStore } from '../state/rosterStore'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 
 const pack = loadPack(angelsPack)
@@ -8,8 +9,14 @@ const tactics = pack.effects.filter((e) => e.source.startsWith('chapterTactic:')
 
 export function RosterView() {
   const setView = useViewStore((s) => s.setView)
+  const setRoster = useRosterStore((s) => s.setRoster)
   const [picked, setPicked] = useState<string[]>([pack.operatives[0]!.operativeId])
   const [tacticPick, setTacticPick] = useState<string[]>([])
+
+  function enterMatch() {
+    setRoster(picked, tacticPick) // H4：建队结果写入 store，MatchView 读取
+    setView('match')
+  }
 
   const toggleOp = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const toggleTactic = (id: string) =>
@@ -57,7 +64,7 @@ export function RosterView() {
           <li>{tacticOk ? '✓' : '✗'} 战团战术 2/2</li>
           <li>✓ 装备限制（阵营包无限制项）</li>
         </ul>
-        <button className="primary" disabled={!legal} onClick={() => setView('match')}>
+        <button className="primary" disabled={!legal} onClick={enterMatch}>
           {legal ? '进入对局 ▶' : '先满足合法性'}
         </button>
       </div>

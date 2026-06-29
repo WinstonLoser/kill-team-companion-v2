@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { loadPack, runShooting, losFinding, rangeFinding, coverFinding } from '../'
 import { ElectronicDiceSource, hashSeed } from '../dice'
 import { createInitialTurnState, turnReducer, type TurnState } from '../state/turnStateMachine'
+import { useRosterStore } from '../state/rosterStore'
 import type { ShootResult } from '../engine'
+import type { Effect } from '../rules'
 import type { Board, OperativePlacement, Point, TerrainFeature } from '../geometry'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 
@@ -31,16 +33,29 @@ const MAPS: Record<string, TerrainFeature[]> = {
     { id: 'w2', kind: 'BLOCKING', polygon: [{ x: 20, y: 11 }, { x: 22, y: 11 }, { x: 22, y: 18 }, { x: 20, y: 18 }] },
   ],
 }
-const mk = (side: 'a' | 'b', i: number): Token => ({ uid: `${side}${i}`, side, name: `战术兵${side.toUpperCase()}${i}`, pos: { x: -1, y: -1 }, wounds: 13, alive: true, placed: false })
-const initialTokens = (): Token[] => [mk('a', 1), mk('a', 2), mk('b', 1), mk('b', 2)]
 
-interface LastShot {
-  result: ShootResult
-  targetUid: string
-  targetName: string
-  woundsDealt: number
-  prevWounds: number
+const DEFAULT_IDS = [pack.operatives[0]!.operativeId, (pack.operatives[1] ?? pack.operatives[0]!).operativeId]
+const opById = (id: string) => pack.operatives.find((o) => o.operativeId === id) ?? pack.operatives[0]!
+
+function mkToken(side: 'a' | 'b', opId: string, idx: number): Token {
+  const op = opById(opId)
+  return { uid: `${side}${idx}`, side, name: `${op.name}-${side.toUpperCase()}${idx}`, pos: { x: -1, y: -1 }, wounds: op.stats.wounds, alive: true, placed: false }
 }
+
+function initialTokens(): Token[] {
+  const ids = useRosterStore.getState().aOps.length ? useRosterStore.getState().aOps : DEFAULT_IDS
+  const out: Token[] = []
+  ids.forEach((id, i) => { out.push(mkToken('a', id, i + 1)); out.push(mkToken('b', id, i + 1)) })
+  return out
+}
+
+function tacticEffects(): Effect[] {
+  return useRosterStore.getState().aTactics
+    .map((id) => pack.effects.find((e) => e.effectId === id))
+    .filter((e): e is Effect => Boolean(e))
+}
+
+interface LastShot { result: ShootResult; targetUid: string; targetName: string; woundsDealt: number; prevWounds: number }
 
 export function MatchView() {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
@@ -53,6 +68,7 @@ export function MatchView() {
   const [mapKey, setMapKey] = useState('ruin')
   const [phase, setPhase] = useState<'deploy' | 'play'>('deploy')
   const [lastShot, setLastShot] = useState<LastShot | null>(null)
+  const [shotSeq, setShotSeq] = useState(0) // H1：单调计数器，替代 log.length 做 seed
   const [winner, setWinner] = useState<string | null>(null)
   const terrain = MAPS[mapKey] ?? MAPS.ruin!
 
@@ -68,9 +84,8 @@ export function MatchView() {
 
   function placeAt(p: Point) {
     if (phase !== 'deploy' || allPlaced) return
-    // 降落区：A 在 x<10，B 在 x>20
     const inZone = deploySide === 'a' ? p.x < 10 : p.x > 20
-    if (!inZone) { pushLog(`⚠ 须在 ${deploySide.toUpperCase()} 方降落区（${deploySide === 'a' ? '左 1/3' : '右 1/3'}）放置`); return }
+    if (!inZone) { pushLog(`⚠ 须在 ${deploySide.toUpperCase()} 方降落区放置`); return }
     const next = tokens.find((t) => t.side === deploySide && !t.placed)
     if (!next) return
     setTokens((ts) => ts.map((t) => (t.uid === next.uid ? { ...t, placed: true, pos: clampPos(p) } : t)))
@@ -78,18 +93,20 @@ export function MatchView() {
   }
 
   function beginPlay() {
-    setPhase('play')
-    setSelected(null)
-    setTurn((s) => ({ ...s, activePlayer: 'a' }))
+    if (phase !== 'deploy' || !allPlaced) return // 防御兜底
+    setPhase('play'); setSelected(null); setTurn((s) => ({ ...s, activePlayer: 'a' }))
     pushLog('部署完成 · 战斗开始（占领目标点）')
   }
 
   // ===== 对局阶段 =====
+  const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
   const guidance = !active
     ? `轮到 ${turn.activePlayer.toUpperCase()}：点一名己方特工激活`
     : active.side !== turn.activePlayer
-      ? `选中了对方特工；请激活 ${turn.activePlayer.toUpperCase()} 方`
-      : `已激活 ${active.name}：点空地移动 / 点敌方射击 / [结束激活]`
+      ? `选中了对方特工（仅查看）；请激活 ${turn.activePlayer.toUpperCase()} 方`
+      : activated
+        ? `已激活 ${active.name}：点空地移动 / 点敌方射击 / [结束激活]`
+        : `${active.name}：先 [激活] 才能行动`
 
   function activate() {
     if (!active || active.side !== turn.activePlayer) return
@@ -105,9 +122,10 @@ export function MatchView() {
   }
 
   function shoot(targetUid: string) {
-    if (!active) return
+    // C1/C2/C3 守卫：须激活 + 当前玩家 + 目标存活
+    if (!active || active.side !== turn.activePlayer || !activated) return
     const target = tokens.find((t) => t.uid === targetUid)
-    if (!target || target.side === active.side) return
+    if (!target || target.side === active.side || !target.alive) return
     const board = toBoard()
     const aPl: OperativePlacement = { operativeId: active.uid, pos: active.pos, baseRadius: BASE_R }
     const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: BASE_R }
@@ -117,26 +135,29 @@ export function MatchView() {
     const cover = coverFinding(target.pos, board, others)
     if (!los.finalValue) { pushLog(`⚠ 拦截：${target.name} 不可见（LOS 阻断）`); return }
     if (!range.finalValue) { pushLog(`⚠ 拦截：${target.name} 超射程 ${RANGE}"`); return }
-    const dice = new ElectronicDiceSource(hashSeed(`${active.uid}>${target.uid}`, 'SHOOT', log.length))
-    const r = runShooting({ attacker: { operativeId: active.uid, weapon }, defender: { operativeId: target.uid, save: 3, wounds: target.wounds }, effects: [], dice, hasCover: cover.finalValue })
+    // H4：A 方应用建队所选战团战术
+    const effects = active.side === 'a' ? tacticEffects() : []
+    const dice = new ElectronicDiceSource(hashSeed(`${active.uid}>${target.uid}`, 'SHOOT', shotSeq))
+    const r = runShooting({ attacker: { operativeId: active.uid, weapon }, defender: { operativeId: target.uid, save: 3, wounds: target.wounds }, effects, dice, hasCover: cover.finalValue })
+    setShotSeq((s) => s + 1)
     const prevWounds = target.wounds
     const nw = Math.max(0, target.wounds - r.woundsDealt)
     setLastShot({ result: r, targetUid: target.uid, targetName: target.name, woundsDealt: r.woundsDealt, prevWounds })
     setTokens((ts) => ts.map((t) => (t.uid === target.uid ? { ...t, wounds: nw, alive: nw > 0 } : t)))
-    pushLog(`${active.name} → ${target.name}：造伤 ${r.woundsDealt}${nw <= 0 ? '（残废）' : `（剩 ${nw}）`}${cover.finalValue ? ' [掩护]' : ''}${los.confidence === 'AMBIGUOUS' ? ' [LOS模糊]' : ''}`)
+    pushLog(`${active.name} → ${target.name}：造伤 ${r.woundsDealt}${nw <= 0 ? '（残废）' : `（剩 ${nw}）`}${cover.finalValue ? ' [掩护]' : ''}${los.confidence === 'AMBIGUOUS' ? ' [LOS模糊]' : ''}${effects.length ? ` [${effects.length}战术]` : ''}`)
   }
 
   function undoLastShot() {
-    // FR-16 回滚：撤销上次结算（恢复目标耐伤/存活）
     if (!lastShot) return
+    const exists = tokens.some((t) => t.uid === lastShot.targetUid) // 守卫：目标仍在
     const restore = lastShot.prevWounds
-    setTokens((ts) => ts.map((t) => (t.uid === lastShot.targetUid ? { ...t, wounds: restore, alive: restore > 0 } : t)))
-    pushLog(`↶ 回滚：${lastShot.targetName} 耐伤恢复至 ${restore}`)
+    if (exists) setTokens((ts) => ts.map((t) => (t.uid === lastShot.targetUid ? { ...t, wounds: restore, alive: restore > 0 } : t)))
+    pushLog(exists ? `↶ 回滚：${lastShot.targetName} 耐伤恢复至 ${restore}` : `↶ 回滚：${lastShot.targetName} 已不在场（仅清记录）`)
     setLastShot(null)
   }
 
   function endActivation() {
-    if (!active) return
+    if (!active || active.side !== turn.activePlayer || !activated) return
     setTurn((s) => turnReducer(s, { type: 'END_ACTIVATION', opId: active.uid }))
     setSelected(null)
     pushLog(`${active.name} 结束激活`)
@@ -151,13 +172,13 @@ export function MatchView() {
       else if (nB > nA) scored.b++
     }
     setVp(scored)
+    setSelected(null) // H2：清残留选中
     const next = turnReducer(turn, { type: 'END_TURNING_POINT' })
     setTurn(next)
     pushLog(`转折点 ${turn.turningPoint} 结束 — VP A:${scored.a} B:${scored.b}`)
     if (next.phase === 'BATTLE_END') {
       const w = scored.a > scored.b ? 'A 胜' : scored.b > scored.a ? 'B 胜' : '平局'
-      setWinner(w)
-      pushLog(`战斗结束 → ${w}`)
+      setWinner(w); pushLog(`战斗结束 → ${w}`)
     } else {
       setTurn((s) => ({ ...s, activePlayer: s.activePlayer === 'a' ? 'b' : 'a' }))
     }
@@ -169,7 +190,9 @@ export function MatchView() {
   }
 
   function reset() {
-    setTokens(initialTokens()); setTurn(createInitialTurnState()); setVp({ a: 0, b: 0 }); setWinner(null); setPhase('deploy'); setSelected(null); setLastShot(null); setLog(['部署阶段：双方在降落区交替放置特工'])
+    setTokens(initialTokens()); setTurn(createInitialTurnState()); setVp({ a: 0, b: 0 }); setWinner(null)
+    setPhase('deploy'); setSelected(null); setLastShot(null); setDragging(null); setMapKey('ruin'); setShotSeq(0)
+    setLog(['部署阶段：双方在降落区交替放置特工'])
   }
 
   if (winner) {
@@ -195,7 +218,7 @@ export function MatchView() {
         ) : (
           <>
             <button onClick={activate} disabled={!active || active.side !== turn.activePlayer}>激活选中</button>
-            <button onClick={endActivation} disabled={!active}>结束激活</button>
+            <button onClick={endActivation} disabled={!active || active.side !== turn.activePlayer || !activated}>结束激活</button>
             <button className="primary" onClick={scoreAndEndTP}>结束转折点（计分）</button>
             {lastShot && <button onClick={undoLastShot}>↶ 回滚上次结算</button>}
           </>
@@ -209,7 +232,7 @@ export function MatchView() {
       </div>
 
       <div
-        className={`board ${phase === 'deploy' ? 'deploying' : ''} ${phase === 'deploy' ? `deploy-${deploySide}` : ''}`}
+        className={`board ${phase === 'deploy' ? 'deploying' : ''}`}
         style={{ width: BOARD_W * SCALE, height: BOARD_H * SCALE }}
         onPointerMove={(e) => { if (phase === 'play' && dragging) { e.preventDefault(); moveToken(dragging, boardPoint(e)) } }}
         onPointerUp={() => setDragging(null)}
@@ -217,7 +240,7 @@ export function MatchView() {
         onClick={(e) => { const p = boardPoint(e); if (phase === 'deploy') placeAt(p); else if (!dragging) moveSelectedTo(p) }}
       >
         <svg className="overlay" width={BOARD_W * SCALE} height={BOARD_H * SCALE}>
-          {phase === 'play' && active && (
+          {phase === 'play' && active && activated && (
             <>
               <circle cx={active.pos.x * SCALE} cy={active.pos.y * SCALE} r={RANGE * SCALE} className="rangedot" />
               {tokens.filter((t) => t.alive && t.placed && t.side !== active.side).map((t) => {
@@ -233,13 +256,13 @@ export function MatchView() {
           return <div key={t.id} className="terrain" style={{ left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE, width: (Math.max(...xs) - Math.min(...xs)) * SCALE, height: (Math.max(...ys) - Math.min(...ys)) * SCALE }} />
         })}
         {phase === 'play' && objectives.map((o, i) => <div key={i} className="objective" style={{ left: o.x * SCALE - 8, top: o.y * SCALE - 8 }} title="目标点 控制3英寸" />)}
-        {tokens.filter((t) => t.placed).map((t) => (
+        {tokens.filter((t) => t.placed && t.alive).map((t) => (
           <button
             key={t.uid}
             className={`token ${t.side} ${selected === t.uid ? 'sel' : ''}`}
             style={{ left: t.pos.x * SCALE - 11, top: t.pos.y * SCALE - 11 }}
-            onPointerDown={(e) => { if (phase === 'play') { e.stopPropagation(); setSelected(t.uid); setDragging(t.uid) } }}
-            onClick={(e) => { if (phase === 'play') { e.stopPropagation(); if (active && t.side !== active.side) shoot(t.uid) } }}
+            onPointerDown={(e) => { if (phase === 'play' && t.side === turn.activePlayer) { e.stopPropagation(); setSelected(t.uid); setDragging(t.uid) } }}
+            onClick={(e) => { if (phase === 'play') { e.stopPropagation(); if (t.side !== turn.activePlayer) shoot(t.uid) } }}
             title={`${t.name} 耐伤${t.wounds}`}
           >{t.side.toUpperCase()}</button>
         ))}
@@ -247,7 +270,7 @@ export function MatchView() {
       <p className="muted">
         {phase === 'deploy'
           ? `降落区：A 左 1/3、B 右 1/3。交替放置（当前 ${deploySide.toUpperCase()}）。`
-          : '拖特工移动 / 点敌方射击（绿=可见 红=阻挡 虚=模糊）/ 选中有射程环。'}
+          : '拖己方特工移动 / 点敌方射击（绿=可见 红=阻挡 虚=模糊）/ 选中有射程环。'}
       </p>
 
       <div className="cols">
@@ -269,7 +292,7 @@ export function MatchView() {
   )
 
   function moveSelectedTo(p: Point) {
-    if (!active) return
+    if (!active || active.side !== turn.activePlayer || !activated) return
     moveToken(active.uid, p)
     pushLog(`${active.name} 移动 → ${p.x.toFixed(1)},${p.y.toFixed(1)}`)
   }
