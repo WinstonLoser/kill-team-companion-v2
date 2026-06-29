@@ -84,3 +84,8 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .rangedot { fill: rgba(74,158,255,0.06); stroke: rgba(74,158,255,0.35); stroke-dasharray: 3 3; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem; }
 .cols h3 { margin: 0 0 0.25rem; font-size: 0.85rem; color: var(--muted); }
+.board.deploying { cursor: cell; }
+.board.deploying::before {
+  content: ''; position: absolute; inset: 0; border-radius: 8px; pointer-events: none;
+  background: linear-gradient(to right, rgba(58,123,199,0.12) 0 33.33%, transparent 33.33% 66.66%, rgba(199,93,58,0.12) 66.66% 100%);
+}
