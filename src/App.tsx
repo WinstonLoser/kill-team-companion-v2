@@ -1,5 +1,5 @@
 import { useViewStore, type View } from './state/viewStore'
-import { ResolveDemo } from './ui/ResolveDemo'
+import { MatchView } from './ui/MatchView'
 import { loadPack } from './'
 import angelsPack from './data/packs/angels_of_death.v1.json'
 
@@ -53,7 +53,7 @@ export function App() {
             </ul>
           </section>
         )}
-        {currentView === 'match' && <ResolveDemo />}
+        {currentView === 'match' && <MatchView />}
         {currentView === 'rules' && (
           <section>
             <h2>规则查询（引擎参数化，不显示 GW 原文 D-29）</h2>

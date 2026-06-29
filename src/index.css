@@ -68,3 +68,14 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .trace .sid { display: inline-block; min-width: 11rem; color: var(--accent); font-family: ui-monospace, monospace; font-size: 0.78rem; }
 .trace .sum { color: var(--fg); }
 .list { line-height: 1.7; }
+.muted { color: var(--muted); font-size: 0.8rem; }
+
+/* 棋盘 */
+.board { position: relative; background: #0f1115; border: 1px solid var(--border); border-radius: 8px; cursor: crosshair; margin: 0.5rem 0; }
+.terrain { position: absolute; background: #3a2a1a; border: 1px solid #5a4030; border-radius: 2px; pointer-events: none; }
+.objective { position: absolute; width: 16px; height: 16px; background: var(--accent); transform: rotate(45deg); border-radius: 2px; pointer-events: none; }
+.token { position: absolute; width: 22px; height: 22px; border-radius: 50%; padding: 0; min-width: 0; min-height: 0; font-size: 0.7rem; font-weight: 700; line-height: 22px; text-align: center; cursor: pointer; border: 2px solid transparent; }
+.token.a { background: var(--side-b); color: #fff; } /* A 蓝 */
+.token.b { background: var(--side-a); color: #fff; } /* B 暖 */
+.token.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.token:disabled { opacity: 0.4; }
