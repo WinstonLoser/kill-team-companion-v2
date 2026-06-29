@@ -137,6 +137,7 @@ export function runMelee(input: MeleeInput): MeleeResult {
   let dmgToAtk = defSurvive.normal * wpnD.normalDamage + defSurvive.critical * wpnD.criticalDamage
   const mitDef = modsOf(effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'])
   dmgToDef = Math.max(0, dmgToDef - mitDef.length)
+  dmgToAtk = Math.max(0, dmgToAtk - mitDef.length) // P6：双向减伤（对称近似；按源分边留 DN）
   traces.push(
     step(
       'MELEE_DAMAGE_AND_MITIGATE',
@@ -160,8 +161,8 @@ export function runMelee(input: MeleeInput): MeleeResult {
   return {
     woundsToDefender,
     woundsToAttacker,
-    defenderIncapacitated: woundsToDefender >= defender.wounds,
-    attackerIncapacitated: woundsToAttacker >= attacker.wounds,
+    defenderIncapacitated: woundsToDefender > 0 && woundsToDefender >= defender.wounds,
+    attackerIncapacitated: woundsToAttacker > 0 && woundsToAttacker >= attacker.wounds,
     traces,
   }
 }

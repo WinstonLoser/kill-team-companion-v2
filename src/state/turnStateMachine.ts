@@ -177,7 +177,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       const ploy = state.ployUses[event.ployId]
       const next = {
         ...state,
-        cp: { ...state.cp, [event.player]: state.cp[event.player] - event.cpCost },
+        cp: { ...state.cp, [event.player]: Math.max(0, state.cp[event.player] - event.cpCost) },
         ployUses: {
           ...state.ployUses,
           [event.ployId]: { used: (ploy?.used ?? 0) + 1, perBattle: ploy?.perBattle, perTurningPoint: ploy?.perTurningPoint },
@@ -186,10 +186,18 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return next
     }
     case 'END_TURNING_POINT': {
+      if (state.phase === 'BATTLE_END') return state // 终态保护（P11）
       const next = state.turningPoint + 1
       // 翻回就绪 + CP 发放（先手+1/非先手+2，简化：双方 +2）
       const ops = Object.fromEntries(
         Object.entries(state.operatives).map(([id, o]) => [id, { ...o, ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false }]),
+      )
+      // P10：每转折点计谋次数重置（perBattle 保留）
+      const ployUses = Object.fromEntries(
+        Object.entries(state.ployUses).map(([k, v]) => [
+          k,
+          v.perTurningPoint ? { ...v, used: 0 } : v,
+        ]),
       )
       return {
         ...state,
@@ -197,6 +205,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
         cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
         operatives: ops,
+        ployUses,
       }
     }
     default:

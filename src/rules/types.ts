@@ -56,7 +56,7 @@ export type Modifier =
   | { kind: 'IMMUNITY'; payload: { immuneToEffectGroup: string } }
   | { kind: 'EXTRA_DAMAGE_ON_HIT'; payload: { amount: number; cap?: number } }
   | { kind: 'GRANT_MARKER'; payload: { marker: string; target: 'SELF' | 'DEFENDER' | 'ATTACKER'; atStep?: string } }
-  | { kind: 'HEAL_OPERATIVE'; payload: { amount: number; target: 'SELF' | 'target'; condition?: string } }
+  | { kind: 'HEAL_OPERATIVE'; payload: { amount: number; target: 'SELF' | 'DEFENDER' | 'ATTACKER'; condition?: string } }
   | { kind: 'APL_PLUS'; payload: { amount: number; duration: 'ACTIVATION' | 'TURNING_POINT' | 'BATTLE' } }
   | { kind: 'CUSTOM_HOOK'; payload: { hookId: string; prompt: string } }
 

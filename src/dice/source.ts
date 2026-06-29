@@ -5,6 +5,7 @@ export type DiceGrade = 'NORMAL' | 'CRITICAL' | 'FAIL'
 export interface DiceRoll {
   nat: 1 | 2 | 3 | 4 | 5 | 6 // 自然点
   grade: DiceGrade // 由命中属性判定，或关键(6)/必败(1)预设
+  seed?: number // 电子骰的源 seed，入日志供回放复现（FR-17）；物理骰无
 }
 
 export interface DiceSource {
@@ -17,15 +18,16 @@ export interface DiceSource {
  */
 export class ElectronicDiceSource implements DiceSource {
   private seedable: () => number
-  // grade 由调用方据命中属性后置判定；此处只产自然点 + 占位 grade（NORMAL，后续 step 覆写）
+  private readonly seed: number
   constructor(seed: number) {
-    this.seedable = mulberry32(seed >>> 0)
+    this.seed = seed >>> 0
+    this.seedable = mulberry32(this.seed)
   }
   roll(n: number): DiceRoll[] {
     const out: DiceRoll[] = []
     for (let i = 0; i < n; i++) {
       const nat = d6(this.seedable)
-      out.push({ nat, grade: nat === 6 ? 'CRITICAL' : nat === 1 ? 'FAIL' : 'NORMAL' })
+      out.push({ nat, grade: nat === 6 ? 'CRITICAL' : nat === 1 ? 'FAIL' : 'NORMAL', seed: this.seed })
     }
     return out
   }

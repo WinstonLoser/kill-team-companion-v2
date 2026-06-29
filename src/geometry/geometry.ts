@@ -75,6 +75,7 @@ function segSeg(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
   return false
 }
 function pointInPoly(p: Point, poly: Polygon): boolean {
+  if (poly.length < 3) return false // P9：退化多边形（点/线段）不算体积
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const xi = poly[i]!.x
@@ -87,6 +88,7 @@ function pointInPoly(p: Point, poly: Polygon): boolean {
   return inside
 }
 function segIntersectsPoly(a: Point, b: Point, poly: Polygon): boolean {
+  if (poly.length < 2) return false // P9：不足 2 顶点无法成边
   if (pointInPoly(a, poly) || pointInPoly(b, poly)) return true
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     if (segSeg(a, b, poly[i]!, poly[j]!)) return true
@@ -109,20 +111,30 @@ function nearestPoly(p: Point, poly: Polygon): number {
   return min
 }
 
+// 多边形顶点到线段(a-b)的最近距离（LOS 近miss clearance 近似）
+function minVertexDistToSeg(poly: Polygon, a: Point, b: Point): number {
+  let min = Infinity
+  for (const v of poly) min = Math.min(min, distPointSeg(v, a, b))
+  return min
+}
+
 // ===== 判定（各产出 GeometryFinding） =====
 
-/** LOS：攻击方中心到目标中心线段被 BLOCKING 地形阻断 → 不可见。 */
+/** LOS：攻击方→目标线段被 BLOCKING 地形阻断 → 不可见。margin=未挡时最近 blocker 到视线的距离（P5）。 */
 export function losFinding(attacker: Point, target: Point, board: Board): GeometryFinding {
   const blockers = board.terrain.filter((t) => t.kind === 'BLOCKING')
-  let blockedBy: number = Infinity
+  let blocked = false
+  let clearance = Infinity
   for (const b of blockers) {
-    if (segIntersectsPoly(attacker, target, b.polygon)) {
-      // 粗略 margin：取最近阻断地形到线段的距离（>0 表示相交，margin 记为负=被挡深度）
-      blockedBy = 0
-    }
+    const poly = b.polygon
+    if (poly.length < 2) continue
+    // P8：攻击方/目标站于此地形内（部署于废墟常见）→ 不当它阻断自身视线
+    if (pointInPoly(attacker, poly) || pointInPoly(target, poly)) continue
+    if (segIntersectsPoly(attacker, target, poly)) blocked = true
+    else clearance = Math.min(clearance, minVertexDistToSeg(poly, attacker, target))
   }
-  const visible = blockedBy > 0
-  return finding('LOS', visible, visible ? 1 : -1)
+  const margin = blocked ? -1 : clearance
+  return finding('LOS', !blocked, margin)
 }
 
 /** 掩护：目标 1" 内有 COVER 地形 → 有掩护；2" 内有他特工 → 无掩护。 */

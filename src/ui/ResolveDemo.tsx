@@ -9,7 +9,7 @@ const pack = loadPack(angelsPack)
 export function ResolveDemo() {
   const firstRanged = pack.weapons.find((w) => w.kind === 'RANGED') ?? pack.weapons[0]!
   const [attackerId, setAttackerId] = useState(pack.operatives[0]!.operativeId)
-  const [defenderId, setDefenderId] = useState(pack.operatives[0]!.operativeId)
+  const [defenderId, setDefenderId] = useState(pack.operatives[1]?.operativeId ?? pack.operatives[0]!.operativeId) // P19：默认不自射
   const [weaponId, setWeaponId] = useState(firstRanged.weaponId)
   const [diceStr, setDiceStr] = useState('4,5,2,6, 2,3,1')
   const [hasCover, setHasCover] = useState(false)

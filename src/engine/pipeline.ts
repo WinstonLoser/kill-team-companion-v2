@@ -67,8 +67,9 @@ export function runShooting(input: ShootInput): ShootResult {
   )
 
   // 4 ATTACK_UPGRADE（AFTER_HIT_ROLL）：UPGRADE_SUCCESS 普通→关键；AUTO_SUCCESS 直接加
-  const upgrade = effectsAt(effects, 'AFTER_HIT_ROLL').filter((e) => e.modifier.kind === 'UPGRADE_SUCCESS')
-  const auto = effectsAt(effects, 'AFTER_HIT_ROLL').filter((e) => e.modifier.kind === 'AUTO_SUCCESS')
+  // P14：跳过 pipelineStep 属近战的 effect（如近战撕裂不在射击触发）
+  const upgrade = effectsAt(effects, 'AFTER_HIT_ROLL').filter((e) => e.modifier.kind === 'UPGRADE_SUCCESS' && !e.pipelineStep.startsWith('MELEE'))
+  const auto = effectsAt(effects, 'AFTER_HIT_ROLL').filter((e) => e.modifier.kind === 'AUTO_SUCCESS' && !e.pipelineStep.startsWith('MELEE'))
   const upApplied: string[] = []
   for (const e of upgrade) {
     if (normalSuccess > 0) {
@@ -79,8 +80,9 @@ export function runShooting(input: ShootInput): ShootResult {
   }
   for (const e of auto) {
     const p = e.modifier.payload as { count: number; grade: 'NORMAL' | 'CRITICAL' }
-    if (p.grade === 'CRITICAL') criticalSuccess += p.count
-    else normalSuccess += p.count
+    const c = Math.max(0, p.count) // P17：clamp 负值
+    if (p.grade === 'CRITICAL') criticalSuccess += c
+    else normalSuccess += c
     upApplied.push(e.effectId)
   }
   traces.push(step('ATTACK_UPGRADE', `升级/自动后 → 普通${normalSuccess} 关键${criticalSuccess}`, undefined, upApplied))
@@ -89,17 +91,24 @@ export function runShooting(input: ShootInput): ShootResult {
   const pierce = modsOf(effects, 'BEFORE_DEFENCE_ROLL', ['PIERCE'])
   const defenceDiceCount = Math.max(0, 3 - sum(pierce))
   const defenceDice = dice.roll(defenceDiceCount)
+  const saveThresh = clampHits(defender.save) // P18：save 钳到 2..6
   let defNormal = 0
   let defCritical = 0
   for (const d of defenceDice) {
     if (d.nat === 1) continue
-    if (d.nat >= defender.save) {
+    if (d.nat >= saveThresh) {
       if (d.nat === 6) defCritical++
       else defNormal++
     }
   }
-  const coverApplied: string[] = []
-  if (hasCover) defNormal += 1 // 核心规则：掩护豁免（+1 普通成功保留）
+  // P16：掩护豁免——读 COVER_SAVE effect extraNormal；攻城战专家(IMMUNITY cover-save)取消
+  const coverEffs = effectsAt(effects, 'BEFORE_DEFENCE_ROLL').filter((e) => e.modifier.kind === 'COVER_SAVE')
+  const coverRemoved = effectsAt(effects, 'BEFORE_DEFENCE_ROLL').some((e) => e.modifier.kind === 'IMMUNITY' && (e.modifier.payload as { immuneToEffectGroup?: string }).immuneToEffectGroup === 'cover-save')
+  const coverApplied: string[] = coverEffs.map((e) => e.effectId)
+  if (hasCover && !coverRemoved) {
+    const extra = coverEffs.length ? (coverEffs[0]?.modifier.payload as { extraNormal?: number }).extraNormal ?? 1 : 1
+    defNormal += extra
+  }
   traces.push(
     step(
       'DEFENCE_ROLL',
@@ -157,7 +166,7 @@ export function runShooting(input: ShootInput): ShootResult {
 
   // 10 WOUNDS_APPLY_AND_AFTER：扣耐伤 + 后效（毒素 GRANT_MARKER AT_PIPELINE_END）
   const woundsDealt = damage
-  const defenderIncapacitated = woundsDealt >= defender.wounds
+  const defenderIncapacitated = woundsDealt > 0 && woundsDealt >= defender.wounds // P7：0 伤不致残
   const markers = effectsAt(effects, 'AT_PIPELINE_END').filter((e) => e.modifier.kind === 'GRANT_MARKER')
   traces.push(
     step(
