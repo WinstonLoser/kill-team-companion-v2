@@ -5,7 +5,22 @@
   "faction": {
     "id": "angels_of_death",
     "name": "死亡天使",
-    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"]
+    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"],
+    "subFactionSelector": {
+      "id": "chapterTactic",
+      "label": "战团战术（8 选 2）",
+      "options": [
+        "chapterTactic_relentless",
+        "chapterTactic_duelist",
+        "chapterTactic_resolute",
+        "chapterTactic_concealed",
+        "chapterTactic_mobile",
+        "chapterTactic_stalwart",
+        "chapterTactic_sharpshooter",
+        "chapterTactic_siege"
+      ],
+      "max": 2
+    }
   },
   "operatives": [
     {
@@ -157,6 +172,8 @@
     }
   ],
   "buildConstraints": {
-    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；部分 chapterTactic effect 映射为占位 modifier，引擎 effect-hooking 随 AQ-3 扩展。"
+    "operatives": { "min": 1 },
+    "equipmentLimitScope": "weaponId",
+    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；死亡天使无重武器上限，equipmentLimits 空。"
   }
 }

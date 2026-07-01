@@ -1,5 +1,5 @@
 # generated: 2026-06-28
-# last_updated: 2026-06-29
+# last_updated: 2026-07-01
 # project: kill-team-companion
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-28
-last_updated: 2026-06-29
+last_updated: 2026-07-01
 project: kill-team-companion
 project_key: NOKEY
 tracking_system: file-system
@@ -54,7 +54,7 @@ development_status:
   1-8-geometry-eligibility: review
   1-9-turn-state-machine: review
   1-10-resolution-log-rollback: review
-  1-11-roster-building: ready-for-dev
+  1-11-roster-building: review
   1-12-setup-map-deploy: ready-for-dev
   1-13-match-ui-one-tap-resolve: ready-for-dev
   1-14-board-interaction-viz: ready-for-dev

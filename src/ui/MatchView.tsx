@@ -43,14 +43,15 @@ function mkToken(side: 'a' | 'b', opId: string, idx: number): Token {
 }
 
 function initialTokens(): Token[] {
-  const ids = useRosterStore.getState().aOps.length ? useRosterStore.getState().aOps : DEFAULT_IDS
+  const picked = useRosterStore.getState().rosterA.operativeIds
+  const ids = picked.length ? picked : DEFAULT_IDS
   const out: Token[] = []
   ids.forEach((id, i) => { out.push(mkToken('a', id, i + 1)); out.push(mkToken('b', id, i + 1)) })
   return out
 }
 
 function tacticEffects(): Effect[] {
-  return useRosterStore.getState().aTactics
+  return useRosterStore.getState().rosterA.subFactionSelection
     .map((id) => pack.effects.find((e) => e.effectId === id))
     .filter((e): e is Effect => Boolean(e))
 }

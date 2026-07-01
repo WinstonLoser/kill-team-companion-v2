@@ -87,7 +87,8 @@ export interface Effect {
 export interface SubFactionSelector {
   id: string
   label: string
-  options: string[]
+  options: string[] // option ids（阵营机制 = 数据；死亡天使=战团战术 effectId，军团兵=印记 id）
+  max: number // 可选项数上限（死亡天使 8 选 2 → max=2；军团兵印记 5 选 1 → max=1）
   default?: string
 }
 
@@ -141,7 +142,11 @@ export interface Wargear {
 }
 
 export interface BuildConstraints {
+  // 特工来源结构性约束（KT Lite 无点数 D-30，仅 min/max 数量）
+  operatives?: { min?: number; max?: number }
+  // 装备限制：key 为 weaponId 或武器 keyword（按 equipmentLimitScope 判定），value 为全队上限数量
   equipmentLimits?: Record<string, number>
+  equipmentLimitScope?: 'weaponId' | 'keyword'
   notes?: string
 }
 
