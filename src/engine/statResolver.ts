@@ -28,6 +28,9 @@ export interface EnforcerContext {
   attackerHasCritical?: boolean
   // CONDITIONAL（R2/R7）条件求值器：谓词库（Story 1.6）注入；未注入则透传（向后兼容）
   evalCondition?: (cond: ConditionPredicate) => boolean
+  // R3 CAP_PER_ATTACK_DIE 每骰语义（DN5）：本结算攻击成功骰数（atkN+atkC）。
+  // 实际上限 = cap × attackDiceCount；省略则按 1 枚骰（向后兼容）。
+  attackDiceCount?: number
 }
 
 /** effect → AppliedModifier（提取 payload.amount/cap + 叠加元数据）。 */

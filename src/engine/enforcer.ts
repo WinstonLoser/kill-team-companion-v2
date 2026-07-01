@@ -65,10 +65,11 @@ export function enforcerWithTrace(mods: AppliedModifier[], ctx: EnforcerContext 
         break
       }
       case 'CAP_PER_ATTACK_DIE': {
-        // R3：同源每枚攻击骰减伤上限（默认 1）
+        // R3：同源每枚攻击骰减伤上限（默认 1）。DN5：实际上限 = cap × attackDiceCount（每骰独立）。
         const cap = m.cap ?? 1
+        const limit = cap * (ctx.attackDiceCount ?? 1)
         const prev = perSourceCount.get(m.source) ?? 0
-        if (prev >= cap) reject(m, 'R3', `每源每枚上限 ${cap}：source '${m.source}' 已达上限`)
+        if (prev >= limit) reject(m, 'R3', `每源每骰上限 ${cap}（${ctx.attackDiceCount ?? 1} 骰 → 上限 ${limit}）：source '${m.source}' 已达上限`)
         else {
           perSourceCount.set(m.source, prev + 1)
           kept.push(m)

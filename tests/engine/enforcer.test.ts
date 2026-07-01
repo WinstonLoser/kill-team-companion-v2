@@ -104,6 +104,55 @@ describe('enforcer — 12 条叠加规则', () => {
   })
 })
 
+describe('R3 CAP_PER_ATTACK_DIE — per-die（DN5）', () => {
+  it('默认（无 attackDiceCount）= 每源上限 cap（向后兼容，1 枚骰）', () => {
+    const out = enforcer([
+      mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+    ])
+    expect(out).toHaveLength(1) // cap 1 × 1 骰 = 1
+  })
+
+  it('attackDiceCount=3 → 同源可留 cap×3 条', () => {
+    const out = enforcer(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 3 },
+    )
+    expect(out).toHaveLength(3) // cap 1 × 3 骰 = 3
+  })
+
+  it('attackDiceCount=2 → 超过 cap×2 被拒带 ruleId', () => {
+    const out = enforcerWithTrace(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 2 },
+    )
+    expect(out.kept).toHaveLength(2) // cap 1 × 2 骰 = 2，第三条被拒
+    expect(out.rejected[0]?.id).toBe('c')
+    expect(out.rejected[0]?.ruleId).toBe('R3')
+  })
+
+  it('不同源各自按 cap×diceCount 计', () => {
+    const out = enforcer(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'guard', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'd', source: 'guard', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 2 },
+    )
+    expect(out).toHaveLength(4) // 每源 cap 1 × 2 骰 = 2，两源各留 2
+  })
+})
+
 describe('resolveStat — 两层属性模型', () => {
   it('base + 过滤后 modifiers = effective；base 不变', () => {
     const r = resolveStat(3, [

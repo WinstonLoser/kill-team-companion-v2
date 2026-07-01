@@ -231,7 +231,10 @@ const DAMAGE_PER_DIE: StepFn<ShootingState> = {
 const DAMAGE_TOTAL_MITIGATE: StepFn<ShootingState> = {
   stepId: 'DAMAGE_TOTAL_MITIGATE',
   run: (state, ctx) => {
-    const mitT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'])
+    // DN5：CAP_PER_ATTACK_DIE 每骰语义——减伤按未抵挡命中骰数（atkN+atkC）计上限
+    const mitT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'], {
+      attackDiceCount: state.atkN + state.atkC,
+    })
     const mitMods = mitT.applied
     const reduce = mitMods.length
     const damage = Math.max(0, state.damage - reduce)
