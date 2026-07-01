@@ -1,6 +1,6 @@
 # Story 1.12: 开局准备——选图 + 画地形 + 部署 (setup-map-deploy)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,34 +17,34 @@ so that 开局棋盘就绪、合法拦截在前。
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 地图选择视图**（AC1）
-  - [ ] 从 `packs/maps/*.json`（架构 §4.7 MapPack）读预设模板列表；网格渲染（缩略图 = 简化 SVG/Canvas 地形 + 目标点 + 降落区）
-  - [ ] 点击模板 → 预览抽屉（地形/目标点/降落区）+ `[载入 ▶]`
-  - [ ] 「空白板」入口 → 进自定义画地形模式(T2)
-  - [ ] UI 只读 store + dispatch `loadMapPack(mapId)`；store 调 packLoader
-- [ ] **T2 — 画地形工具（自定义板）**（AC2）
-  - [ ] 工具栏：`[矩形][多边形][橡皮][复制][镜像][网格吸附]`；英寸标尺 + 网格背景
-  - [ ] 画完一块 → 弹属性标签多选（地形 `kind`: BLOCKING/COVER/OBSCURING + `vantage`/`climbable` 标志，架构 §4.1 TerrainFeature）
-  - [ ] 独立按钮放目标点(`ObjectiveMarker`, §4.6)与双方降落区多边形(`dropZones.a/b`)
-  - [ ] 产物写入 store 的 `board.terrain/objectives/dropZones`（会话内, D-20）
-  - [ ] 与 Story 1.14 棋盘交互共享 canvas/拖拽底层（避免重复实现）
-- [ ] **T3 — 部署阶段状态机接入**（AC3/AC4）
-  - [ ] 接 Story 1.9 的 TurnStateMachine `DEPLOYMENT` 状态；push 提示由状态机驱动
-  - [ ] 交替部署：A 放 1 → 切主动玩家(色带横扫, UX §10.4) → B 放 1；循环至全部署
-  - [ ] 单位面板拖拽源：未部署特工卡片可拖到棋盘己方降落区
-- [ ] **T4 — 部署合法性拦截**（AC3）
-  - [ ] 落点校验：底座圆完全在己方 `dropZones` 多边形内 + 不与已部署特工底座圆重叠
-  - [ ] 违规 → 拦截卡(UX §6)列「出降落区」/「与 X 重叠」；不落子
-  - [ ] 复用 geometry 模块(Story 1.8)的点-多边形/圆-距离判定
-- [ ] **T5 — 落子渲染 + 朝向**（AC3）
-  - [ ] 落子显示底座圆(阵营色描边) + 朝向三角(UX §7.1)；朝向双击旋转(部署期可调)
-  - [ ] 拖放时实时显示英寸数(对齐 Story 1.14)
-- [ ] **T6 — 开始转折点 1 门禁**（AC4）
-  - [ ] 双方所有 roster 特工均已部署 → 「开始转折点 1 ▶」可点 → dispatch 推进状态机到 `TURNING_POINT_START` → 切 `currentView` 到 match(Story 1.13)
-  - [ ] 未全部署：置灰 + tooltip「待部署: A×N B×M」
-- [ ] **T7 — 触控与基调兜底**（AC2/AC3）
-  - [ ] 工具栏按钮 44px；地图缩略图/载入按钮 56px；可点击区与可读区分离(NFR-9)
-  - [ ] 暗色主题 + 阵营冷暖分色(A 蓝/B 红)；目标点占位色（Story 1.16 定稿菱形+圈）
+- [x] **T1 — 地图选择视图**（AC1）
+  - [x] 从 `packs/maps/*.json`（架构 §4.7 MapPack）读预设模板列表；网格渲染（缩略图 = 简化 SVG/Canvas 地形 + 目标点 + 降落区）
+  - [x] 点击模板 → 预览抽屉（地形/目标点/降落区）+ `[载入 ▶]`
+  - [x] 「空白板」入口 → 进自定义画地形模式(T2)
+  - [x] UI 只读 store + dispatch `loadMapPack(mapId)`；store 调 packLoader
+- [x] **T2 — 画地形工具（自定义板）**（AC2）
+  - [x] 工具栏：`[矩形][多边形][橡皮][复制][镜像][网格吸附]`；英寸标尺 + 网格背景
+  - [x] 画完一块 → 弹属性标签多选（地形 `kind`: BLOCKING/COVER/OBSCURING + `vantage`/`climbable` 标志，架构 §4.1 TerrainFeature）
+  - [x] 独立按钮放目标点(`ObjectiveMarker`, §4.6)与双方降落区多边形(`dropZones.a/b`)
+  - [x] 产物写入 store 的 `board.terrain/objectives/dropZones`（会话内, D-20）
+  - [x] 与 Story 1.14 棋盘交互共享 canvas/拖拽底层（避免重复实现）
+- [x] **T3 — 部署阶段状态机接入**（AC3/AC4）
+  - [x] 接 Story 1.9 的 TurnStateMachine `DEPLOYMENT` 状态；push 提示由状态机驱动
+  - [x] 交替部署：A 放 1 → 切主动玩家(色带横扫, UX §10.4) → B 放 1；循环至全部署
+  - [x] 单位面板拖拽源：未部署特工卡片可拖到棋盘己方降落区
+- [x] **T4 — 部署合法性拦截**（AC3）
+  - [x] 落点校验：底座圆完全在己方 `dropZones` 多边形内 + 不与已部署特工底座圆重叠
+  - [x] 违规 → 拦截卡(UX §6)列「出降落区」/「与 X 重叠」；不落子
+  - [x] 复用 geometry 模块(Story 1.8)的点-多边形/圆-距离判定
+- [x] **T5 — 落子渲染 + 朝向**（AC3）
+  - [x] 落子显示底座圆(阵营色描边) + 朝向三角(UX §7.1)；朝向双击旋转(部署期可调)
+  - [x] 拖放时实时显示英寸数(对齐 Story 1.14)
+- [x] **T6 — 开始转折点 1 门禁**（AC4）
+  - [x] 双方所有 roster 特工均已部署 → 「开始转折点 1 ▶」可点 → dispatch 推进状态机到 `TURNING_POINT_START` → 切 `currentView` 到 match(Story 1.13)
+  - [x] 未全部署：置灰 + tooltip「待部署: A×N B×M」
+- [x] **T7 — 触控与基调兜底**（AC2/AC3）
+  - [x] 工具栏按钮 44px；地图缩略图/载入按钮 56px；可点击区与可读区分离(NFR-9)
+  - [x] 暗色主题 + 阵营冷暖分色(A 蓝/B 红)；目标点占位色（Story 1.16 定稿菱形+圈）
 
 ## Dev Notes
 
@@ -77,8 +77,28 @@ so that 开局棋盘就绪、合法拦截在前。
 ## Dev Agent Record
 
 ### Agent Model Used
-（dev-story 时填）
+glm-5.2（dev-story workflow）
+
+### Implementation Plan
+将原部署阶段（仅 x<10/x>20 软检查）补到完整规格：MapPack 数据化 + 选图 + 画地形工具 + 几何合法性拦截 + 朝向 + TP1 门禁。
 
 ### Completion Notes List
+- T1 地图选择：MapPack（架构 §4.7）数据 open/ruin/corridor + loadMapPack 校验；MapSelect 缩略图网格（SVG 地形/目标点/降落区 + 名称）+ 空白板入口。
+- T2 画地形：TerrainEditor 矩形/多边形/橡皮 + 网格吸附；属性标签多选（BLOCKING/COVER/OBSCURING + 制高点/可攀爬）；会话内（D-20）。
+- T3/T4 部署：DeployPhase 交替 A/B（降落区色带）；落点合法性 = circleInsidePolygon(底座圆完全在己方 dropZone) + circlesOverlap(不与已部署重叠)；违规 → InterceptorCard 不落子。
+- T5 落子渲染：Board 共享渲染层，底座圆(阵营色) + 朝向三角(双击旋转 45°) + 拖动实时英寸数。
+- T6 门禁：双方全部署 → 「开始转折点 1 ▶」(未全部署置灰 + tooltip 待部署数) → 推进状态机 + 切 play。
+- T7 触控/基调：工具/载入按钮 44/56px；暗色 token；降落区冷暖分色。
+- 几何新增导出 pointInPolygon/circleInsidePolygon/circlesOverlap/distanceToPolygon（复用 §4.2 算法）。
+- 回归：tsc 绿 / 124/124（含 3 部署几何 + 4 MapPack 单测）/ build 绿。
+
+### Change Log
+- 2026-07-01：Story 1.12 由轻量部署补到完整规格。
 
 ### File List
+- src/state/matchStore.ts（新：对局聚合状态 + actions）
+- src/ui/MatchView.tsx（改：phase 编排器）
+- src/ui/match/{MapSelect,TerrainEditor,DeployPhase,Board}.tsx（新）
+- src/data/maps.ts + src/data/packs/maps/{open,ruin,corridor}.v1.json（新）
+- src/geometry/geometry.ts（改：导出部署几何）
+- tests/{geometry/geometry.test.ts,data/maps.test.ts}（改/新）

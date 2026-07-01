@@ -1,0 +1,19 @@
+{
+  "mapId": "corridor",
+  "name": "走廊",
+  "version": "1.0.0",
+  "bounds": { "w": 30, "h": 20 },
+  "terrain": [
+    { "id": "w1", "kind": "BLOCKING", "polygon": [{ "x": 8, "y": 2 }, { "x": 10, "y": 2 }, { "x": 10, "y": 9 }, { "x": 8, "y": 9 }] },
+    { "id": "w2", "kind": "BLOCKING", "polygon": [{ "x": 20, "y": 11 }, { "x": 22, "y": 11 }, { "x": 22, "y": 18 }, { "x": 20, "y": 18 }] },
+    { "id": "obs1", "kind": "OBSCURING", "polygon": [{ "x": 14, "y": 2 }, { "x": 16, "y": 2 }, { "x": 16, "y": 5 }, { "x": 14, "y": 5 }] }
+  ],
+  "objectives": [
+    { "id": "obj1", "pos": { "x": 12, "y": 14 }, "controlRange": 3 },
+    { "id": "obj2", "pos": { "x": 18, "y": 6 }, "controlRange": 3 }
+  ],
+  "dropZones": {
+    "a": [{ "x": 0, "y": 0 }, { "x": 6, "y": 0 }, { "x": 6, "y": 20 }, { "x": 0, "y": 20 }],
+    "b": [{ "x": 24, "y": 0 }, { "x": 30, "y": 0 }, { "x": 30, "y": 20 }, { "x": 24, "y": 20 }]
+  }
+}

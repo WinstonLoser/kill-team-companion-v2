@@ -7,6 +7,9 @@ import {
   validateTarget,
   flipFinding,
   FindingStore,
+  pointInPolygon,
+  circleInsidePolygon,
+  circlesOverlap,
   type Board,
   type OperativePlacement,
   type Point,
@@ -205,5 +208,31 @@ describe('咨询式翻转接线 + finding store（DN7/D-24）', () => {
     store.upsertAll(r.findings)
     expect(store.get('LOS')?.finalValue).toBe(true)
     expect(store.get('LOS')?.overridden).toBe(true)
+  })
+})
+
+describe('部署/控制几何（Story 1.12/1.16 导出）', () => {
+  const square = (x: number, y: number, w: number, h: number) => [
+    { x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h },
+  ]
+  const zone = square(0, 0, 10, 20)
+
+  it('pointInPolygon：内/外/边界', () => {
+    expect(pointInPolygon({ x: 5, y: 5 }, zone)).toBe(true)
+    expect(pointInPolygon({ x: 15, y: 5 }, zone)).toBe(false)
+    expect(pointInPolygon({ x: 0, y: 0 }, zone)).toBe(true) // 顶点算内（奇偶规则）
+  })
+
+  it('circleInsidePolygon：圆完全在内 / 贴边外', () => {
+    expect(circleInsidePolygon({ x: 5, y: 10 }, 0.6, zone)).toBe(true)
+    // 圆心在内但半径触边 → 不完全在内
+    expect(circleInsidePolygon({ x: 9.7, y: 10 }, 0.6, zone)).toBe(false)
+    // 圆心在外
+    expect(circleInsidePolygon({ x: 11, y: 10 }, 0.6, zone)).toBe(false)
+  })
+
+  it('circlesOverlap：重叠 / 分离', () => {
+    expect(circlesOverlap({ x: 5, y: 5 }, 0.6, { x: 6, y: 5 }, 0.6)).toBe(true)
+    expect(circlesOverlap({ x: 5, y: 5 }, 0.6, { x: 9, y: 5 }, 0.6)).toBe(false)
   })
 })

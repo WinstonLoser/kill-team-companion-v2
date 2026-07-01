@@ -54,13 +54,13 @@ development_status:
   1-8-geometry-eligibility: review
   1-9-turn-state-machine: review
   1-10-resolution-log-rollback: review
-  1-11-roster-building: ready-for-dev
-  1-12-setup-map-deploy: ready-for-dev
-  1-13-match-ui-one-tap-resolve: ready-for-dev
-  1-14-board-interaction-viz: ready-for-dev
-  1-15-audit-ui-feedback: ready-for-dev
-  1-16-objectives-vp-victory: ready-for-dev
-  1-17-rules-query-touch-visuals: ready-for-dev
+  1-11-roster-building: review
+  1-12-setup-map-deploy: review
+  1-13-match-ui-one-tap-resolve: review
+  1-14-board-interaction-viz: review
+  1-15-audit-ui-feedback: review
+  1-16-objectives-vp-victory: review
+  1-17-rules-query-touch-visuals: review
   epic-1-retrospective: optional
 
   # Epic 2: 军团兵扩展
