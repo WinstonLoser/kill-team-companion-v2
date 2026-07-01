@@ -49,6 +49,13 @@ export interface LogEntry {
   text: string
 }
 
+/** 特工身上的限时 effect（D4：到期结算 + 单位卡显示剩余 TP）。 */
+export interface ActiveEffect {
+  id: string // effectId（溯源）
+  label: string
+  remainingTP: number // 剩余转折点；TP 结束递减，0 到期移除
+}
+
 export interface LastShot {
   targetUid: string
   targetName: string
@@ -81,6 +88,8 @@ interface MatchState {
   diceSource: DiceSourceKind
   /** D-24 咨询式翻转：key=`${aUid}>${tUid}>${kind}` → 玩家终裁 finalValue。 */
   overrides: Record<string, boolean>
+  /** D4：特工身上的限时 effect（uid → 列表）。 */
+  activeEffects: Record<string, ActiveEffect[]>
   winner: string | null
   intercept: { title: string; reasons: string[] } | null
 
@@ -129,6 +138,10 @@ interface MatchState {
   engagementOf: (aUid: string, tUid: string) => boolean
   /** 物理骰录入所需枚数（hit+defense 上限）。 */
   manualDiceNeeded: (kind: 'SHOOT' | 'MELEE') => number
+  /** D4：给特工加限时 effect（同 id 刷新 duration）。 */
+  addEffect: (uid: string, effect: { id: string; label: string; durationTP: number }) => void
+  /** D4：TP 结束结算到期 effect（递减、移除、记日志）；返回到期条目数供 push。 */
+  tickEffects: () => number
   scoreAndEndTP: (objectiveControl: (o: ObjectiveMarker) => Side | null) => void
   reset: () => void
 }
@@ -156,6 +169,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   shotSeq: 0,
   diceSource: 'electronic',
   overrides: {},
+  activeEffects: {},
   winner: null,
   intercept: null,
 
@@ -369,8 +383,39 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!w) return 0
     return w.profile.attacks * 2 // hit + defense 上限（射击）/ atk + def（近战）
   },
-  scoreAndEndTP: (objectiveControl) => {
+  addEffect: (uid, effect) =>
+    set((s) => {
+      const cur = s.activeEffects[uid] ?? []
+      const without = cur.filter((e) => e.id !== effect.id)
+      return { activeEffects: { ...s.activeEffects, [uid]: [...without, { id: effect.id, label: effect.label, remainingTP: effect.durationTP }] } }
+    }),
+  tickEffects: () => {
     const s = get()
+    const expired: string[] = []
+    const next: Record<string, ActiveEffect[]> = {}
+    for (const [uid, list] of Object.entries(s.activeEffects)) {
+      const kept: ActiveEffect[] = []
+      for (const e of list) {
+        const rem = e.remainingTP - 1
+        if (rem <= 0) expired.push(`${e.label}(${uid})`)
+        else kept.push({ ...e, remainingTP: rem })
+      }
+      if (kept.length) next[uid] = kept
+    }
+    const newLogs: LogEntry[] = []
+    if (expired.length) newLogs.push({ id: nextLogId(), kind: 'system', text: `effect 到期 ×${expired.length}：${expired.join('，')}` })
+    set({
+      activeEffects: next,
+      log: [...newLogs, ...s.log].slice(0, 80),
+      // D4 effect 到期 push：作为非阻塞 intercept 提示
+      intercept: expired.length ? { title: `effect 到期 ×${expired.length}`, reasons: expired } : s.intercept,
+    })
+    return expired.length
+  },
+  scoreAndEndTP: (objectiveControl) => {
+    // D4：先结算到期 effect（递减/移除/记日志/push），再计分推进
+    get().tickEffects()
+    const s = get() // tickEffects 已 set，重取最新
     const map = s.mapPack
     let scoredA = s.vp.a
     let scoredB = s.vp.b
@@ -416,6 +461,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       currentLog: null,
       shotSeq: 0,
       overrides: {},
+      activeEffects: {},
       winner: null,
       intercept: null,
     }),

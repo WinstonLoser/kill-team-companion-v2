@@ -16,6 +16,7 @@ export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => n
   const selected = useMatchStore((s) => s.selected)
   const setSelected = useMatchStore((s) => s.setSelected)
   const setIntercept = useMatchStore((s) => s.setIntercept)
+  const activeEffects = useMatchStore((s) => s.activeEffects) // D4：单位卡 effect 列表
 
   const sides: ('a' | 'b')[] = ['a', 'b']
   return (
@@ -27,6 +28,7 @@ export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => n
             {tokens.filter((t) => t.side === side).map((t) => {
               const cls = woundClass(t, startWoundsOf(t.uid))
               const ready = Boolean(turn.operatives[t.uid]?.ready)
+              const effs = activeEffects[t.uid] ?? []
               return (
                 <li
                   key={t.uid}
@@ -37,6 +39,9 @@ export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => n
                   <span className="uc-wounds">耐伤 {t.wounds}{!t.alive && ' ✕'}</span>
                   {ready && <span className="uc-tag">激活中</span>}
                   {cls === 'injured' && <span className="uc-tag warn">受创</span>}
+                  {effs.map((e) => (
+                    <span key={e.id} className="uc-effect" title={`${e.label}（剩余 ${e.remainingTP}TP）`}>{e.label} ×{e.remainingTP}TP</span>
+                  ))}
                 </li>
               )
             })}
