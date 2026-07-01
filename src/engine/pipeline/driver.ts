@@ -1,11 +1,13 @@
-// 流水线驱动器（架构 §7.1/§7.2，DN1 游标 + 快照回滚）。游标在 step 数组上移动：
-// advance 执行下一 step append；pause 停；rollbackTo 丢弃其后并从该步 output 快照恢复 state。
+// 流水线驱动器（架构 §7.1/§7.2，DN1 游标 + 快照回滚；DN3 泛化供近战复用）。
+// 游标在 step 数组上移动：advance 执行下一 step append；pause 停；
+// rollbackTo 丢弃其后并从该步 output 快照恢复 state。
 
 import type { StepTrace } from '../context'
 import type { ResolutionContext, ShootingState, StepFn, StepResult } from './types'
 import { createInitialShootingState, SHOOTING_PIPELINE } from './shooting'
 
-export interface ShootingResolution {
+/** 通用解析游标（DN3：射击/近战共用）。 */
+export interface Resolution<S> {
   /** 执行下一 step 并 append；已到末尾或暂停时返回 null */
   advance(): StepTrace | null
   /** 暂停在当前 cursor（advance 不再推进直到再次调用或重置 paused） */
@@ -18,11 +20,11 @@ export interface ShootingResolution {
   run(): StepTrace[]
   readonly records: readonly StepTrace[]
   readonly cursor: number
-  readonly state: ShootingState
+  readonly state: S
   readonly done: boolean
 }
 
-function toRecord<S>(step: StepFn<S>, res: StepResult<S>): StepTrace {
+function toRecord<S>(step: StepFn<S, unknown>, res: StepResult<S>): StepTrace {
   return {
     stepId: step.stepId,
     summary: res.summary,
@@ -35,19 +37,26 @@ function toRecord<S>(step: StepFn<S>, res: StepResult<S>): StepTrace {
   }
 }
 
-/** 创建射击解析：可逐步 advance / 暂停 / 回滚，或一次 run 到底。 */
-export function createShootingResolution(ctx: ResolutionContext): ShootingResolution {
-  let state = createInitialShootingState(ctx.attacker.weapon.profile)
+/**
+ * 通用解析工厂（DN3）：可逐步 advance / 暂停 / 回滚，或一次 run 到底。
+ * 射击用 SHOOTING_PIPELINE；近战用 MELEE_PIPELINE（pipeline/melee.ts）。
+ */
+export function createResolution<S, C>(
+  ctx: C,
+  pipeline: StepFn<S, C>[],
+  initState: () => S,
+): Resolution<S> {
+  let state = initState()
   const records: StepTrace[] = []
   let cursor = 0
   let paused = false
 
   const advance = (): StepTrace | null => {
-    if (cursor >= SHOOTING_PIPELINE.length || paused) return null
-    const step = SHOOTING_PIPELINE[cursor]!
+    if (cursor >= pipeline.length || paused) return null
+    const step = pipeline[cursor]!
     const res = step.run(state, ctx)
     // 快照：output 捕获本步完成后的 state（steps 不可变更新 → 引用安全，回滚可直接还原）
-    const rec = toRecord(step, { ...res, snapshot: { output: res.state } })
+    const rec = toRecord(step as StepFn<S, unknown>, { ...res, snapshot: { output: res.state } })
     state = res.state
     records.push(rec)
     cursor++
@@ -66,7 +75,7 @@ export function createShootingResolution(ctx: ResolutionContext): ShootingResolu
     if (records.length === 0) return
     records.length = idx + 1 // 保留 0..idx
     cursor = idx + 1
-    const snap = records[idx]!.output as ShootingState | undefined
+    const snap = records[idx]!.output as S | undefined
     if (snap) state = { ...snap }
     paused = false
   }
@@ -89,7 +98,17 @@ export function createShootingResolution(ctx: ResolutionContext): ShootingResolu
       return state
     },
     get done() {
-      return cursor >= SHOOTING_PIPELINE.length
+      return cursor >= pipeline.length
     },
   }
+}
+
+/** 射击解析游标（DN1，向后兼容别名）。 */
+export type ShootingResolution = Resolution<ShootingState>
+
+/** 创建射击解析：可逐步 advance / 暂停 / 回滚，或一次 run 到底。 */
+export function createShootingResolution(ctx: ResolutionContext): ShootingResolution {
+  return createResolution(ctx, SHOOTING_PIPELINE, () =>
+    createInitialShootingState(ctx.attacker.weapon.profile),
+  )
 }

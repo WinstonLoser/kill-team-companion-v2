@@ -44,8 +44,9 @@ export interface StepResult<S> {
   rulings?: string[]
 }
 
-/** StepFn：纯函数 (state, ctx) → StepResult。同入同出、不 mutate ctx。 */
-export interface StepFn<S> {
+/** StepFn：纯函数 (state, ctx) → StepResult。同入同出、不 mutate ctx。
+ * 泛型 C 默认 ResolutionContext（射击）；近战等异构上下文可传自定义 ctx 类型（DN3）。 */
+export interface StepFn<S, C = ResolutionContext> {
   stepId: string
-  run: (state: S, ctx: ResolutionContext) => StepResult<S>
+  run: (state: S, ctx: C) => StepResult<S>
 }

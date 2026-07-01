@@ -3,6 +3,7 @@
 
 import type { Effect } from '../../rules/types'
 import { validateTarget } from '../../geometry'
+import { parryAllocation } from '../parry'
 import { resolveEffectsTraced, resolveStat } from '../statResolver'
 import type { AppliedModifier } from '../statResolver'
 import type { RejectionTrace } from '../enforcer'
@@ -182,26 +183,13 @@ const DEFENCE_UPGRADE: StepFn<ShootingState> = {
 const PARRY_ALLOCATE: StepFn<ShootingState> = {
   stepId: 'PARRY_ALLOCATE',
   run: (state) => {
-    let atkN = state.normalSuccess
-    let atkC = state.criticalSuccess
-    let dN = state.defNormal
-    let dC = state.defCritical
-    while (atkC > 0 && dN >= 2) {
-      atkC--
-      dN -= 2
-    }
-    while (atkN > 0 && dN >= 1) {
-      atkN--
-      dN--
-    }
-    while (atkN > 0 && dC >= 1) {
-      atkN--
-      dC--
-    }
-    while (atkC > 0 && dC >= 1) {
-      atkC--
-      dC--
-    }
+    // P4/DN3：防御方用共用 parryAllocation 格挡攻击方成功（关键抵关键→2普通抵关键→关键抵普通→普通抵普通）。
+    const alloc = parryAllocation(
+      { normal: state.defNormal, critical: state.defCritical },
+      { normal: state.normalSuccess, critical: state.criticalSuccess },
+    )
+    const atkN = alloc.survivor.normal
+    const atkC = alloc.survivor.critical
     return {
       state: { ...state, atkN, atkC },
       summary: `未抵挡：普通${atkN} 关键${atkC}`,
