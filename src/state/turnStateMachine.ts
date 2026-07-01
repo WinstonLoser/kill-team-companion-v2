@@ -141,13 +141,24 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     case 'START_ENGAGEMENT':
       return { ...state, phase: 'ENGAGEMENT' }
     case 'ACTIVATE': {
-      const op = state.operatives[event.opId]
+      // P5：ACTIVATE 自包含——upsert 一条 ready:true 的激活条目（保留既有 order）。
+      // 调用方只需 dispatch ACTIVATE，不再需手填 operatives（避免双写/孤儿条目）。
+      const prev = state.operatives[event.opId]
       return {
         ...state,
         activePlayer: event.player,
-        operatives: op
-          ? { ...state.operatives, [event.opId]: { ...op, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false } }
-          : state.operatives,
+        operatives: {
+          ...state.operatives,
+          [event.opId]: {
+            order: prev?.order ?? 'ENGAGED',
+            ready: true,
+            apUsed: 0,
+            actionsThisActivation: [],
+            fallBackDone: false,
+            chargeDone: false,
+            moveDone: false,
+          },
+        },
       }
     }
     case 'SELECT_ORDER': {

@@ -1,11 +1,7 @@
 import { useState } from 'react'
-import { loadPack, runShooting, runMelee, losFinding, coverFinding, engagementFinding, validateTarget, ElectronicDiceSource, ManualDiceSource, hashSeed, type FactionPack, type Effect } from '../..'
 import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
-import { useRosterStore } from '../../state/rosterStore'
-import { buildShootingLog, buildMeleeLog, type ResolutionLog } from '../../engine'
-import type { Point, OperativePlacement, Board as BoardT } from '../../geometry'
+import type { Point } from '../../geometry'
 import type { ObjectiveMarker } from '../../data/maps'
-import angelsPack from '../../data/packs/angels_of_death.v1.json'
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { ActionBar } from './ActionBar'
@@ -15,19 +11,12 @@ import { LogPanel } from './LogPanel'
 import { InterceptorCard } from './InterceptorCard'
 import { ManualDiceEntry } from './ManualDiceEntry'
 
-const pack: FactionPack = loadPack(angelsPack)
-const RANGED = pack.weapons.find((w) => w.kind === 'RANGED')!
-const MELEE = pack.weapons.find((w) => w.kind === 'MELEE')!
+// 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
+// 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
 
 function clampPos(p: Point): Point {
   const b = useMatchStore.getState().mapPack?.bounds ?? { w: 30, h: 20 }
   return { x: Math.max(0.5, Math.min(b.w - 0.5, p.x)), y: Math.max(0.5, Math.min(b.h - 0.5, p.y)) }
-}
-
-function tacticEffects(): Effect[] {
-  return useRosterStore.getState().rosterA.subFactionSelection
-    .map((id) => pack.effects.find((e) => e.effectId === id))
-    .filter((e): e is Effect => Boolean(e))
 }
 
 export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void }) {
@@ -44,34 +33,26 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const activate = useMatchStore((s) => s.activate)
   const endActivation = useMatchStore((s) => s.endActivation)
   const scoreAndEndTP = useMatchStore((s) => s.scoreAndEndTP)
-  const undoLastShot = useMatchStore((s) => s.undoLastShot)
-  const applyDamage = useMatchStore((s) => s.applyDamage)
-  const setLastShot = useMatchStore((s) => s.setLastShot)
-  const setCurrentLog = useMatchStore((s) => s.setCurrentLog)
-  const nextShotSeq = useMatchStore((s) => s.nextShotSeq)
+  const undoPending = useMatchStore((s) => s.undoPending)
+  const resolveAttack = useMatchStore((s) => s.resolveAttack)
+  const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
-  const overrides = useMatchStore((s) => s.overrides)
-  const toggleOverride = useMatchStore((s) => s.toggleOverride)
-  const intercept = useMatchStore((s) => s.intercept)
   const setIntercept = useMatchStore((s) => s.setIntercept)
+  const intercept = useMatchStore((s) => s.intercept)
   const pushLog = useMatchStore((s) => s.pushLog)
   const lastShot = useMatchStore((s) => s.lastShot)
+  const attackViz = useMatchStore((s) => s.attackViz)
+  const engagementOf = useMatchStore((s) => s.engagementOf)
+  const manualDiceNeeded = useMatchStore((s) => s.manualDiceNeeded)
 
-  const [pendingAttack, setPendingAttack] = useState<{ attacker: MatchToken; target: MatchToken; mode: 'ask' } | null>(null)
+  const [pendingAsk, setPendingAsk] = useState<{ attacker: MatchToken; target: MatchToken } | null>(null)
   const [manualCollect, setManualCollect] = useState<{ attacker: MatchToken; target: MatchToken; kind: 'SHOOT' | 'MELEE'; needed: number } | null>(null)
   const [hoverInch, setHoverInch] = useState<string | null>(null)
 
   const active = tokens.find((t) => t.uid === selected) ?? null
   const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
 
-  function toBoard(): BoardT {
-    return {
-      terrain: mapPack.terrain,
-      operatives: tokens.filter((t) => t.alive && t.placed).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })),
-    }
-  }
-
-  // ===== 目标控制（1.16） =====
+  // ===== 目标控制（1.16）— 纯计数，非几何算法 =====
   function controlOf(o: ObjectiveMarker): Side | null {
     const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
     const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
@@ -81,122 +62,58 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   }
   const objControl: ObjControl[] = mapPack.objectives.map((o) => ({ id: o.id, ctrl: controlOf(o) }))
 
-  // ===== 几何可视化（1.14）：选中已激活特工 → 射程环 + LOS 射线 =====
+  // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
   const showViz = active && activated && active.side === turn.activePlayer
-  const rangeRing = showViz ? { center: active!.pos, r: RANGED.profile.range ?? 24 } : null
-  const losLines: LosLine[] = showViz
-    ? tokens
-        .filter((t) => t.alive && t.placed && t.side !== active!.side)
-        .map((t) => {
-          const los = losFinding(active!.pos, t.pos, toBoard())
-          const stroke = los.finalValue ? '#39d98a' : '#ff5c5c'
-          const dash = los.confidence === 'AMBIGUOUS' ? '4 3' : 'none'
-          return { target: t.pos, stroke, dash, opacity: 0.7 }
-        })
-    : []
+  const viz = showViz ? attackViz(active!.uid) : { range: 0, targets: [] }
+  const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
+  const losLines: LosLine[] = viz.targets.map((tg) => {
+    const tok = tokens.find((t) => t.uid === tg.uid)
+    if (!tok) return null
+    return {
+      target: tg.pos,
+      stroke: tg.losFinal ? '#39d98a' : '#ff5c5c',
+      dash: tg.losAmbiguous ? '4 3' : 'none',
+      opacity: 0.7,
+    }
+  }).filter((x): x is LosLine => x !== null)
 
-  // ===== 一击交互（1.13 T4） =====
+  // ===== 一击交互（1.13 T4）— dispatch intent =====
   function onClickToken(t: MatchToken) {
     if (t.side === turn.activePlayer) {
       setSelected(t.uid)
       setIntercept(null)
       return
     }
-    // 点敌方 → 一击结算
     if (!active || active.side !== turn.activePlayer || !activated) {
       setIntercept({ title: '未激活', reasons: ['须先激活己方特工再攻击'] })
       return
     }
-    startAttackWithDice(active, t)
+    startAttack(active, t)
   }
 
   function startAttack(attacker: MatchToken, target: MatchToken) {
-    const aPl: OperativePlacement = { operativeId: attacker.uid, pos: attacker.pos, baseRadius: attacker.baseRadius, facing: attacker.facing }
-    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: target.baseRadius }
-    const board = toBoard()
-    const others = tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
-    const elig = validateTarget(aPl, dPl, RANGED.profile.range ?? 24, board, others)
-    if (!elig.ok) {
-      setIntercept({ title: '不可攻击', reasons: elig.missing })
+    const engaged = engagementOf(attacker.uid, target.uid)
+    if (engaged) {
+      setPendingAsk({ attacker, target })
       return
     }
-    // 近战/射击歧义：控制范围内 → 给 chips
-    const engaged = engagementFinding(aPl, dPl, losFinding(attacker.pos, target.pos, board).finalValue).finalValue
-    setIntercept(null)
-    if (engaged) {
-      setPendingAttack({ attacker, target, mode: 'ask' })
-    } else {
-      resolveShoot(attacker, target)
+    runKind(attacker, target, 'SHOOT')
+  }
+
+  function runKind(attacker: MatchToken, target: MatchToken, kind: 'SHOOT' | 'MELEE') {
+    if (diceSource === 'manual') {
+      setManualCollect({ attacker, target, kind, needed: manualDiceNeeded(kind) })
+      return
     }
-  }
-
-  function resolveShoot(attacker: MatchToken, target: MatchToken, manualNats?: number[]) {
-    const board = toBoard()
-    const others = tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
-    const cover = coverFinding(target.pos, board, others).finalValue
-    const effects = attacker.side === 'a' ? tacticEffects() : []
-    const dice = manualNats
-      ? (() => { const m = new ManualDiceSource(); m.provide(manualNats); return m })()
-      : new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, 'SHOOT', nextShotSeq()))
-    const r = runShooting({
-      attacker: { operativeId: attacker.uid, weapon: RANGED },
-      defender: { operativeId: target.uid, save: 3, wounds: target.wounds },
-      effects,
-      dice,
-      hasCover: cover,
-    })
-    finalize(attacker, target, r.woundsDealt, buildShootingLog(`${attacker.uid}>${target.uid}`, { attacker: { operativeId: attacker.uid, weapon: RANGED }, defender: { operativeId: target.uid, save: 3, wounds: target.wounds }, effects, dice, hasCover: cover }, r), 'shoot')
-  }
-
-  function resolveMelee(attacker: MatchToken, target: MatchToken, manualNats?: number[]) {
-    const effects = attacker.side === 'a' ? tacticEffects() : []
-    const dice = manualNats
-      ? (() => { const m = new ManualDiceSource(); m.provide(manualNats); return m })()
-      : new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, 'MELEE', nextShotSeq()))
-    const input = {
-      attacker: { operativeId: attacker.uid, weapon: MELEE, save: 3, wounds: attacker.wounds },
-      defender: { operativeId: target.uid, weapon: MELEE, save: 3, wounds: target.wounds },
-      effects,
-      dice,
-    }
-    const r = runMelee(input)
-    finalize(attacker, target, r.woundsToDefender, buildMeleeLog(`${attacker.uid}>${target.uid}`, input, r), 'melee')
-  }
-
-  function finalize(attacker: MatchToken, target: MatchToken, woundsDealt: number, log: ResolutionLog, kind: 'shoot' | 'melee') {
-    setLastShot({ targetUid: target.uid, targetName: target.name, woundsDealt, prevWounds: target.wounds, attackerUid: attacker.uid, kind })
-    setCurrentLog(log)
-    // 1.13 §4.1：唯一强制确认 = 确认伤亡。damage 在确认时写回（见 onConfirm）。
-    pushLog(kind, `${attacker.name} → ${target.name}：待确认伤亡 ${woundsDealt}`)
-    setPendingAttack(null)
-  }
-
-  function onConfirm() {
-    if (!lastShot) return
-    const t = tokens.find((x) => x.uid === lastShot.targetUid)
-    const nw = Math.max(0, (t?.wounds ?? 0) - lastShot.woundsDealt)
-    applyDamage(lastShot.targetUid, lastShot.woundsDealt)
-    pushLog(lastShot.kind, `${lastShot.targetName} 确认伤亡 ${lastShot.woundsDealt}${nw <= 0 ? '（残废）' : `（剩 ${nw}）`}`)
-    setCurrentLog(null)
-  }
-
-  // manual 模式：先收集骰（攻击+防御上限 2×attacks），电子模式直接结算
-  function startAttackWithDice(attacker: MatchToken, target: MatchToken) {
-    if (diceSource !== 'manual') { startAttack(attacker, target); return }
-    const aPl: OperativePlacement = { operativeId: attacker.uid, pos: attacker.pos, baseRadius: attacker.baseRadius }
-    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: target.baseRadius }
-    const elig = validateTarget(aPl, dPl, RANGED.profile.range ?? 24, toBoard(), tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos))
-    if (!elig.ok) { setIntercept({ title: '不可攻击', reasons: elig.missing }); return }
-    const engaged = engagementFinding(aPl, dPl, losFinding(attacker.pos, target.pos, toBoard()).finalValue).finalValue
-    if (engaged) { setPendingAttack({ attacker, target, mode: 'ask' }); return }
-    setManualCollect({ attacker, target, kind: 'SHOOT', needed: RANGED.profile.attacks * 2 })
+    const r = resolveAttack({ attackerUid: attacker.uid, targetUid: target.uid, kind })
+    if (!r.ok) setIntercept({ title: '不可攻击', reasons: r.missing ?? [] })
+    else setPendingAsk(null)
   }
 
   function onPointerMove(p: Point) {
     if (dragging && dragOrigin) {
       moveToken(dragging, clampPos(p))
-      const d = Math.hypot(p.x - dragOrigin.x, p.y - dragOrigin.y)
-      setHoverInch(`移动 ${d.toFixed(1)}"`)
+      setHoverInch(`移动 ${Math.hypot(p.x - dragOrigin.x, p.y - dragOrigin.y).toFixed(1)}"`)
     }
   }
   function onPointerUp() {
@@ -211,16 +128,17 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     }
   }
 
-  function onEndTP() {
-    scoreAndEndTP(controlOf)
-  }
-
   return (
     <div className="play-view">
       <StatusStrip />
-
-      {/* 几何 finding 内联翻转（1.14 T5 / 1.15 咨询式）：显示当前选中→目标的关键 finding */}
-      {showViz && <FindingStrip active={active!} tokens={tokens} board={toBoard()} overrides={overrides} onToggle={toggleOverride} />}
+      {showViz && <FindingStrip active={active!} targets={viz.targets} />}
+      {lastShot && (
+        <div className="pending-banner">
+          ⏳ 待确认伤亡：{lastShot.targetName} −{lastShot.woundsDealt}
+          <button className="primary" onClick={confirmCasualties}>确认伤亡 ▶</button>
+          <button onClick={undoPending}>取消</button>
+        </div>
+      )}
 
       <div className="play-main">
         <div className="play-board-col">
@@ -254,31 +172,33 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             hasLastShot={Boolean(lastShot)}
             onActivate={() => { if (active) { activate(active.uid, active.side); pushLog('turn', `${active.name} 激活`) } }}
             onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null) } }}
-            onEndTP={onEndTP}
-            onUndo={undoLastShot}
+            onEndTP={() => scoreAndEndTP(controlOf)}
+            onUndo={undoPending}
           />
           <UnitPanel startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} />
         </div>
 
         <div className="play-right-col">
-          <PipelineDrawer onConfirm={onConfirm} onQueryRule={onQueryRule} />
-          <LogPanel onReplay={() => { /* currentLog 已展 */ }} onRollbackToHere={undoLastShot} />
+          <PipelineDrawer onConfirm={confirmCasualties} onQueryRule={onQueryRule} />
+          <LogPanel onReplay={() => {}} onRollbackToHere={undoPending} />
         </div>
       </div>
 
-      {intercept && <div className="intercept-floating"><InterceptorCard title={intercept.title} reasons={intercept.reasons} onClose={() => setIntercept(null)} onQueryRule={() => onQueryRule(intercept.title)} /></div>}
-
-      {/* 近战/射击歧义 chips（零模态） */}
-      {pendingAttack?.mode === 'ask' && (
-        <div className="chips-ask">
-          <span>{pendingAttack.attacker.name} 控制范围内有 {pendingAttack.target.name}：</span>
-          <button className="primary" onClick={() => { const a = pendingAttack.attacker, t = pendingAttack.target; if (diceSource === 'manual') setManualCollect({ attacker: a, target: t, kind: 'SHOOT', needed: RANGED.profile.attacks * 2 }); else resolveShoot(a, t) }}>射击 ▸</button>
-          <button className="primary" onClick={() => { const a = pendingAttack.attacker, t = pendingAttack.target; if (diceSource === 'manual') setManualCollect({ attacker: a, target: t, kind: 'MELEE', needed: MELEE.profile.attacks * 2 }); else resolveMelee(a, t) }}>近战 ▸</button>
-          <button onClick={() => setPendingAttack(null)}>取消</button>
+      {intercept && (
+        <div className="intercept-floating">
+          <InterceptorCard title={intercept.title} reasons={intercept.reasons} onClose={() => setIntercept(null)} onQueryRule={() => onQueryRule(intercept.title)} />
         </div>
       )}
 
-      {/* 物理骰录入浮层 */}
+      {pendingAsk && (
+        <div className="chips-ask">
+          <span>{pendingAsk.attacker.name} 控制范围内有 {pendingAsk.target.name}：</span>
+          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'SHOOT') }}>射击 ▸</button>
+          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'MELEE') }}>近战 ▸</button>
+          <button onClick={() => setPendingAsk(null)}>取消</button>
+        </div>
+      )}
+
       {manualCollect && (
         <ManualDiceEntry
           needed={manualCollect.needed}
@@ -287,8 +207,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
           onConfirm={(nats) => {
             const { attacker, target, kind } = manualCollect
             setManualCollect(null)
-            if (kind === 'SHOOT') resolveShoot(attacker, target, nats)
-            else resolveMelee(attacker, target, nats)
+            const r = resolveAttack({ attackerUid: attacker.uid, targetUid: target.uid, kind, manualNats: nats })
+            if (!r.ok) setIntercept({ title: '不可攻击', reasons: r.missing ?? [] })
           }}
         />
       )}
@@ -296,40 +216,40 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   )
 }
 
-// 1.14 T5：几何 finding 内联翻转条（咨询式 D-24，不弹框）
+// 1.14 T5：几何 finding 内联翻转（D-24）— 读 store 算的 LOS，翻转写 store.setOverride。
 function FindingStrip({
   active,
-  tokens,
-  board,
-  overrides,
-  onToggle,
+  targets,
 }: {
   active: MatchToken
-  tokens: MatchToken[]
-  board: BoardT
-  overrides: Record<string, boolean>
-  onToggle: (key: string) => void
+  targets: { uid: string; pos: Point; losFinal: boolean; losAmbiguous: boolean }[]
 }) {
-  const enemies = tokens.filter((t) => t.alive && t.placed && t.side !== active.side).slice(0, 4)
-  const items: { key: string; label: string; ambiguous: boolean }[] = []
-  for (const e of enemies) {
-    const los = losFinding(active.pos, e.pos, board)
-    const k = `${active.uid}>${e.uid}>LOS`
-    items.push({ key: k, label: `${e.name} LOS=${los.finalValue ? '可见' : '阻挡'}`, ambiguous: los.confidence === 'AMBIGUOUS' })
-  }
-  if (items.length === 0) return null
+  const setOverride = useMatchStore((s) => s.setOverride)
+  const clearOverride = useMatchStore((s) => s.clearOverride)
+  const overrideValue = useMatchStore((s) => s.overrideValue)
+  const tokens = useMatchStore((s) => s.tokens)
+
+  if (targets.length === 0) return null
   return (
     <div className="finding-strip">
-      {items.map((it) => (
-        <button
-          key={it.key}
-          className={`chip finding ${it.ambiguous ? 'ambiguous' : ''} ${overrides[it.key] ? 'flipped' : ''}`}
-          onClick={() => onToggle(it.key)}
-          title={it.ambiguous ? '⚠ 可翻转（咨询式，1 击翻转假设，不弹框）' : 'CLEAR（可手动翻转）'}
-        >
-          {it.ambiguous ? '⚠ ' : ''}{it.label}{overrides[it.key] ? ' ⟲' : ''}
-        </button>
-      ))}
+      {targets.slice(0, 4).map((tg) => {
+        const tok = tokens.find((t) => t.uid === tg.uid)
+        if (!tok) return null
+        const key = `${active.uid}>${tg.uid}>LOS`
+        const ov = overrideValue(active.uid, tg.uid, 'LOS')
+        const overridden = ov !== undefined
+        const displayed = ov ?? tg.losFinal
+        return (
+          <button
+            key={tg.uid}
+            className={`chip finding ${tg.losAmbiguous ? 'ambiguous' : ''} ${overridden ? 'flipped' : ''}`}
+            onClick={() => (overridden ? clearOverride(key) : setOverride(key, !displayed))}
+            title={tg.losAmbiguous ? '⚠ 可翻转（咨询式，1 击翻转假设，不弹框）' : 'CLEAR（可手动翻转）'}
+          >
+            {tg.losAmbiguous ? '⚠ ' : ''}{tok.name} LOS={displayed ? '可见' : '阻挡'}{overridden ? ' ⟲' : ''}
+          </button>
+        )
+      })}
     </div>
   )
 }
