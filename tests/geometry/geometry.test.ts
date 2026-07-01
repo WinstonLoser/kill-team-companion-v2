@@ -6,6 +6,7 @@ import {
   engagementFinding,
   validateTarget,
   flipFinding,
+  FindingStore,
   type Board,
   type OperativePlacement,
   type Point,
@@ -152,5 +153,57 @@ describe('资格判定 + 咨询式翻转', () => {
   it('P13：无 options 向后兼容（5 参调用）', () => {
     const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [])
     expect(r.ok).toBe(true)
+  })
+})
+
+describe('咨询式翻转接线 + finding store（DN7/D-24）', () => {
+  // 高墙挡 LOS：(0,0)→(10,0) 不可见；其余（射程/掩护/遮挡/控制）均过
+  const blockedLos: Board = {
+    terrain: [{ id: 'w', kind: 'BLOCKING', polygon: [{ x: 4, y: -3 }, { x: 5, y: -3 }, { x: 5, y: 3 }, { x: 4, y: 3 }] }],
+    operatives: [],
+  }
+  const atk = op('a', 0, 0)
+  const tgt = op('d', 10, 0)
+
+  it('LOS 被挡 → 不合法；翻转覆盖 LOS→可见 → 合法', () => {
+    expect(validateTarget(atk, tgt, 20, blockedLos, []).ok).toBe(false)
+    const r = validateTarget(atk, tgt, 20, blockedLos, [], {
+      findingOverrides: [{ kind: 'LOS', finalValue: true }],
+    })
+    expect(r.ok).toBe(true)
+    expect(r.missing.some((m) => m.includes('LOS'))).toBe(false)
+  })
+
+  it('翻转覆盖反映进 findings（overridden=true）', () => {
+    const r = validateTarget(atk, tgt, 20, blockedLos, [], {
+      findingOverrides: [{ kind: 'LOS', finalValue: true }],
+    })
+    const los = r.findings.find((f) => f.kind === 'LOS')!
+    expect(los.finalValue).toBe(true)
+    expect(los.overridden).toBe(true)
+  })
+
+  it('FindingStore：flip 翻转 + overridden 持久 + overrides() 导出', () => {
+    const store = new FindingStore()
+    store.upsertAll(validateTarget(atk, tgt, 20, blockedLos, []).findings)
+    expect(store.get('LOS')?.finalValue).toBe(false)
+    store.flip('LOS')
+    expect(store.get('LOS')?.finalValue).toBe(true)
+    expect(store.get('LOS')?.overridden).toBe(true)
+    const ov = store.overrides()
+    expect(ov).toEqual([{ kind: 'LOS', finalValue: true }])
+  })
+
+  it('端到端：store 翻转 → 重算 validateTarget(store.overrides()) → 合法；玩家终裁跨重算保留', () => {
+    const store = new FindingStore()
+    store.upsertAll(validateTarget(atk, tgt, 20, blockedLos, []).findings)
+    expect(validateTarget(atk, tgt, 20, blockedLos, []).ok).toBe(false)
+    store.flip('LOS')
+    const r = validateTarget(atk, tgt, 20, blockedLos, [], { findingOverrides: store.overrides() })
+    expect(r.ok).toBe(true)
+    // 再 upsert：引擎值刷新但玩家翻转的 finalValue 保留
+    store.upsertAll(r.findings)
+    expect(store.get('LOS')?.finalValue).toBe(true)
+    expect(store.get('LOS')?.overridden).toBe(true)
   })
 })

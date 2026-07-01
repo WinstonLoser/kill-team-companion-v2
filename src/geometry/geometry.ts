@@ -232,12 +232,26 @@ export interface EligibilityResult {
   findings: GeometryFinding[]
 }
 
-/** validateTarget 扩展参数（P13，FR-10）：目标命令 + 己方位置。均可选，向后兼容。 */
+/** validateTarget 扩展参数（P13，FR-10）：目标命令 + 己方位置 + 咨询式翻转覆盖。均可选，向后兼容。 */
 export interface ValidateTargetOptions {
   /** 目标命令：CONCEALED 目标不可射击 */
   targetOrder?: 'ENGAGED' | 'CONCEALED'
   /** 己方特工位置：目标控制范围内有己方（近战纠缠）则禁射击，避免误伤 */
   friendlyPositions?: Point[]
+  /** 咨询式翻转覆盖（DN7/D-24）：玩家终裁覆盖引擎某项 finding 的 finalValue */
+  findingOverrides?: FindingOverride[]
+}
+
+/** 玩家终裁覆盖（DN7）：强制某项 finding 的最终值。 */
+export interface FindingOverride {
+  kind: GeometryFinding['kind']
+  finalValue: boolean
+}
+
+/** 把覆盖应用到单条 finding（命中则覆盖 finalValue + 标 overridden）。 */
+function applyOverride(f: GeometryFinding, overrides?: FindingOverride[]): GeometryFinding {
+  const ov = overrides?.find((o) => o.kind === f.kind)
+  return ov ? { ...f, finalValue: ov.finalValue, overridden: true } : f
 }
 
 /**
@@ -253,11 +267,12 @@ export function validateTarget(
   otherOperatives: Point[],
   options?: ValidateTargetOptions,
 ): EligibilityResult {
-  const los = losFinding(attacker.pos, target.pos, board, { targetBaseRadius: target.baseRadius })
-  const cover = coverFinding(target.pos, board, otherOperatives)
-  const obscured = obscuredFinding(target.pos, board)
-  const rangeF = rangeFinding(attacker, target, range)
-  const engaged = engagementFinding(attacker, target, los.finalValue)
+  const overrides = options?.findingOverrides
+  const los = applyOverride(losFinding(attacker.pos, target.pos, board, { targetBaseRadius: target.baseRadius }), overrides)
+  const cover = applyOverride(coverFinding(target.pos, board, otherOperatives), overrides)
+  const obscured = applyOverride(obscuredFinding(target.pos, board), overrides)
+  const rangeF = applyOverride(rangeFinding(attacker, target, range), overrides)
+  const engaged = applyOverride(engagementFinding(attacker, target, los.finalValue), overrides)
 
   const missing: string[] = []
   if (!los.finalValue) missing.push('LOS 不可见')
@@ -285,4 +300,42 @@ export function validateTarget(
 export function flipFinding(f: GeometryFinding): GeometryFinding {
   const finalValue = !f.finalValue
   return { ...f, finalValue, overridden: true }
+}
+
+/**
+ * FindingStore：跨多次 validateTarget 调用持久化几何判定 + 玩家终裁翻转（DN7）。
+ * 典型回路：upsertAll(result.findings) → flip(kind) → validateTarget(..., { findingOverrides: store.overrides() })。
+ * 玩家翻转过的项，其 finalValue 在后续 upsert（引擎值刷新）时保留。
+ */
+export class FindingStore {
+  private map = new Map<GeometryFinding['kind'], GeometryFinding>()
+
+  /** 用最新判定的 findings 刷新引擎值；玩家 overridden 的 finalValue 保留。 */
+  upsertAll(findings: GeometryFinding[]): void {
+    for (const f of findings) {
+      const prev = this.map.get(f.kind)
+      this.map.set(f.kind, prev?.overridden ? { ...f, finalValue: prev.finalValue, overridden: true } : f)
+    }
+  }
+
+  /** 玩家翻转某项（D-24 终裁）。 */
+  flip(kind: GeometryFinding['kind']): void {
+    const f = this.map.get(kind)
+    if (f) this.map.set(kind, flipFinding(f))
+  }
+
+  get(kind: GeometryFinding['kind']): GeometryFinding | undefined {
+    return this.map.get(kind)
+  }
+
+  /** 导出覆盖列表：仅玩家翻转过的项，供 validateTarget.findingOverrides 使用。 */
+  overrides(): FindingOverride[] {
+    return [...this.map.values()]
+      .filter((f) => f.overridden)
+      .map((f) => ({ kind: f.kind, finalValue: f.finalValue }))
+  }
+
+  clear(): void {
+    this.map.clear()
+  }
 }
