@@ -36,5 +36,14 @@
 - **DN5** CAP_PER_ATTACK_DIE 移到 per-die（DAMAGE_PER_DIE）→ 现每源总数接受；正确实现需 enforcer 接收攻击骰上下文
 - **DN7** 几何咨询式 flip 接线（validateTarget 接受翻转、写 rulings、finding store）→ flipFinding/validateTarget 现未连通；D-24 翻转 UI 留加固
 
+## Completed (2026-07-01, commits 5b703cd / ff5d509 / 40595b5 / 947b5a3)
+
+剩余 4 项全部完成（引擎 133 测试绿，tsc/build clean）。**Epic 1 全部 deferred 项清零。**
+
+- ✅ **DN5** CAP_PER_ATTACK_DIE per-die：EnforcerContext.attackDiceCount，实际上限 = cap × attackDiceCount；pipeline 减伤步按未抵挡命中骰数传入（shooting atkN+atkC / melee 出击骰）。省略 ctx 向后兼容（1 骰）。（4 测试）
+- ✅ **DN4** LOS 头部→底座圆保真：losFinding 接 targetBaseRadius，按攻击方头部→目标底座圆求可视（朝攻击方最近点 + 两侧切点，任一不被 BLOCKING 阻断即可见）。省略 radius 向后兼容（中心线）。validateTarget 注入底座半径走保真 LOS。（6 测试）
+- ✅ **DN7** flip 接线 + FindingStore：validateTarget 接 findingOverrides（玩家终裁覆盖引擎某项 finding.finalValue，标 overridden），missing 据覆盖后值重算。新增 FindingStore：跨重算持久化判定 + flip(kind) + overrides() 导出。闭合 D-24 advisory 回路。（4 测试）
+- ✅ **DN3 / P3 / P4** melee 交替游标 + parry 统一：共用 parryAllocation 原语（射击 PARRY_ALLOCATE + 近战，P4 统一）；driver 泛化 createResolution<S,C>（射击/近战共用游标）；新 pipeline/melee.ts（MELEE_PIPELINE 7 步 StepFn 注册表 + createMeleeResolution）；真交替格挡修 P3 双重计数（回合1 攻方格挡消耗→回合2 防方剩余格挡，消耗骰不再出击）+ 子决策日志 parryLog。（14 测试：8 parry + 6 melee pipeline）
+
 ---
-理由：引擎在当前 scope 正确可用（105 测试绿 + 16 patches from 496fd49 + 7 deferred items complete）；剩余 4 项需较大重构/签名变更或等 1.6 谓词库，不阻塞 v1 demo 与后续阵营/UI。
+理由：引擎核心（1.1-1.10）+ 代码评审加固全部完成——133 测试绿 + 16 patches (496fd49) + **11/11 deferred items 清零**（DN1-DN7 + P4/P12/P13/P21/P22/P2-trace）。引擎在 v1 scope 完整可用，不阻塞后续阵营/UI。
