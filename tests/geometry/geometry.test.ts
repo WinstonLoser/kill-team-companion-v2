@@ -31,6 +31,48 @@ describe('LOS', () => {
   })
 })
 
+describe('LOS 头部→底座圆保真（DN4）', () => {
+  // 矮墙：中心线穿过，但目标底座切线从墙上方绕过
+  const lowWall: Board = {
+    terrain: [{ id: 'w', kind: 'BLOCKING', polygon: [{ x: 4, y: -0.5 }, { x: 5, y: -0.5 }, { x: 5, y: 0.5 }, { x: 4, y: 0.5 }] }],
+    operatives: [],
+  }
+  // 高墙：连切线也挡
+  const tallWall: Board = {
+    terrain: [{ id: 'w', kind: 'BLOCKING', polygon: [{ x: 4, y: -3 }, { x: 5, y: -3 }, { x: 5, y: 3 }, { x: 4, y: 3 }] }],
+    operatives: [],
+  }
+
+  it('无 radius → 中心线（向后兼容），矮墙挡中心 → 不可见', () => {
+    expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, lowWall).finalValue).toBe(false)
+  })
+
+  it('大底座（r=2）：中心被矮墙挡，但切线绕过 → 可见（保真收益）', () => {
+    const f = losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, lowWall, { targetBaseRadius: 2 })
+    expect(f.finalValue).toBe(true)
+  })
+
+  it('大底座：高墙连切线全挡 → 不可见', () => {
+    const f = losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, tallWall, { targetBaseRadius: 2 })
+    expect(f.finalValue).toBe(false)
+  })
+
+  it('攻击方在目标底座内（d≤r）→ 必可见', () => {
+    const f = losFinding({ x: 9, y: 0 }, { x: 10, y: 0 }, tallWall, { targetBaseRadius: 2 })
+    expect(f.finalValue).toBe(true)
+  })
+
+  it('无阻挡 + 大底座 → 可见', () => {
+    expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, noTerrain, { targetBaseRadius: 2 }).finalValue).toBe(true)
+  })
+
+  it('validateTarget 注入底座半径走保真 LOS（矮墙 + 大底座 → 合法）', () => {
+    const target = op('d', 10, 0, 2) // baseRadius 2
+    const r = validateTarget(op('a', 0, 0), target, 20, lowWall, [])
+    expect(r.ok).toBe(true) // 保真 LOS 可见 → 不进 missing
+  })
+})
+
 describe('掩护', () => {
   it('1" 内有 COVER 地形 → 有掩护', () => {
     const board: Board = {

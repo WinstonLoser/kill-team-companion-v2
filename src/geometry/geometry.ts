@@ -120,21 +120,73 @@ function minVertexDistToSeg(poly: Polygon, a: Point, b: Point): number {
 
 // ===== 判定（各产出 GeometryFinding） =====
 
-/** LOS：攻击方→目标线段被 BLOCKING 地形阻断 → 不可见。margin=未挡时最近 blocker 到视线的距离（P5）。 */
-export function losFinding(attacker: Point, target: Point, board: Board): GeometryFinding {
+/** 单条视线段被 BLOCKING 阻断情况：{blocked, clearance}。 */
+function losSegment(a: Point, b: Point, board: Board): { blocked: boolean; clearance: number } {
   const blockers = board.terrain.filter((t) => t.kind === 'BLOCKING')
   let blocked = false
   let clearance = Infinity
-  for (const b of blockers) {
-    const poly = b.polygon
+  for (const blk of blockers) {
+    const poly = blk.polygon
     if (poly.length < 2) continue
-    // P8：攻击方/目标站于此地形内（部署于废墟常见）→ 不当它阻断自身视线
-    if (pointInPoly(attacker, poly) || pointInPoly(target, poly)) continue
-    if (segIntersectsPoly(attacker, target, poly)) blocked = true
-    else clearance = Math.min(clearance, minVertexDistToSeg(poly, attacker, target))
+    // P8：端点站于此地形内（部署于废墟常见）→ 不当它阻断自身视线
+    if (pointInPoly(a, poly) || pointInPoly(b, poly)) continue
+    if (segIntersectsPoly(a, b, poly)) blocked = true
+    else clearance = Math.min(clearance, minVertexDistToSeg(poly, a, b))
   }
-  const margin = blocked ? -1 : clearance
-  return finding('LOS', !blocked, margin)
+  return { blocked, clearance }
+}
+
+/** 目标底座圆上的候选视点：朝攻击方最近点 + 两侧切点（DN4 头→底座保真）。 */
+function sightPoints(a: Point, c: Point, r: number): Point[] {
+  const dx = c.x - a.x
+  const dy = c.y - a.y
+  const d = Math.hypot(dx, dy)
+  if (d <= r) return [] // 攻击方在底座内 → 由调用方短路判定
+  const ux = dx / d
+  const uy = dy / d
+  const nearest: Point = { x: c.x - r * ux, y: c.y - r * uy }
+  const dt = Math.sqrt(d * d - r * r)
+  const sinA = r / d
+  const cosA = dt / d
+  // 将 AC 方向 u 旋转 ±α（sinα = r/d）→ 两切线方向；切点 = A + dt·方向
+  const t1: Point = { x: a.x + dt * (ux * cosA - uy * sinA), y: a.y + dt * (uy * cosA + ux * sinA) }
+  const t2: Point = { x: a.x + dt * (ux * cosA + uy * sinA), y: a.y + dt * (uy * cosA - ux * sinA) }
+  return [nearest, t1, t2]
+}
+
+/** LOS 保真选项（DN4）：注入目标底座半径则按「头部→底座圆」求可视（任一切线/最近点清则可见）。 */
+export interface LosOptions {
+  targetBaseRadius?: number
+}
+
+/**
+ * LOS：线段被 BLOCKING 阻断 → 不可见。
+ * DN4：注入 targetBaseRadius 则改为「攻击方头部 → 目标底座圆」保真——
+ * 任一候选视点（朝攻击方最近点 + 两侧切点）线段不被阻断即可见（可见部分底座）。
+ * margin=未挡候选线的最大 clearance（最佳视野余量），全挡则 -1。
+ */
+export function losFinding(attacker: Point, target: Point, board: Board, options?: LosOptions): GeometryFinding {
+  const r = options?.targetBaseRadius ?? 0
+  if (r <= 0) {
+    // 向后兼容：中心到中心
+    const { blocked, clearance } = losSegment(attacker, target, board)
+    return finding('LOS', !blocked, blocked ? -1 : clearance)
+  }
+  const d = Math.hypot(target.x - attacker.x, target.y - attacker.y)
+  if (d <= r) {
+    // 攻击方贴/入目标底座 → 必可见
+    return finding('LOS', true, d - r)
+  }
+  let anyClear = false
+  let best = -1
+  for (const p of sightPoints(attacker, target, r)) {
+    const seg = losSegment(attacker, p, board)
+    if (!seg.blocked) {
+      anyClear = true
+      best = Math.max(best, seg.clearance)
+    }
+  }
+  return finding('LOS', anyClear, anyClear ? best : -1)
 }
 
 /** 掩护：目标 1" 内有 COVER 地形 → 有掩护；2" 内有他特工 → 无掩护。 */
@@ -201,7 +253,7 @@ export function validateTarget(
   otherOperatives: Point[],
   options?: ValidateTargetOptions,
 ): EligibilityResult {
-  const los = losFinding(attacker.pos, target.pos, board)
+  const los = losFinding(attacker.pos, target.pos, board, { targetBaseRadius: target.baseRadius })
   const cover = coverFinding(target.pos, board, otherOperatives)
   const obscured = obscuredFinding(target.pos, board)
   const rangeF = rangeFinding(attacker, target, range)
