@@ -87,6 +87,30 @@ function pointInPoly(p: Point, poly: Polygon): boolean {
   }
   return inside
 }
+
+/** 点是否在多边形内（导出版，部署/目标控制复用，FR-24/FR-25）。 */
+export function pointInPolygon(p: Point, poly: Polygon): boolean {
+  return pointInPoly(p, poly)
+}
+
+/**
+ * 底座圆是否完全在多边形内（部署合法性 FR-24）。
+ * 判定：圆心在内，且圆心到多边形各边的最近距离 ≥ 半径。
+ */
+export function circleInsidePolygon(center: Point, radius: number, poly: Polygon): boolean {
+  if (!pointInPoly(center, poly)) return false
+  return nearestPoly(center, poly) >= radius - 1e-9
+}
+
+/** 两底座圆是否重叠（部署/移动合法性）。 */
+export function circlesOverlap(a: Point, ra: number, b: Point, rb: number): boolean {
+  return Math.hypot(a.x - b.x, a.y - b.y) < ra + rb - 1e-9
+}
+
+/** 点到多边形边界最近距离（导出版，掩护/控制范围复用）。 */
+export function distanceToPolygon(p: Point, poly: Polygon): number {
+  return nearestPoly(p, poly)
+}
 function segIntersectsPoly(a: Point, b: Point, poly: Polygon): boolean {
   if (poly.length < 2) return false // P9：不足 2 顶点无法成边
   if (pointInPoly(a, poly) || pointInPoly(b, poly)) return true
