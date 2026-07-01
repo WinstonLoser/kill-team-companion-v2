@@ -21,10 +21,10 @@ export const PIPELINE_STEPS = [
 ] as const
 export type PipelineStep = (typeof PIPELINE_STEPS)[number]
 
-// ===== 叠加 policy（架构 §2.6，6 种） =====
+// ===== 叠加 policy（架构 §2.6 + DN2 R9，7 种） =====
 export const STACKING_POLICIES = [
   'STACKABLE', 'UNIQUE_PER_SOURCE', 'UNIQUE_PER_GROUP',
-  'MUTUALLY_EXCLUSIVE_WITH', 'CONDITIONAL', 'CAP_PER_ATTACK_DIE',
+  'MUTUALLY_EXCLUSIVE_WITH', 'CONDITIONAL', 'CAP_PER_ATTACK_DIE', 'UNIQUE_PER_ACTION',
 ] as const
 export type StackingPolicy = (typeof STACKING_POLICIES)[number]
 

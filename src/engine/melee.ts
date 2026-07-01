@@ -1,7 +1,7 @@
 import type { Effect, Weapon } from '../rules/types'
 import type { DiceSource, DiceRoll } from '../dice'
-import { enforcer } from './enforcer'
-import type { AppliedModifier } from './statResolver'
+import { resolveEffectsTraced } from './statResolver'
+import type { RejectionTrace } from './enforcer'
 import type { StepTrace } from './context'
 
 export interface MeleeCombatant {
@@ -75,27 +75,21 @@ function parry(parrier: Pool, target: Pool): Pool {
   return { normal: tN, critical: tC }
 }
 
-function modsOf(effects: Effect[], point: string, kinds: string[]): AppliedModifier[] {
-  const matched = effects.filter((e) => e.trigger.point === point && kinds.includes(e.modifier.kind))
-  return enforcer(
-    matched.map((e) => ({
-      id: e.effectId,
-      source: e.source,
-      amount: (e.modifier.payload as { amount?: number }).amount ?? 0,
-      policy: e.stacking.policy,
-      groupKeys: e.stacking.groupKeys,
-      priority: e.priority,
-      cap: (e.modifier.payload as { cap?: number }).cap,
-    })),
-    {},
-  )
-}
+const toRejected = (r: RejectionTrace): { id: string; reason: string } => ({
+  id: r.id,
+  reason: `${r.ruleId} ${r.reason}`,
+})
 
-const step = (stepId: string, summary: string, applied: string[] = []): StepTrace => ({
+const step = (
+  stepId: string,
+  summary: string,
+  applied: string[] = [],
+  rejected: { id: string; reason: string }[] = [],
+): StepTrace => ({
   stepId,
   summary,
   appliedEffectIds: applied,
-  rejectedEffectIds: [],
+  rejectedEffectIds: rejected,
 })
 
 /**
@@ -135,7 +129,8 @@ export function runMelee(input: MeleeInput): MeleeResult {
   const wpnD = defender.weapon.profile
   let dmgToDef = atkSurvive.normal * wpnA.normalDamage + atkSurvive.critical * wpnA.criticalDamage
   let dmgToAtk = defSurvive.normal * wpnD.normalDamage + defSurvive.critical * wpnD.criticalDamage
-  const mitDef = modsOf(effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'])
+  const mitDefT = resolveEffectsTraced(effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'])
+  const mitDef = mitDefT.applied
   dmgToDef = Math.max(0, dmgToDef - mitDef.length)
   dmgToAtk = Math.max(0, dmgToAtk - mitDef.length) // P6：双向减伤（对称近似；按源分边留 DN）
   traces.push(
@@ -143,6 +138,7 @@ export function runMelee(input: MeleeInput): MeleeResult {
       'MELEE_DAMAGE_AND_MITIGATE',
       `攻→防 ${dmgToDef}，防→攻 ${dmgToAtk}`,
       mitDef.map((m) => m.id),
+      mitDefT.rejected.map(toRejected),
     ),
   )
 

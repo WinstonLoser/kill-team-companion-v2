@@ -118,7 +118,7 @@ export type TurnEvent =
   | { type: 'START_ENGAGEMENT' }
   | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
   | { type: 'SELECT_ORDER'; opId: string; order: Order }
-  | { type: 'DO_ACTION'; opId: string; action: ActionType }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext }
   | { type: 'END_ACTIVATION'; opId: string }
   | { type: 'END_TURNING_POINT' }
   | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
@@ -158,6 +158,9 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     case 'DO_ACTION': {
       const op = state.operatives[event.opId]
       if (!op) return state
+      // DN6：内嵌 guard。带 ctx 则先验合法性，非法行动防御性 no-op（不依赖调用方先 guard）。
+      // 无 ctx → 向后兼容（调用方已 guard），直接应用。
+      if (event.ctx && !canDoAction(state, event.opId, event.action, event.ctx).ok) return state
       const next: OperativeActivation = {
         ...op,
         apUsed: op.apUsed + ACTION_AP[event.action],
@@ -174,6 +177,8 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } }
     }
     case 'USE_PLOY': {
+      // DN6：内嵌 guard（计谋次数上限先验）+ CP clamp 防负（补丁 #10）。
+      if (!canUsePloy(state, event.ployId).ok) return state
       const ploy = state.ployUses[event.ployId]
       const next = {
         ...state,

@@ -81,4 +81,34 @@ describe('资格判定 + 咨询式翻转', () => {
     expect(flipped.finalValue).toBe(!f.finalValue)
     expect(flipped.overridden).toBe(true)
   })
+
+  it('P13：目标隐匿命令 → 不可射击', () => {
+    const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [], {
+      targetOrder: 'CONCEALED',
+    })
+    expect(r.ok).toBe(false)
+    expect(r.missing.some((m) => m.includes('隐匿'))).toBe(true)
+  })
+
+  it('P13：目标与己方近战纠缠（控制范围内有己方）→ 不可射击', () => {
+    // 目标 (8,0) r0.5；己方 (8.5,0) → 中心距 0.5 - 0.5 = 0 ≤ 1，纠缠
+    const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [], {
+      friendlyPositions: [{ x: 8.5, y: 0 }],
+    })
+    expect(r.ok).toBe(false)
+    expect(r.missing.some((m) => m.includes('己方'))).toBe(true)
+  })
+
+  it('P13：目标就绪命令、控制范围内无己方 → 合法', () => {
+    const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [], {
+      targetOrder: 'ENGAGED',
+      friendlyPositions: [{ x: 20, y: 0 }],
+    })
+    expect(r.ok).toBe(true)
+  })
+
+  it('P13：无 options 向后兼容（5 参调用）', () => {
+    const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [])
+    expect(r.ok).toBe(true)
+  })
 })
