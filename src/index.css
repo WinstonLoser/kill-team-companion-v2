@@ -207,6 +207,9 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .uc-tag { font-size: 0.7rem; padding: 0 0.3rem; border-radius: 3px; background: var(--accent); color: #0b0d10; }
 .uc-tag.warn { background: #d97739; }
 .uc-effect { font-size: 0.65rem; padding: 0 0.3rem; border-radius: 3px; background: rgba(217,162,57,0.2); color: #d9a239; border: 1px solid rgba(217,162,57,0.4); }
+.uc-marker { font-size: 0.6rem; font-weight: 700; padding: 0 0.3rem; border-radius: 3px; margin-left: 0.2rem; }
+.uc-marker--poison { background: rgba(57,217,138,0.2); color: #39d98a; border: 1px solid rgba(57,217,138,0.4); }
+.uc-marker--fly_cloud { background: rgba(155,155,175,0.2); color: #9baaaf; border: 1px solid rgba(155,155,175,0.4); }
 .pending-banner { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; background: rgba(74,158,255,0.1); border: 1px solid var(--accent); border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0.3rem 0; }
 
 /* 流水线抽屉（1.13/1.15） */

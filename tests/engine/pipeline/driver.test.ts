@@ -139,7 +139,7 @@ describe('step 独立可单测（AC7）', () => {
       damage: 0,
       woundsDealt: 0,
       defenderIncapacitated: false,
-      targetValid: true,
+      targetValid: true, rotCurseDamage: 0,
     }
     const res = hitStep.run(init, mkCtx([4, 5, 2, 6]))
     expect(res.state.normalSuccess).toBe(2)

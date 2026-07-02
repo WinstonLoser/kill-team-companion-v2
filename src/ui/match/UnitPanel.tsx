@@ -37,6 +37,9 @@ export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => n
                 >
                   <span className="uc-name">{t.name}</span>
                   <span className="uc-wounds">耐伤 {t.wounds}{!t.alive && ' ✕'}</span>
+                  {t.markers.map((m) => (
+                    <span key={m} className={`uc-marker uc-marker--${m.toLowerCase()}`} title={`指示物：${m}`}>{m}</span>
+                  ))}
                   {ready && <span className="uc-tag">激活中</span>}
                   {cls === 'injured' && <span className="uc-tag warn">受创</span>}
                   {effs.map((e) => (

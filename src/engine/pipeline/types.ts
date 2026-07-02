@@ -35,6 +35,7 @@ export interface ShootingState {
   woundsDealt: number
   defenderIncapacitated: boolean
   targetValid: boolean // P12：TARGET_VALIDATE 几何资格结果（false → 不造伤）
+  rotCurseDamage: number // 腐烂诅咒：防御骰每出 dieFaceEquals(face) 累加 1 伤（DEFENCE_ROLL 算，DAMAGE_PER_DIE 加）
 }
 
 /** 单步执行产出：summary + record 字段 + 更新后的 state + 可选快照。 */

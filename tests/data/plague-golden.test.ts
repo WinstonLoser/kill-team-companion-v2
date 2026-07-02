@@ -109,10 +109,28 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
     expect(e.stacking.groupKeys).toContain('injured')
   })
 
-  it('7. 腐烂诅咒 descriptor（掷出 3 即伤，需 dieFaceEquals 谓词 + DAMAGE_PER_DIE_FACE）', () => {
-    const e = effect('plg_rot_curse')
-    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
-    expect((e.modifier.payload as { hookId: string }).hookId).toBe('rot-curse-die-face-3')
+  it('7. 腐烂诅咒（防御骰每出 3 → +1 伤，per-die real）', () => {
+    // SEQ: attack [4,5,2,3]=3 命中; defence [3,2,1]=无抵挡 + 一个 3 → rotCurse +1
+    const dice = new ManualDiceSource()
+    dice.provide([4, 5, 2, 3, 3, 2, 1])
+    const r = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [effect('plg_rot_curse')], dice, hasCover: false,
+    })
+    // 3 命中 × 2 = 6 + rotCurse 1（一个防御 3）= 7
+    expect(r.woundsDealt).toBe(7)
+    const def = r.traces.find((t) => t.stepId === 'DEFENCE_ROLL')!
+    expect(def.appliedEffectIds).toContain('plg_rot_curse')
+    // 无 rotCurse → 6
+    const dice2 = new ManualDiceSource()
+    dice2.provide([4, 5, 2, 3, 3, 2, 1])
+    const base = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [], dice: dice2, hasCover: false,
+    })
+    expect(base.woundsDealt).toBe(6)
   })
 
   it('9. 剧毒（plg_virulent effect CONDITIONAL targetHasMarker(POISON)：有 marker +1，无不+）', () => {

@@ -139,11 +139,11 @@
     },
     {
       "effectId": "plg_rot_curse",
-      "label": "腐烂诅咒（对手掷骰每出 3 即伤，不可保留/重掷）",
+      "label": "腐烂诅咒（对手防御骰每出 3 即受 1 伤，不可保留/重掷）",
       "source": "stratagem:rotCurse",
-      "trigger": { "point": "ON_DEFENCE_ROLL" },
+      "trigger": { "point": "ON_DEFENCE_ROLL", "condition": { "op": "dieFaceEquals", "args": [3] } },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "rot-curse-die-face-3", "prompt": "掷出 3 即伤（需 dieFaceEquals 谓词 + DAMAGE_PER_DIE_FACE，留 3.2 AQ-3）" } },
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "rot-curse-die-face-3", "prompt": "防御骰每出 3 → +1 伤（DEFENCE_ROLL per-die 消费 dieFaceEquals(3)，real）" } },
       "stacking": { "policy": "CONDITIONAL" },
       "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-腐烂诅咒" }
     },

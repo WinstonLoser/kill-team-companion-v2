@@ -44,6 +44,7 @@ export function createInitialShootingState(profile: { hit: number; weaponRules?:
     woundsDealt: 0,
     defenderIncapacitated: false,
     targetValid: true,
+    rotCurseDamage: 0,
   }
 }
 
@@ -197,11 +198,26 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
       const extra = coverEffs.length ? (coverEffs[0]?.modifier.payload as { extraNormal?: number }).extraNormal ?? 1 : 1
       defNormal += extra
     }
+    // 腐烂诅咒（rot_curse，per-die，dieFaceEquals 驱动）：ON_DEFENCE_ROLL effect 带 dieFaceEquals(face) 条件
+    // → 每枚防御骰面值===face 累加 1 伤（不可保留/重掷，DAMAGE_PER_DIE 加入造伤）。
+    const rotEffs = effectsAt(ctx.effects, 'ON_DEFENCE_ROLL').filter((e) => {
+      const c = (e.trigger as { condition?: { op?: string } }).condition
+      return c?.op === 'dieFaceEquals'
+    })
+    let rotCurseDamage = 0
+    const rotApplied: string[] = []
+    for (const e of rotEffs) {
+      const face = (e.trigger as { condition?: { args?: (string | number)[] } }).condition?.args?.[0]
+      if (typeof face === 'number') {
+        const hits = defDice.filter((d) => d.nat === face).length
+        if (hits > 0) { rotCurseDamage += hits; rotApplied.push(e.effectId) }
+      }
+    }
     return {
-      state: { ...state, defDice, defNormal, defCritical },
-      summary: `防御骰${defenceDiceCount} → 普通成功${defNormal} 关键${defCritical}${ctx.hasCover ? ' +掩护豁免' : ''}`,
+      state: { ...state, defDice, defNormal, defCritical, rotCurseDamage },
+      summary: `防御骰${defenceDiceCount} → 普通成功${defNormal} 关键${defCritical}${ctx.hasCover ? ' +掩护豁免' : ''}${rotCurseDamage ? ` 腐烂诅咒+${rotCurseDamage}` : ''}`,
       dice: defDice,
-      applied: [...pierce.map((m) => m.id), ...coverEffs.map((e) => e.effectId)],
+      applied: [...pierce.map((m) => m.id), ...coverEffs.map((e) => e.effectId), ...rotApplied],
       rejected: pierceT.rejected.map(toRejected),
     }
   },
@@ -248,10 +264,11 @@ const DAMAGE_PER_DIE: StepFn<ShootingState> = {
     const limit = caps.length ? Math.min(...caps) : Infinity
     const rawExtra = sum(extraDmg)
     const extra = Math.min(rawExtra, limit)
-    const damage = base + extra
+    // 腐烂诅咒伤（DEFENCE_ROLL 算的 per-die 面值匹配伤）加入总造伤
+    const damage = base + extra + state.rotCurseDamage
     return {
       state: { ...state, damage },
-      summary: `造伤 ${base} + 额外${extra}${extra < rawExtra ? `（钳 cap ${limit}）` : ''} = ${damage}`,
+      summary: `造伤 ${base} + 额外${extra}${extra < rawExtra ? `（钳 cap ${limit}）` : ''}${state.rotCurseDamage ? ` + 腐烂诅咒${state.rotCurseDamage}` : ''} = ${damage}`,
       applied: extraDmg.map((m) => m.id),
       rejected: extraT.rejected.map(toRejected),
     }
