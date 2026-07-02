@@ -4,9 +4,21 @@ import {
   canUsePloy,
   turnReducer,
   createInitialTurnState,
+  effectiveApl,
   type TurnState,
   type ActionContext,
 } from '../../src/state'
+import type { Effect } from '../../src/rules'
+
+const aplPlus = (amount: number, duration: 'ACTIVATION' | 'TURNING_POINT' | 'BATTLE' = 'ACTIVATION'): Effect => ({
+  effectId: `apl${amount}`,
+  label: 't',
+  source: 'test',
+  trigger: { point: 'ON_ACTIVATION_START' },
+  pipelineStep: 'ACTIVATION_PRE',
+  modifier: { kind: 'APL_PLUS', payload: { amount, duration } },
+  stacking: { policy: 'UNIQUE_PER_ACTION' },
+})
 
 function stateWithOp(over: Partial<TurnState['operatives'][string]> = {}): TurnState {
   const s = createInitialTurnState()
@@ -166,5 +178,41 @@ describe('turnReducer 内嵌 guard（DN6：reducer 自防御）', () => {
     s = turnReducer(s, { type: 'END_TURNING_POINT' }) // 重置 used→0
     s = turnReducer(s, { type: 'USE_PLOY', ployId: 'perTP', player: 'a', cpCost: 1 })
     expect(s.ployUses.perTP?.used).toBe(1) // 重置后再次使用成功
+  })
+})
+
+describe('effectiveApl — APL_PLUS 引擎消费（W3a）', () => {
+  it('base APL + Σ APL_PLUS amount', () => {
+    expect(effectiveApl(3, [aplPlus(1)])).toBe(4) // 变异与扭转 +1
+  })
+
+  it('负向 APL_PLUS（不祥迷惑 −1）扣减', () => {
+    expect(effectiveApl(3, [aplPlus(-1)])).toBe(2)
+  })
+
+  it('多条 APL_PLUS 叠加', () => {
+    expect(effectiveApl(2, [aplPlus(1), aplPlus(-1)])).toBe(2)
+  })
+
+  it('非 APL_PLUS effect 不影响（过滤）', () => {
+    const hit: Effect = {
+      effectId: 'h', label: 't', source: 'test',
+      trigger: { point: 'BEFORE_HIT_ROLL' }, pipelineStep: 'HIT_ROLL',
+      modifier: { kind: 'HIT_PLUS', payload: { amount: 1 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    expect(effectiveApl(3, [hit, aplPlus(1)])).toBe(4)
+  })
+
+  it('无 APL_PLUS → base 不变', () => {
+    expect(effectiveApl(3, [])).toBe(3)
+  })
+
+  it('端到端：effectiveApl 喂 canDoAction → APL+1 允许原本超 AP 的行动', () => {
+    // base APL 2，apUsed 2：剩 0，FALL_BACK(需2) 拒；APL_PLUS +1 → 剩 1 仍拒；
+    // 但 MOVE(需1) 在 base 下 apUsed2>剩0 拒，+1 后剩1 允
+    const s = stateWithOp({ apUsed: 2 })
+    expect(canDoAction(s, 'op1', 'MOVE', ctx({ apl: effectiveApl(2, []) })).ok).toBe(false)
+    expect(canDoAction(s, 'op1', 'MOVE', ctx({ apl: effectiveApl(2, [aplPlus(1)]) })).ok).toBe(true)
   })
 })

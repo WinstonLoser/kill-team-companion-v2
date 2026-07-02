@@ -45,3 +45,19 @@ Diff 源 `a113103..HEAD`（3 新文件，+508 行，引擎代码零改动）。
 **Dismiss（4）**：IP（docs/ gitignored）/ 持徽手 apl:4（spec intended）/ gunner 重叠武器（loadout）/ 纳垢 golden（#2+#6 双重验证）。
 
 最终：**184/184 测试绿**（+6：2 real golden 转换 + 4 trigger/step 护栏），build 绿（389.05 kB）。Story 2-1 + 2-2 → done。
+
+## Deferred Work 实现（2026-07-03，commit 723bda6）
+
+3 项 Defer 全部推进（分支 epic2-deferred-work，**202/202 测试绿**，tsc/build clean）：
+
+- ✅ **W1 EXTRA_DAMAGE cap 强制**：DAMAGE_PER_DIE 多 effect 叠加时，总额外伤钳到「最严 cap」（min）。单 effect 未超 cap 不钳（向后兼容）。(+2 测试)
+- ✅ **W2 DAMAGE_MITIGATION payload schema + 全 kind payload-shape 校验**：modifier 改 discriminated `oneOf`（21 kind 各自 payload 形状）。DAMAGE_MITIGATION `roll` 须匹配 `^(\d+\+|ignore-once)$`；其余 kind 必填字段/枚举校验（如 AUTO_SUCCESS 缺 grade、HIT_PLUS 缺 amount 拒绝）。既有 angels/legionaries/core 包全通过。(+3 测试)
+- ✅ **W3a APL_PLUS 引擎消费**：新增 `effectiveApl(baseApl, effects)`——base APL + Σ(APL_PLUS amount)；纯函数，UI/matchStore 构造 ActionContext.apl 时调用（AR-9 intent 驱动）。端到端：effectiveApl 喂 canDoAction 允许原本超 AP 的行动。(+6 测试)
+- ✅ **W3b ATTACH_WEAPON_RULE 引擎消费**：新增 `withAttachedRules(weapon, effects)`——附加规则并入 profile.weaponRules（去重）；WEAPON_SELECT 写入 `ShootingState.effectiveWeaponRules`。(+7 测试)
+
+**W3 剩余（架构层，仍留 Epic 3）**：
+- **movement（mark_slaanesh）/ save 覆写（warding_armour）**：D1 已诚实降级为 CUSTOM_HOOK 描述符——无 MOVE/SAVE_OVERRIDE kind 可消费，需移动结算器 / 豁免覆写子系统（架构层，非 pipeline 可解）。
+- **weaponRule→骰子语义**：W3b 让附加规则进结算武器，但 RAPID_FIRE/PIERCING1/TORRENT 等规则的骰子效果属 weaponRule 语义层（全 13 种 weaponRule 当前均描述性），留 Epic 3。
+
+最终（含 deferred 实现）：**202/202 测试绿**，build 绿（393.89 kB）。
+
