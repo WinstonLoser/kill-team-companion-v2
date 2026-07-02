@@ -31,7 +31,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["operativeId", "name", "keywords", "stats", "base", "weaponRefs"],
+        "required": ["operativeId", "name", "keywords", "stats", "base"],
         "properties": {
           "operativeId": { "type": "string" },
           "name": { "type": "string" },
@@ -47,7 +47,27 @@
             }
           },
           "base": { "type": "object", "required": ["diameterMm"], "properties": { "diameterMm": { "type": "number", "minimum": 1 } } },
-          "weaponRefs": { "type": "array", "items": { "type": "string" } }
+          "weaponRefs": { "type": "array", "items": { "type": "string" } },
+          "factionRuleRefs": { "type": "array", "items": { "type": "string" } },
+          "abilityRefs": { "type": "array", "items": { "type": "string" } },
+          "loadouts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["description", "count", "options"],
+              "properties": {
+                "description": { "type": "string" },
+                "count": { "type": "integer", "minimum": 1 },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

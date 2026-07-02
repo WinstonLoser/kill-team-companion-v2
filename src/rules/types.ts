@@ -98,14 +98,22 @@ export interface OperativeStats {
   wounds: number
 }
 
+export interface Loadout {
+  description: string
+  count: number
+  options: string[][]
+}
+
 export interface Operative {
   operativeId: string
   name: string
   keywords: string[]
   stats: OperativeStats
   base: { diameterMm: number } // D-27：规则源不提供，GW 约定
-  weaponRefs: string[]
+  weaponRefs?: string[]
+  loadouts?: Loadout[]
   abilities?: string[]
+  factionRuleRefs?: string[]
 }
 
 export type WeaponKind = 'RANGED' | 'MELEE'

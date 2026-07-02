@@ -1,11 +1,13 @@
 import { useViewStore, type View } from './state/viewStore'
 import { ResolveDemo } from './ui/ResolveDemo'
+import { TestLab } from './ui/test-lab/TestLab'
 import { loadPack } from './'
 import angelsPack from './data/packs/angels_of_death.v1.json'
 
 const pack = loadPack(angelsPack)
 
 const VIEWS: { key: View; label: string }[] = [
+  { key: 'testLab', label: 'UI 测试实验室' },
   { key: 'roster', label: '建队' },
   { key: 'match', label: '对局' },
   { key: 'rules', label: '规则查询' },
@@ -53,6 +55,7 @@ export function App() {
             </ul>
           </section>
         )}
+        {currentView === 'testLab' && <TestLab pack={pack} />}
         {currentView === 'match' && <ResolveDemo />}
         {currentView === 'rules' && (
           <section>

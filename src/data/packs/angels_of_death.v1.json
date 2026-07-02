@@ -7,45 +7,512 @@
     "name": "死亡天使",
     "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"]
   },
-  "operatives": [
+  "factionRules": [
     {
-      "operativeId": "angels_tactical",
-      "name": "战术兵",
-      "keywords": ["ASTARTES", "TACTICAL"],
-      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 13 },
-      "base": { "diameterMm": 32 },
-      "weaponRefs": ["angels_bolt_rifle", "angels_bolt_pistol", "angels_chainsword"]
+      "ruleId": "chapter_tactics",
+      "name": "Chapter Tactics / 战团战术",
+      "description": "Select a primary and secondary CHAPTER TACTIC for friendly ANGEL OF DEATH operatives. Multiple instances of the same CHAPTER TACTIC aren’t cumulative.",
+      "type": "SELECTION",
+      "selectionLimit": 2,
+      "options": [
+        {
+          "id": "tactic_aggressive",
+          "name": "1. Aggressive / 猛攻",
+          "description": "This operative’s melee weapons have the Rending weapon rule."
+        },
+        {
+          "id": "tactic_dueller",
+          "name": "2. Dueller / 决斗家",
+          "description": "Whenever this operative is fighting or retaliating, each of your normal successes can block one unresolved critical success (unless the enemy operative’s weapon has the Brutal weapon rule)."
+        },
+        {
+          "id": "tactic_resolute",
+          "name": "3. Resolute / 坚决",
+          "description": "You can ignore any changes to this operative’s APL stat and it isn’t affected by enemy operatives’ Shock weapon rule."
+        },
+        {
+          "id": "tactic_stealthy",
+          "name": "4. Stealthy / 隐秘",
+          "description": "Whenever an operative is shooting this operative, if you can retain any cover saves, you can retain one additional cover save, or you can retain one cover save as a critical success instead."
+        },
+        {
+          "id": "tactic_mobile",
+          "name": "5. Mobile / 机动",
+          "description": "This operative can perform the Fall Back action for 1 less AP. It can perform the Charge action while within control range of an enemy operative."
+        },
+        {
+          "id": "tactic_hardy",
+          "name": "6. Hardy / 强健",
+          "description": "Whenever an operative is shooting this operative, defence dice results of 5+ are critical successes. When retaliating, the first time taking Normal Dmg of 3+, inflicts 1 less damage."
+        },
+        {
+          "id": "tactic_sharpshooter",
+          "name": "7. Sharpshooter / 神射手",
+          "description": "Whenever shooting during an activation without Charge, Fall Back or Reposition, its bolt weapons have Accurate 1 and Severe rules."
+        },
+        {
+          "id": "tactic_siege_specialist",
+          "name": "8. Siege Specialist / 攻城专家",
+          "description": "Ranged weapons have Saturate rule. Whenever fighting or retaliating, enemy operatives cannot assist."
+        }
+      ]
     },
     {
-      "operativeId": "angels_sergeant",
-      "name": "仲裁者",
-      "keywords": ["ASTARTES", "CHAMPION"],
+      "ruleId": "combat_doctrine",
+      "name": "Combat Doctrine / 战斗条令",
+      "description": "Select one COMBAT DOCTRINE. Whenever a friendly ANGEL OF DEATH operative is X, its weapons have the Balanced weapon rule.",
+      "type": "PASSIVE",
+      "options": [
+        {
+          "id": "doctrine_devastator",
+          "name": "Devastator Doctrine / 毁灭者条令",
+          "description": "Shooting an operative more than 6\" from it."
+        },
+        {
+          "id": "doctrine_tactical",
+          "name": "Tactical Doctrine / 战术条令",
+          "description": "Shooting an operative within 6\" of it."
+        },
+        {
+          "id": "doctrine_assault",
+          "name": "Assault Doctrine / 突击条令",
+          "description": "Fighting or retaliating."
+        }
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "heroic_leader",
+      "name": "Heroic Leader",
+      "description": "Once per turning point, use a firefight ploy for 0CP, Combat Doctrine, or Adjust Doctrine for 0CP."
+    },
+    {
+      "abilityId": "iron_halo",
+      "name": "Iron Halo",
+      "description": "Once per battle, ignore Normal Dmg from an attack dice."
+    },
+    {
+      "abilityId": "doctrine_warfare_assault_tactical",
+      "name": "Doctrine Warfare",
+      "description": "Once per battle: Assault doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP."
+    },
+    {
+      "abilityId": "doctrine_warfare_devastator_tactical",
+      "name": "Doctrine Warfare",
+      "description": "Once per battle: Devastator doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP."
+    },
+    {
+      "abilityId": "chapter_veteran",
+      "name": "Chapter Veteran",
+      "description": "Select one additional CHAPTER TACTIC for the battle."
+    },
+    {
+      "abilityId": "grenadier",
+      "name": "Grenadier",
+      "description": "Can use frag and krak grenades without counting towards limited uses. When doing so, improve Hit stat by 1."
+    },
+    {
+      "abilityId": "camo_cloak",
+      "name": "Camo Cloak",
+      "description": "When shot, ignore Saturate weapon rule. If Stealthy chapter tactic is selected, retain two cover saves."
+    },
+    {
+      "abilityId": "optics",
+      "name": "Optics (1AP)",
+      "description": "Until next activation, when shooting, enemy operatives cannot be obscured."
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "space_marine_captain",
+      "name": "Space Marine Captain / 星际战士连长",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "SPACE MARINE CAPTAIN"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup", "capt_power_fist"]
+          ]
+        }
+      ],
+      "abilityRefs": ["heroic_leader", "iron_halo"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_sergeant",
+      "name": "Assault Intercessor Sergeant / 突击仲裁者军士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "ASSAULT INTERCESSOR", "SERGEANT"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["hand_flamer"],
+            ["heavy_bolt_pistol"],
+            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup"]
+          ]
+        },
+        {
+          "description": "Melee Weapon / 近战武器",
+          "count": 1,
+          "options": [
+            ["assault_sgt_chainsword"],
+            ["assault_sgt_power_fist"],
+            ["assault_sgt_power_weapon"],
+            ["assault_sgt_thunder_hammer"]
+          ]
+        }
+      ],
+      "abilityRefs": ["doctrine_warfare_assault_tactical", "chapter_veteran"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_sergeant",
+      "name": "Intercessor Sergeant / 仲裁者军士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "INTERCESSOR", "SERGEANT"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle"],
+            ["bolt_rifle"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile"]
+          ]
+        },
+        {
+          "description": "Melee Weapon / 近战武器",
+          "count": 1,
+          "options": [
+            ["sgt_chainsword"],
+            ["sgt_fists"],
+            ["sgt_power_fist"],
+            ["sgt_power_weapon"],
+            ["sgt_thunder_hammer"]
+          ]
+        }
+      ],
+      "abilityRefs": ["doctrine_warfare_devastator_tactical", "chapter_veteran"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_grenadier",
+      "name": "Assault Intercessor Grenadier / 突击仲裁者掷弹兵",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ASSAULT INTERCESSOR", "GRENADIER"],
       "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
       "base": { "diameterMm": 32 },
-      "weaponRefs": ["angels_bolt_pistol", "angels_chainsword"]
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["warrior_heavy_bolt_pistol", "warrior_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["grenadier"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_warrior",
+      "name": "Assault Intercessor Warrior / 突击仲裁者战士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ASSAULT INTERCESSOR", "WARRIOR"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["warrior_heavy_bolt_pistol", "warrior_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "heavy_intercessor_gunner",
+      "name": "Heavy Intercessor Gunner / 重装仲裁者枪手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "HEAVY INTERCESSOR", "GUNNER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 18 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Heavy Bolter / 重型爆矢枪",
+          "count": 1,
+          "options": [
+            ["heavy_bolter_focused", "bolt_pistol", "sgt_fists"],
+            ["heavy_bolter_sweeping", "bolt_pistol", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_gunner",
+      "name": "Intercessor Gunner / 仲裁者枪手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "INTERCESSOR", "GUNNER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"],
+            ["bolt_rifle", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_warrior",
+      "name": "Intercessor Warrior / 仲裁者战士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "INTERCESSOR", "WARRIOR"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle", "sgt_fists"],
+            ["bolt_rifle", "sgt_fists"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "eliminator_sniper",
+      "name": "Eliminator Sniper / 消除者狙击手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ELIMINATOR", "SNIPER"],
+      "stats": { "apl": 3, "move": 7, "save": 3, "wounds": 12 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["bolt_sniper_executioner", "bolt_sniper_hyperfrag", "bolt_sniper_mortis", "bolt_pistol", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": ["camo_cloak", "optics"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
     }
   ],
   "weapons": [
     {
-      "weaponId": "angels_bolt_rifle",
-      "name": "爆矢步枪",
+      "weaponId": "capt_plasma_pistol_std",
+      "name": "Plasma pistol (standard) / 等离子手枪 (标准)",
       "kind": "RANGED",
-      "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 24, "weaponRules": [] },
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "capt_plasma_pistol_sup",
+      "name": "Plasma pistol (supercharge) / 等离子手枪 (超载)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "range": 8, "weaponRules": ["Hot", "Lethal 5+", "Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "capt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "hand_flamer",
+      "name": "Hand flamer / 手持火焰喷射器",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "range": 6, "weaponRules": ["Saturate", "Torrent 1\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "heavy_bolt_pistol",
+      "name": "Heavy bolt pistol / 重型爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Piercing Crits 1"] },
       "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_bolt_pistol",
-      "name": "爆矢手枪",
+      "weaponId": "assault_sgt_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_power_weapon",
+      "name": "Power weapon / 动力武器",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_thunder_hammer",
+      "name": "Thunder hammer / 雷霆之锤",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 6, "weaponRules": ["Shock", "Stun"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "auto_bolt_rifle",
+      "name": "Auto bolt rifle / 自动爆矢步枪",
       "kind": "RANGED",
-      "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL"] },
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Torrent 1\""] },
       "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_chainsword",
-      "name": "链剑",
+      "weaponId": "bolt_rifle",
+      "name": "Bolt rifle / 爆矢步枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "stalker_bolt_rifle_heavy",
+      "name": "Stalker bolt rifle (heavy) / 潜行者爆矢步枪(重型)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["Heavy (Dash only)", "Lethal 5+", "Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "stalker_bolt_rifle_mobile",
+      "name": "Stalker bolt rifle (mobile) / 潜行者爆矢步枪(机动)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "sgt_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_fists",
+      "name": "Fists / 拳头",
       "kind": "MELEE",
       "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
       "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_power_weapon",
+      "name": "Power weapon / 动力武器",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_thunder_hammer",
+      "name": "Thunder hammer / 雷霆之锤",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 5, "criticalDamage": 6, "weaponRules": ["Shock", "Stun"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "warrior_heavy_bolt_pistol",
+      "name": "Heavy bolt pistol / 重型爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "warrior_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "bolt_pistol",
+      "name": "Bolt pistol / 爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "heavy_bolter_focused",
+      "name": "Heavy bolter (focused) / 重型爆矢枪 (集中)",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "heavy_bolter_sweeping",
+      "name": "Heavy bolter (sweeping) / 重型爆矢枪 (扫射)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing Crits 1", "Torrent 1\""] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "aux_grenade_frag",
+      "name": "Auxiliary grenade launcher (frag) / 辅助榴弹发射器(破片)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "weaponRules": ["Blast 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "aux_grenade_krak",
+      "name": "Auxiliary grenade launcher (krak) / 辅助榴弹发射器(穿甲)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "bolt_sniper_executioner",
+      "name": "Bolt sniper rifle (executioner) / 爆矢狙击步枪 (处决者)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Heavy (Dash only)", "Saturate", "Seek Light", "Silent"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "bolt_sniper_hyperfrag",
+      "name": "Bolt sniper rifle (hyperfrag) / 爆矢狙击步枪 (超能破片)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "weaponRules": ["Blast 1\"", "Heavy (Dash only)", "Silent"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "bolt_sniper_mortis",
+      "name": "Bolt sniper rifle (mortis) / 爆矢狙击步枪 (莫提斯)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "weaponRules": ["Devastating 3", "Heavy (Dash only)", "Piercing 1", "Silent"] },
+      "keywords": ["BOLT"]
     }
   ],
   "effects": [
