@@ -3,13 +3,18 @@ import type { RosterLegalityResult } from '../../rules'
 // T5：合法性面板。读 buildConstraints 经 evaluateLegality 算出的 checks，逐条渲染。
 // 桌面右侧固定、平板底部抽屉（index.css 响应式）。违规红字 + 定位（detail 含特工/武器名）。
 // 全绿才解锁「进入对局」（门禁逻辑在 RosterView，本组件纯展示）。
-export function LegalityPanel({ result, sideLabel }: { result: RosterLegalityResult; sideLabel: string }) {
+export function LegalityPanel({ result, sideLabel, onLocate }: { result: RosterLegalityResult; sideLabel: string; onLocate?: () => void }) {
   return (
     <aside className={`legality ${result.legal ? '' : 'has-warn'}`}>
       <h3>合法性 · {sideLabel}</h3>
       <ul className="list">
         {result.checks.map((c) => (
-          <li key={c.key} className={c.status === 'warn' ? 'warn' : 'ok'}>
+          <li
+            key={c.key}
+            className={c.status === 'warn' ? 'warn actionable' : 'ok'}
+            onClick={c.status === 'warn' ? onLocate : undefined}
+            title={c.status === 'warn' && onLocate ? '点击定位到特工/装备' : undefined}
+          >
             <strong>{c.status === 'ok' ? '✓' : '✗'} {c.label}</strong>
             <span className="muted"> {c.detail}</span>
           </li>

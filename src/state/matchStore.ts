@@ -164,7 +164,12 @@ interface MatchState {
   rewindToSnapshot: (id: number) => void
   /** D3：重展最近已确认结算（日志 ▶回放）。 */
   replayLast: () => void
-  scoreAndEndTP: (objectiveControl: (o: ObjectiveMarker) => Side | null) => void
+  /** P7：目标控制归属（读 store 当下 tokens，非渲染闭包）。 */
+  controlOf: (o: ObjectiveMarker) => Side | null
+  /** P11：ActionBar push 文案（TP 结束计分等），null=无。 */
+  pushMsg: string | null
+  setPushMsg: (msg: string | null) => void
+  scoreAndEndTP: () => void
   reset: () => void
 }
 
@@ -195,6 +200,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   activeEffects: {},
   snapshots: [],
   replayLog: null,
+  pushMsg: null,
   winner: null,
   intercept: null,
 
@@ -480,7 +486,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const r = get().replayLog
     if (r) set({ currentLog: r })
   },
-  scoreAndEndTP: (objectiveControl) => {
+  controlOf: (o) => {
+    const tokens = get().tokens
+    const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
+    const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
+    if (nA > nB && nA > 0) return 'a'
+    if (nB > nA && nB > 0) return 'b'
+    return null
+  },
+  setPushMsg: (pushMsg) => set({ pushMsg }),
+  scoreAndEndTP: () => {
     // D4：先结算到期 effect（递减/移除/记日志/push），再计分推进
     get().tickEffects()
     const s = get() // tickEffects 已 set，重取最新
@@ -491,26 +506,31 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const events: string[] = []
     if (map) {
       for (const o of map.objectives) {
-        const ctrl = objectiveControl(o)
+        const ctrl = get().controlOf(o) // P7：读 store 当下 tokens
         if (ctrl === 'a') { scoredA++; events.push(`${o.id} → A`) }
         else if (ctrl === 'b') { scoredB++; events.push(`${o.id} → B`) }
       }
     }
     const next = turnReducer(s.turn, { type: 'END_TURNING_POINT' })
     const newLogs: LogEntry[] = []
-    if (events.length) newLogs.push({ id: nextLogId(), kind: 'score', text: `TP${s.turn.turningPoint} 计分：${events.join('，')}（VP A:${scoredA} B:${scoredB}）` })
+    const gainedA = scoredA - s.vp.a
+    const gainedB = scoredB - s.vp.b
+    if (events.length) newLogs.push({ id: nextLogId(), kind: 'score' as LogKind, text: `TP${s.turn.turningPoint} 计分：${events.join('，')}（VP A:${scoredA} B:${scoredB}）` })
     const ended = next.phase === 'BATTLE_END'
     let winner: string | null = s.winner
     if (ended) {
       winner = scoredA > scoredB ? 'A 胜' : scoredB > scoredA ? 'B 胜' : '平局'
-      newLogs.push({ id: nextLogId(), kind: 'system', text: `战斗结束 → ${winner}（VP A:${scoredA} B:${scoredB}）` })
+      newLogs.push({ id: nextLogId(), kind: 'system' as LogKind, text: `战斗结束 → ${winner}（VP A:${scoredA} B:${scoredB}）` })
     }
+    // P11：TP 结束计分 push 文案
+    const pushMsg = ended ? null : `TP${s.turn.turningPoint} 结束 — VP +${gainedA}/+${gainedB}（A:${scoredA} B:${scoredB}）`
     set({
       vp: { a: scoredA, b: scoredB },
       turn: ended ? next : { ...next, activePlayer: next.activePlayer === 'a' ? 'b' : 'a' },
       winner: ended ? winner : null,
       phase: ended ? 'ended' : s.phase,
       selected: null,
+      pushMsg,
       log: [...newLogs, ...s.log].slice(0, 80),
     })
   },
@@ -533,6 +553,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       activeEffects: {},
       snapshots: [],
       replayLog: null,
+      pushMsg: null,
       winner: null,
       intercept: null,
     }),

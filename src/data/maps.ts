@@ -35,5 +35,11 @@ export function loadMapPack(raw: unknown): MapPack {
   }
   if (!Array.isArray(m.terrain) || !Array.isArray(m.objectives)) throw new Error('MapPack: terrain/objectives must be arrays')
   if (!Array.isArray(m.dropZones.a) || !Array.isArray(m.dropZones.b)) throw new Error('MapPack: dropZones.a/b must be polygons')
+  // P9：bounds 正值 + 降落区多边形 ≥3 顶点（NFR-5 不静默降级）
+  if (!(m.bounds.w > 0) || !(m.bounds.h > 0)) throw new Error('MapPack: bounds.w/h must be positive')
+  if (m.dropZones.a.length < 3 || m.dropZones.b.length < 3) throw new Error('MapPack: dropZones must have ≥3 vertices')
+  for (const t of m.terrain) {
+    if (!Array.isArray(t.polygon) || t.polygon.length < 3) throw new Error(`MapPack: terrain '${t.id}' polygon must have ≥3 vertices`)
+  }
   return m
 }

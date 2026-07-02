@@ -5,7 +5,7 @@ import type { MatchToken, Side } from '../../state/matchStore'
 export const SCALE = 20 // 像素/英寸
 
 export interface LosLine { target: Point; stroke: string; dash: string; opacity: number }
-export interface ObjControl { id: string; ctrl: Side | null }
+export interface ObjControl { id: string; ctrl: Side | null; nA?: number; nB?: number }
 
 export function Board({
   mapPack,
@@ -140,7 +140,9 @@ export function Board({
       {/* 目标点（1.16 控制染色） */}
       {phase !== 'map-select' &&
         objectives.map((o, i) => {
-          const ctrl = objControl.find((c) => c.id === o.id)?.ctrl ?? null
+          const info = objControl.find((c) => c.id === o.id)
+          const ctrl = info?.ctrl ?? null
+          const ctrlText = ctrl === 'a' ? 'A' : ctrl === 'b' ? 'B' : '中立'
           return (
             <div
               key={o.id}
@@ -148,6 +150,7 @@ export function Board({
               style={{ left: o.pos.x * SCALE, top: o.pos.y * SCALE }}
               onMouseEnter={() => onObjectiveHover?.(o)}
               onMouseLeave={() => onObjectiveHover?.(null)}
+              title={`OBJ${i + 1} · 控制方: ${ctrlText}（范围内 A×${info?.nA ?? 0} / B×${info?.nB ?? 0}）`}
             >
               <svg width={o.controlRange * 2 * SCALE} height={o.controlRange * 2 * SCALE}
                 style={{ position: 'absolute', left: -o.controlRange * SCALE, top: -o.controlRange * SCALE }}

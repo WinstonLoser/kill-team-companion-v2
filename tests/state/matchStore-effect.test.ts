@@ -48,7 +48,7 @@ describe('effect 追踪 + 到期（D4）', () => {
   it('scoreAndEndTP 触发到期结算（D4 AC4 push）', () => {
     const s = useMatchStore.getState()
     s.addEffect('a1', { id: 'stun', label: '震荡', durationTP: 1 })
-    s.scoreAndEndTP(() => null)
+    s.scoreAndEndTP()
     const after = useMatchStore.getState()
     expect(after.activeEffects.a1).toBeUndefined()
     expect(after.log.some((l) => l.text.includes('到期'))).toBe(true)

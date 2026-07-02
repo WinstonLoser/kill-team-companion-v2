@@ -23,9 +23,8 @@ export function OperativePicker({
       delete nextLoadout[opId]
       onChange({ operativeIds: operativeIds.filter((x) => x !== opId), loadout: nextLoadout })
     } else {
-      // 入队：默认勾选其全部 weaponRefs（玩家可再手动取消）
-      const op = pack.operatives.find((o) => o.operativeId === opId)
-      const nextLoadout = { ...loadout, [opId]: op ? [...op.weaponRefs] : [] }
+      // 入队：默认不勾装备（P14：避免立即违 equipmentLimits，玩家手动勾选）
+      const nextLoadout = { ...loadout, [opId]: [] }
       onChange({ operativeIds: [...operativeIds, opId], loadout: nextLoadout })
     }
   }

@@ -1,11 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useViewStore, type View } from './state/viewStore'
 import { MatchView } from './ui/MatchView'
 import { RosterView } from './ui/RosterView'
-import { loadPack } from './'
-import angelsPack from './data/packs/angels_of_death.v1.json'
-
-const pack = loadPack(angelsPack)
+import { RulesSearch } from './ui/match/RulesQuery'
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'roster', label: '建队' },
@@ -16,7 +13,6 @@ const VIEWS: { key: View; label: string }[] = [
 export function App() {
   const currentView = useViewStore((s) => s.currentView)
   const setView = useViewStore((s) => s.setView)
-  const [q, setQ] = useState('')
 
   return (
     <div className="app">
@@ -24,11 +20,7 @@ export function App() {
         <h1>Kill Team 战棋助手</h1>
         <nav>
           {VIEWS.map((v) => (
-            <button
-              key={v.key}
-              className={currentView === v.key ? 'active' : ''}
-              onClick={() => setView(v.key)}
-            >
+            <button key={v.key} className={currentView === v.key ? 'active' : ''} onClick={() => setView(v.key)}>
               {v.label}
             </button>
           ))}
@@ -39,21 +31,33 @@ export function App() {
         {currentView === 'match' && <MatchView />}
         {currentView === 'rules' && (
           <section>
-            <h2>规则查询（引擎参数化，不显示 GW 原文 D-29）</h2>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索 effect / 关键词…" />
-            <ul className="list">
-              {pack.effects
-                .filter((e) => !q || `${e.label} ${e.modifier.kind} ${e.trigger.point}`.toLowerCase().includes(q.toLowerCase()))
-                .map((e) => (
-                  <li key={e.effectId}>
-                    <strong>{e.label}</strong> — {e.modifier.kind} @ {e.trigger.point}
-                    {e.rulesRef && <em>（见 {e.rulesRef.doc}#{e.rulesRef.section}）</em>}
-                  </li>
-                ))}
-            </ul>
+            <h2>规则查询（引擎参数化要点，不显示 GW 原文 D-29）</h2>
+            <RulesSearch />
           </section>
         )}
       </main>
+      <PortraitLockHint />
     </div>
   )
 }
+
+/** P15：竖屏提示「请横屏」（UX-OQ-7）。 */
+function PortraitLockHint() {
+  const mq = typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)') : null
+  const check = () => Boolean(mq?.matches && window.innerWidth < 900)
+  const [portrait, setPortrait] = useState(check)
+  useEffect(() => {
+    if (!mq) return
+    const handler = () => setPortrait(check())
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [mq])
+  if (!portrait) return null
+  return (
+    <div className="portrait-hint">
+      <strong>请横屏使用</strong>
+      <p className="muted">Kill Team 战棋助手为横屏平板优化。</p>
+    </div>
+  )
+}
+

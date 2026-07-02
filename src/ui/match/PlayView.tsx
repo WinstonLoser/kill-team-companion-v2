@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
+import { useMatchStore, type MatchToken } from '../../state/matchStore'
 import type { Point } from '../../geometry'
-import type { ObjectiveMarker } from '../../data/maps'
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { ActionBar } from './ActionBar'
@@ -38,6 +37,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const replayLast = useMatchStore((s) => s.replayLast)
   const rewindToSnapshot = useMatchStore((s) => s.rewindToSnapshot)
   const snapshots = useMatchStore((s) => s.snapshots)
+  const controlOf = useMatchStore((s) => s.controlOf)
+  const pushMsg = useMatchStore((s) => s.pushMsg)
+  const setPushMsg = useMatchStore((s) => s.setPushMsg)
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -55,15 +57,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const active = tokens.find((t) => t.uid === selected) ?? null
   const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
 
-  // ===== 目标控制（1.16）— 纯计数，非几何算法 =====
-  function controlOf(o: ObjectiveMarker): Side | null {
+  // ===== 目标控制（1.16）— 读 store.controlOf（P7：store 当下 tokens） =====
+  const objControl: ObjControl[] = mapPack.objectives.map((o) => {
     const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
     const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
-    if (nA > nB && nA > 0) return 'a'
-    if (nB > nA && nB > 0) return 'b'
-    return null
-  }
-  const objControl: ObjControl[] = mapPack.objectives.map((o) => ({ id: o.id, ctrl: controlOf(o) }))
+    return { id: o.id, ctrl: controlOf(o), nA, nB }
+  })
 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
   const showViz = active && activated && active.side === turn.activePlayer
@@ -148,6 +147,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
           <button onClick={undoPending}>取消</button>
         </div>
       )}
+      {pushMsg && (
+        <div className="push-banner">
+          {pushMsg}
+          <button className="link-btn" onClick={() => setPushMsg(null)}>✕</button>
+        </div>
+      )}
 
       <div className="play-main">
         <div className="play-board-col">
@@ -181,7 +186,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             hasLastShot={Boolean(lastShot)}
             onActivate={() => { if (active) { activate(active.uid, active.side); pushLog('turn', `${active.name} 激活`) } }}
             onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null) } }}
-            onEndTP={() => scoreAndEndTP(controlOf)}
+            onEndTP={() => scoreAndEndTP()}
             onUndo={undoPending}
           />
           <UnitPanel startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} />

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { loadPack, evaluateLegality, type FactionPack } from '../'
 import { useViewStore } from '../state/viewStore'
 import { useRosterStore, type Side } from '../state/rosterStore'
@@ -45,6 +46,8 @@ export function RosterView() {
   const pack = packFor(entry.factionId)
   const selector = pack?.faction.subFactionSelector
   const result = legalityOf(editing)
+  const opListRef = useRef<HTMLDivElement>(null)
+  const locateOffender = () => opListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
   const resultA = legalityOf('a')
   const resultB = legalityOf('b')
@@ -82,7 +85,7 @@ export function RosterView() {
       </div>
 
       <div className="roster-layout">
-        <div className="roster-main">
+        <div className="roster-main" ref={opListRef}>
           {/* AC1 顺序可达：选阵营 → 选特工+装备 → 子阵营选择器 */}
           <FactionSelect
             factions={FACTIONS}
@@ -120,8 +123,8 @@ export function RosterView() {
           )}
         </div>
 
-        {/* T5 合法性面板（实时） */}
-        <LegalityPanel result={result} sideLabel={sideLabel(editing)} />
+        {/* T5 合法性面板（实时，P13 违规可定位） */}
+        <LegalityPanel result={result} sideLabel={sideLabel(editing)} onLocate={locateOffender} />
       </div>
 
       {/* T6 进入对局门禁 */}
