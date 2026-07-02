@@ -38,6 +38,16 @@
       "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素指示物" }
     },
     {
+      "effectId": "plg_virulent",
+      "label": "剧毒（武器级：对已有 POISON 指示物目标，该结算 +1 伤）",
+      "source": "factionRule:virulent",
+      "trigger": { "point": "ON_DAMAGE_PER_DIE", "condition": { "op": "targetHasMarker", "args": ["POISON"] } },
+      "pipelineStep": "DAMAGE_PER_DIE",
+      "modifier": { "kind": "EXTRA_DAMAGE_ON_HIT", "payload": { "amount": 1 } },
+      "stacking": { "policy": "CONDITIONAL" },
+      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-剧毒" }
+    },
+    {
       "effectId": "plg_toxin_activation_damage",
       "label": "毒素激活伤（持 POISON 特工激活时受 1 伤）",
       "source": "factionRule:plagueToxin",

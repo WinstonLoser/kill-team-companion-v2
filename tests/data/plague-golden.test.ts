@@ -115,10 +115,25 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
     expect((e.modifier.payload as { hookId: string }).hookId).toBe('rot-curse-die-face-3')
   })
 
-  it('9. 剧毒武器 vs 有 POISON 目标 +1（VIRULENT weaponRule + targetHasMarker 谓词）', () => {
-    const sword = weapon('plg_plague_sword')
-    expect(sword.profile.weaponRules).toContain('VIRULENT')
-    // VIRULENT 语义：对已有 POISON 目标该武器两伤害属性 +1（条件 targetHasMarker(POISON)，谓词留 3.2）
+  it('9. 剧毒（plg_virulent effect CONDITIONAL targetHasMarker(POISON)：有 marker +1，无不+）', () => {
+    const dice1 = new ManualDiceSource(); dice1.provide([4, 5, 2, 3, 1, 1, 1])
+    const withPoison = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [effect('plg_virulent')], dice: dice1, hasCover: false,
+      predicate: { targetMarkers: ['POISON'] },
+    })
+    // 3 命中 × 2 = 6，剧毒 +1 → 7
+    expect(withPoison.woundsDealt).toBe(7)
+    const dice2 = new ManualDiceSource(); dice2.provide([4, 5, 2, 3, 1, 1, 1])
+    const noPoison = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [effect('plg_virulent')], dice: dice2, hasCover: false,
+      predicate: { targetMarkers: [] },
+    })
+    // 无 POISON → CONDITIONAL 拒绝 → 不+，造伤 6
+    expect(noPoison.woundsDealt).toBe(6)
   })
 
   it('10. 剧毒破灭（被残废时范围挂 POISON + 已有指示物受 1 伤；范围多目标 descriptor）', () => {

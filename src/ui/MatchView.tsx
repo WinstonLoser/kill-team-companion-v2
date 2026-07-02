@@ -38,6 +38,7 @@ function buildTokens(): MatchToken[] {
         baseRadius,
         wounds: op.stats.wounds,
         maxWounds: op.stats.wounds,
+        markers: [],
         alive: true,
         placed: false,
       })
