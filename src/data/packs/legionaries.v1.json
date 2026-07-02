@@ -1,0 +1,308 @@
+{
+  "packId": "legionaries",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "legionaries",
+    "name": "军团兵",
+    "keywords": ["CHAOS", "LEGION", "HERETIC_ASTARTES"],
+    "subFactionSelector": {
+      "id": "markOfChaos",
+      "label": "混沌印记（每特工 5 选 1，per-operative）",
+      "options": ["mark_khrone", "mark_nurgle", "mark_slaanesh", "mark_tzeentch", "mark_unaligned"],
+      "max": 1,
+      "default": "mark_unaligned"
+    }
+  },
+  "operatives": [
+    {
+      "operativeId": "leg_champion",
+      "name": "野心勇士",
+      "keywords": ["CHAOS", "CHAMPION"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "weaponRefs": ["leg_plasma_pistol", "leg_bolt_pistol", "leg_power_fist", "leg_chainsword_axe"]
+    },
+    {
+      "operativeId": "leg_chosen",
+      "name": "神选者",
+      "keywords": ["CHAOS", "CHAMPION"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "weaponRefs": ["leg_bolt_pistol", "leg_power_maul", "leg_daemon_blade"]
+    },
+    {
+      "operativeId": "leg_chosen_acolyte",
+      "name": "受选者",
+      "keywords": ["CHAOS", "PSYKER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_bolt_pistol", "leg_power_maul"]
+    },
+    {
+      "operativeId": "leg_balefire_acolyte",
+      "name": "邪火使徒",
+      "keywords": ["CHAOS", "PSYKER", "GUNNER"],
+      "stats": { "apl": 2, "move": 5, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_warpflamer", "leg_soulstrike_weapon"]
+    },
+    {
+      "operativeId": "leg_butcher",
+      "name": "屠夫",
+      "keywords": ["CHAOS", "BERSERKER"],
+      "stats": { "apl": 2, "move": 6, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_chainsword_axe"]
+    },
+    {
+      "operativeId": "leg_gunner",
+      "name": "炮手",
+      "keywords": ["CHAOS", "GUNNER"],
+      "stats": { "apl": 2, "move": 5, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_reaper_cannon", "leg_heavy_bolter"]
+    },
+    {
+      "operativeId": "leg_heavy_gunner",
+      "name": "重炮手",
+      "keywords": ["CHAOS", "GUNNER", "HEAVY"],
+      "stats": { "apl": 2, "move": 5, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_heavy_bolter", "leg_reaper_cannon"]
+    },
+    {
+      "operativeId": "leg_icon_bearer",
+      "name": "持徽手",
+      "keywords": ["CHAOS", "BEARER"],
+      "stats": { "apl": 4, "move": 5, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_bolt_pistol", "leg_chainsword_axe"]
+    },
+    {
+      "operativeId": "leg_talon",
+      "name": "赦罪之爪",
+      "keywords": ["CHAOS", "BEAST"],
+      "stats": { "apl": 2, "move": 7, "save": 5, "wounds": 11 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_talon_claws"]
+    },
+    {
+      "operativeId": "leg_legionary",
+      "name": "战士",
+      "keywords": ["CHAOS", "TROOP"],
+      "stats": { "apl": 2, "move": 6, "save": 4, "wounds": 13 },
+      "base": { "diameterMm": 28.5 },
+      "weaponRefs": ["leg_bolt_pistol", "leg_chainsword_axe"]
+    }
+  ],
+  "weapons": [
+    { "weaponId": "leg_plasma_pistol", "name": "等离子手枪", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL"] }, "keywords": ["PLASMA"] },
+    { "weaponId": "leg_bolt_pistol", "name": "腐化爆矢手枪", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL", "RAPID_FIRE"] }, "keywords": ["BOLT"] },
+    { "weaponId": "leg_power_fist", "name": "动力拳套", "kind": "MELEE", "profile": { "attacks": 4, "hit": 4, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["BRUTAL"] }, "keywords": ["MELEE"] },
+    { "weaponId": "leg_chainsword_axe", "name": "链锯斧", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["BRUTAL"] }, "keywords": ["MELEE"] },
+    { "weaponId": "leg_power_maul", "name": "动力槌", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["STUN"] }, "keywords": ["MELEE"] },
+    { "weaponId": "leg_daemon_blade", "name": "恶魔之刃", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["DEVASTATING"] }, "keywords": ["MELEE", "DAEMON"] },
+    { "weaponId": "leg_reaper_cannon", "name": "收割者机炮", "kind": "RANGED", "profile": { "attacks": 5, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 24, "weaponRules": ["RELENTLESS", "HEAVY"] }, "keywords": ["BOLT"] },
+    { "weaponId": "leg_heavy_bolter", "name": "重型爆矢枪", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 24, "weaponRules": ["PIERCING1", "HEAVY"] }, "keywords": ["BOLT"] },
+    { "weaponId": "leg_warpflamer", "name": "邪火喷射", "kind": "RANGED", "profile": { "attacks": 5, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "range": 8, "weaponRules": ["TORRENT"] }, "keywords": ["FLAME"] },
+    { "weaponId": "leg_soulstrike_weapon", "name": "吸魂武器", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["SOULSTRIKE"] }, "keywords": ["PSYCHIC"] },
+    { "weaponId": "leg_talon_claws", "name": "赦罪之爪", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["RELENTLESS", "DEVASTATING"] }, "keywords": ["MELEE", "BEAST"] }
+  ],
+  "effects": [
+    {
+      "effectId": "mark_khrone",
+      "label": "恐虐印记（近战严重）",
+      "source": "markOfChaos:KHORNE",
+      "trigger": { "point": "AFTER_HIT_ROLL" },
+      "pipelineStep": "MELEE_ALTERNATING_RESOLVE",
+      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["melee-devastating"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-恐虐" }
+    },
+    {
+      "effectId": "mark_nurgle",
+      "label": "纳垢印记（恼人生命力，每受≥3伤 D6 5+ 减 1，同源每枚上限 1）",
+      "source": "markOfChaos:NURGLE",
+      "trigger": { "point": "ON_DAMAGE_TOTAL" },
+      "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
+      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 3, "roll": "5+" } },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-纳垢" }
+    },
+    {
+      "effectId": "mark_slaanesh",
+      "label": "色孽印记（移动 +1）",
+      "source": "markOfChaos:SLAANESH",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mark-slaanesh-move", "prompt": "移动 +1（色孽印记，属性 modifier；引擎移动结算留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-色孽" }
+    },
+    {
+      "effectId": "mark_tzeentch",
+      "label": "奸奇印记（远程严重）",
+      "source": "markOfChaos:TZEENTCH",
+      "trigger": { "point": "AFTER_HIT_ROLL" },
+      "pipelineStep": "ATTACK_UPGRADE",
+      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["ranged-devastating"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-奸奇" }
+    },
+    {
+      "effectId": "mark_unaligned",
+      "label": "无分印记（无休，6\"内重掷）",
+      "source": "markOfChaos:UNALIGNED",
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "pipelineStep": "HIT_ROLL",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mark-unaligned-relentless", "prompt": "无休（6\"内重掷失败；重掷引擎谓词留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "CONDITIONAL" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-无分" }
+    },
+
+    {
+      "effectId": "strat_blood_for_blood_god",
+      "label": "血祭血神（战略：非恐虐首次出击额外 1 伤，恐虐近战双伤 +1，上限 7）",
+      "source": "stratagem:bloodForTheBloodGod",
+      "trigger": { "point": "ON_DAMAGE_PER_DIE" },
+      "pipelineStep": "DAMAGE_PER_DIE",
+      "modifier": { "kind": "EXTRA_DAMAGE_ON_HIT", "payload": { "amount": 1, "cap": 7 } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-血祭血神" }
+    },
+    {
+      "effectId": "strat_indomitable",
+      "label": "坚不可摧（战略：纳垢忽略受创属性修改）",
+      "source": "stratagem:indomitable",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "injured" } },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["injured"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-坚不可摧" }
+    },
+    {
+      "effectId": "strat_swift_speed",
+      "label": "迅捷速度（战略：色孽/移动过特工近战，敌方命中 −1，不与受创叠）",
+      "source": "stratagem:swiftSpeed",
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "pipelineStep": "HIT_ROLL",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "swift-speed", "prompt": "色孽/移动过特工近战时敌方命中 −1（防御侧命中修正 + 互斥受创，引擎谓词留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "MUTUALLY_EXCLUSIVE_WITH", "groupKeys": ["injured"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-迅捷速度" }
+    },
+    {
+      "effectId": "strat_capricious_fate",
+      "label": "无常命运（战略：奸奇射击就绪目标保留失败升级）",
+      "source": "stratagem:capriciousFate",
+      "trigger": { "point": "AFTER_DEFENCE_ROLL" },
+      "pipelineStep": "DEFENCE_UPGRADE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "capricious-fate", "prompt": "奸奇就绪目标保留失败升级（防御侧升级谓词留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-无常命运" }
+    },
+    {
+      "effectId": "strat_endless_slaughter",
+      "label": "无尽杀戮（交战，恐虐：被残废时出击）",
+      "source": "stratagem:endlessSlaughter",
+      "trigger": { "point": "AT_PIPELINE_END" },
+      "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
+      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "strike-on-incapacitation", "target": "SELF" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-无尽杀戮" }
+    },
+    {
+      "effectId": "strat_mutation_reversal",
+      "label": "变异与扭转（交战，奸奇：激活期 APL +1，同行动不重复）",
+      "source": "stratagem:mutationReversal",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "APL_PLUS", "payload": { "amount": 1, "duration": "ACTIVATION" } },
+      "stacking": { "policy": "UNIQUE_PER_ACTION" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-变异与扭转" }
+    },
+    {
+      "effectId": "strat_baleful_aura",
+      "label": "邪恶光环（交战，纳垢：射击穿刺 1，3\"内敌方）",
+      "source": "stratagem:balefulAura",
+      "trigger": { "point": "BEFORE_DEFENCE_ROLL" },
+      "pipelineStep": "DEFENCE_ROLL",
+      "modifier": { "kind": "PIERCE", "payload": { "amount": 1 } },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["aura-pierce"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-邪恶光环" }
+    },
+    {
+      "effectId": "strat_ominous_bewitchment",
+      "label": "不祥迷惑（交战，色孽：激活中 APL −1 施加敌方）",
+      "source": "stratagem:ominousBewitchment",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "APL_PLUS", "payload": { "amount": -1, "duration": "ACTIVATION" } },
+      "stacking": { "policy": "UNIQUE_PER_ACTION" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "计谋-不祥迷惑" }
+    },
+
+    {
+      "effectId": "leg_rite_of_possession",
+      "label": "释放恶魔（受选者：每场 1 次，减伤每骰上限 1）",
+      "source": "ability:riteOfPossession",
+      "trigger": { "point": "ON_DAMAGE_TOTAL" },
+      "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
+      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 4, "roll": "ignore-once" } },
+      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "受选者-释放恶魔" }
+    },
+    {
+      "effectId": "leg_soulfeast",
+      "label": "灵魂盛宴（神选者：近战/反击后未残废但造成暴击或残废敌方 → 回复 D3+1 耐伤）",
+      "source": "ability:soulfeast",
+      "trigger": { "point": "AT_PIPELINE_END" },
+      "pipelineStep": "MELEE_AFTER",
+      "modifier": { "kind": "HEAL_OPERATIVE", "payload": { "amount": 3, "target": "SELF" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "神选者-灵魂盛宴" }
+    },
+
+    {
+      "effectId": "wargear_warding_armour",
+      "label": "守护护甲（豁免 2+，持续到下战略就绪）",
+      "source": "wargear:wardingArmour",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "warding-save-2", "prompt": "豁免 2+ 持续到下战略就绪（属性覆写引擎结算留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "装备-守护护甲" }
+    },
+    {
+      "effectId": "wargear_corrupted_ammo",
+      "label": "腐化弹药（每 TP 1 次，爆矢武器附加撕裂）",
+      "source": "wargear:corruptedAmmo",
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "pipelineStep": "HIT_ROLL",
+      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "RAPID_FIRE" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "装备-腐化弹药" }
+    },
+    {
+      "effectId": "wargear_chaos_talisman",
+      "label": "混沌护身符（关键词 + 2+ 失败时自伤 D3 换一次升级）",
+      "source": "wargear:chaosTalisman",
+      "trigger": { "point": "AFTER_DEFENCE_ROLL" },
+      "pipelineStep": "DEFENCE_UPGRADE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "soul-damage-substitute", "prompt": "2+ 失败时自伤 D3 换一次升级（引擎谓词留 Story 2.2 AQ-3）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "装备-混沌护身符" }
+    }
+  ],
+  "buildConstraints": {
+    "operatives": { "min": 6, "max": 6 },
+    "equipmentLimitScope": "weaponId",
+    "equipmentLimits": {
+      "leg_reaper_cannon": 1,
+      "leg_heavy_bolter": 1,
+      "leg_plasma_pistol": 1,
+      "leg_daemon_blade": 1
+    },
+    "notes": "军团兵 v1：1 名野心勇士或神选者（队长）+ 5 名其他；除战士外每类特工限 1（equipmentLimits 覆盖唯一重型/特殊武器）；印记 per-operative 5 选 1（subFactionSelector.max=1）；无点数（D-30）。邪火使徒禁恐虐印记由建队校验（数据层 groupPolicy，引擎谓词留 Story 2.2）。"
+  }
+}
