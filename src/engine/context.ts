@@ -22,11 +22,11 @@ export interface ShootGeometry {
 export interface ShootInput {
   attacker: { operativeId: string; weapon: Weapon }
   defender: Combatant
-  effects: Effect[] // 本结算生效的 effect 栈
+  effects: Effect[]
+  defenderEffects?: Effect[] // 防御方 effect 栈（防御计谋/装备影响攻击方掷骰等）
   dice: DiceSource
-  hasCover: boolean // 1.8 几何注入：目标是否有掩护
-  geometry?: ShootGeometry // P12：目标资格（board/placements/range）
-  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
+  hasCover: boolean
+  geometry?: ShootGeometry
   predicate?: PredicateContext
 }
 

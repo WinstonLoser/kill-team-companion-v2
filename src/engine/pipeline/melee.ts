@@ -24,8 +24,8 @@ export interface MeleeResolutionContext {
   attacker: MeleeCombatant
   defender: MeleeCombatant
   effects: Effect[]
+  defenderEffects?: Effect[]
   dice: DiceSource
-  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
   predicate?: PredicateContext
   pipelineId: string
   attempt: number

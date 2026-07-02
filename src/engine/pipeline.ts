@@ -19,6 +19,7 @@ export function runShooting(input: ShootInput): ShootResult {
     attacker: input.attacker,
     defender: input.defender,
     effects: input.effects,
+    defenderEffects: input.defenderEffects,
     dice: input.dice,
     hasCover: input.hasCover,
     geometry: input.geometry,

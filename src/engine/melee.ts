@@ -19,8 +19,8 @@ export interface MeleeInput {
   attacker: MeleeCombatant
   defender: MeleeCombatant
   effects: Effect[]
+  defenderEffects?: Effect[]
   dice: DiceSource
-  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
   predicate?: PredicateContext
 }
 
@@ -44,6 +44,7 @@ export function runMelee(input: MeleeInput): MeleeResult {
     attacker: input.attacker,
     defender: input.defender,
     effects: input.effects,
+    defenderEffects: input.defenderEffects,
     dice: input.dice,
     predicate: input.predicate,
     pipelineId: 'melee',

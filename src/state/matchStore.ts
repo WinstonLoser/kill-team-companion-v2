@@ -390,7 +390,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon },
         defender: { operativeId: target.uid, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, dice, hasCover: cover, predicate,
+        effects, defenderEffects: factionRuleEffectsFor(target.opId), dice, hasCover: cover, predicate,
       }
       const r = runShooting(input)
       woundsDealt = r.woundsDealt
@@ -399,7 +399,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon, save: DEFENDER_SAVE, wounds: attacker.wounds },
         defender: { operativeId: target.uid, weapon: DEFENDER_WEAPON_FALLBACK ?? useWeapon, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, dice, predicate,
+        effects, defenderEffects: factionRuleEffectsFor(target.opId), dice, predicate,
       }
       const r = runMelee(input)
       woundsDealt = r.woundsToDefender

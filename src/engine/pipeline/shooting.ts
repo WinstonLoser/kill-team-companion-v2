@@ -15,6 +15,10 @@ import type { ShootingState, StepFn, StepResult } from './types'
 const effectsAt = (effects: Effect[], point: string): Effect[] =>
   effects.filter((e) => e.trigger.point === point)
 
+/** 攻方 + 防方 effect 合并（防御方 stratagem/wargear 影响攻击方掷骰等；enforcer 去重）。 */
+const allEffects = (ctx: { effects: Effect[]; defenderEffects?: Effect[] }): Effect[] =>
+  [...ctx.effects, ...(ctx.defenderEffects ?? [])]
+
 const sum = (mods: AppliedModifier[]): number => mods.reduce((s, m) => s + m.amount, 0)
 const clampHits = (n: number): number => Math.max(2, Math.min(6, n))
 
@@ -93,9 +97,9 @@ const HIT_ROLL: StepFn<ShootingState> = {
   stepId: 'HIT_ROLL',
   run: (state, ctx) => {
     const profile = ctx.attacker.weapon.profile
-    const hmT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_MINUS'], withPred(ctx))
-    const hpT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_PLUS'], withPred(ctx))
-    const rrT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['REROLL'], withPred(ctx))
+    const hmT = resolveEffectsTraced(allEffects(ctx), 'BEFORE_HIT_ROLL', ['HIT_MINUS'], withPred(ctx))
+    const hpT = resolveEffectsTraced(allEffects(ctx), 'BEFORE_HIT_ROLL', ['HIT_PLUS'], withPred(ctx))
+    const rrT = resolveEffectsTraced(allEffects(ctx), 'BEFORE_HIT_ROLL', ['REROLL'], withPred(ctx))
     const hitMinus = hmT.applied
     const hitPlus = hpT.applied
     // P22：命中阈值经 resolveStat 两层模型（base=profile.hit）。HIT_MINUS 升阈(+)，HIT_PLUS 降阈(取负)

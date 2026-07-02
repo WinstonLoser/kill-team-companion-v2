@@ -79,12 +79,12 @@
     },
     {
       "effectId": "plg_contagion",
-      "label": "传染（持 POISON 特工在己方瘟疫 3\"内：命中 -1，不与受创叠）",
+      "label": "传染（攻击方命中 -1，当目标有 POISON 指示物时生效；不与受创叠）",
       "source": "stratagem:contagion",
-      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "trigger": { "point": "BEFORE_HIT_ROLL", "condition": { "op": "targetHasMarker", "args": ["POISON"] } },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "contagion-hit-minus", "prompt": "传染命中-1+移动-2（需 operativeHasMarker+距离谓词，留 3.2 AQ-3）" } },
-      "stacking": { "policy": "MUTUALLY_EXCLUSIVE_WITH", "groupKeys": ["injured"] },
+      "modifier": { "kind": "HIT_MINUS", "payload": { "amount": 1 } },
+      "stacking": { "policy": "CONDITIONAL" },
       "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-传染" }
     },
     {

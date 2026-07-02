@@ -103,10 +103,27 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
     expect(e.pipelineStep).toBe('ACTIVATION_PRE')
   })
 
-  it('6. 传染 descriptor（MUTUALLY_EXCLUSIVE_WITH injured，命中-1+移动-2 需谓词）', () => {
-    const e = effect('plg_contagion')
-    expect(e.stacking.policy).toBe('MUTUALLY_EXCLUSIVE_WITH')
-    expect(e.stacking.groupKeys).toContain('injured')
+  it('6. 传染（defender HIT_MINUS targetHasMarker(POISON)：有 POISON → 攻方命中 -1）', () => {
+    // SEQ: attack [4,5,2,3]=3 命中（hit3+）；defence [1,1,1]=无抵挡
+    const contagion = effect('plg_contagion')
+    // 目标无 POISON → CONDITIONAL 拒 → 不 -1 → 3 命中 → 6 伤
+    const dice1 = new ManualDiceSource(); dice1.provide([4, 5, 2, 3, 1, 1, 1])
+    const noPoison = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [], defenderEffects: [contagion], dice: dice1, hasCover: false,
+      predicate: { targetMarkers: [] },
+    })
+    expect(noPoison.woundsDealt).toBe(6)
+    // 目标有 POISON → CONDITIONAL 真 → HIT_MINUS → hit4+ → [4,5]命中(2, 3 fail) → 4 伤
+    const dice2 = new ManualDiceSource(); dice2.provide([4, 5, 2, 3, 1, 1, 1])
+    const withPoison = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 20 },
+      effects: [], defenderEffects: [contagion], dice: dice2, hasCover: false,
+      predicate: { targetMarkers: ['POISON'] },
+    })
+    expect(withPoison.woundsDealt).toBe(4)
   })
 
   it('7. 腐烂诅咒（防御骰每出 3 → +1 伤，per-die real）', () => {

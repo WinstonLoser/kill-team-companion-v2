@@ -10,10 +10,11 @@ export interface ResolutionContext {
   attacker: { operativeId: string; weapon: Weapon }
   defender: Combatant
   effects: Effect[]
+  /** 防御方 effect 栈（防御计谋/装备：HIT_MINUS 影响攻击方掷骰等）。step merge ctx.effects 一起过 enforcer。 */
+  defenderEffects?: Effect[]
   dice: DiceSource
   hasCover: boolean
-  geometry?: ShootGeometry // P12：目标资格几何输入
-  /** W3 谓词接线：CONDITIONAL effect 的条件求值上下文（marker/faction/keywords/range/dealtDamage/dieFace）。 */
+  geometry?: ShootGeometry
   predicate?: PredicateContext
   pipelineId: string
   attempt: number
