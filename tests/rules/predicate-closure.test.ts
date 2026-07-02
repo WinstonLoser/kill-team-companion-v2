@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { loadPack } from '../../src/rules'
 import { MODIFIER_KINDS, STACKING_POLICIES, TRIGGER_POINTS, PIPELINE_STEPS } from '../../src/rules/types'
+import { PREDICATE_OPS } from '../../src/rules/predicates'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
 import legionaries from '../../src/data/packs/legionaries.v1.json'
 import plague from '../../src/data/packs/plague_marines.v1.json'
@@ -53,6 +54,24 @@ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
           if (!steps.has(e.pipelineStep)) outside.push(`${e.effectId}: ${e.pipelineStep}`)
         }
         expect(outside, `未枚举 pipelineStep: ${outside.join(', ')}`).toEqual([])
+      })
+
+      it('effect 若有 condition，其 op 属 PREDICATE_OPS（P3：防 typo 谓词 dead-effect）', () => {
+        const predOps = new Set(PREDICATE_OPS as readonly string[])
+        const collect = (cond: { op?: string; all?: unknown[]; any?: unknown[] }): string[] => {
+          const out: string[] = []
+          if (cond.op) out.push(cond.op)
+          for (const sub of cond.all ?? []) out.push(...collect(sub as never))
+          for (const sub of cond.any ?? []) out.push(...collect(sub as never))
+          return out
+        }
+        const outside: string[] = []
+        for (const e of pack.effects) {
+          const cond = (e.trigger as { condition?: { op?: string; all?: unknown[]; any?: unknown[] } }).condition
+          if (!cond) continue
+          for (const op of collect(cond)) if (!predOps.has(op)) outside.push(`${e.effectId}: ${op}`)
+        }
+        expect(outside, `未枚举 predicate op: ${outside.join(', ')}`).toEqual([])
       })
 
       it('每个 effect 四问齐全（trigger.point/pipelineStep/modifier.kind/stacking.policy）', () => {

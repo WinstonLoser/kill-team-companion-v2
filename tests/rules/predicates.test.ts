@@ -50,4 +50,16 @@ describe('谓词库 evalPredicate（Story 3.2 AQ-3）', () => {
     expect(PREDICATE_OPS).toContain('notSameFaction')
     expect(PREDICATE_OPS.length).toBe(11)
   })
+
+  it('rangeBucket 缺省距离 → false（P2：不静默满足 BEYOND_*）', () => {
+    expect(evalPredicate({ op: 'rangeBucket', args: ['BEYOND_6IN'] }, c({}))).toBe(false)
+    expect(evalPredicate({ op: 'rangeBucket', args: ['WITHIN_6IN'] }, c({}))).toBe(false)
+    // 边界：恰好 6 → WITHIN_6IN 真
+    expect(evalPredicate({ op: 'rangeBucket', args: ['WITHIN_6IN'] }, c({ rangeInches: 6 }))).toBe(true)
+  })
+
+  it('空 args → false（weaponKindIs/targetHasMarker 等不静默真）', () => {
+    expect(evalPredicate({ op: 'weaponKindIs', args: [] }, c({ weaponKind: 'MELEE' }))).toBe(false)
+    expect(evalPredicate({ op: 'targetHasMarker' }, c({ targetMarkers: ['POISON'] }))).toBe(false)
+  })
 })

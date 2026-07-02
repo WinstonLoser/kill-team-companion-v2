@@ -1,6 +1,6 @@
 # Story 3.2: 谓词扩展盘点 (predicate-extension-audit)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -118,3 +118,10 @@ AQ-3 最终收口：3 阵营全编后盘点谓词/modifier 封闭性。落 `src/
 - src/rules/index.ts（改：导出 predicates）
 - tests/rules/predicates.test.ts（新：8 单测）
 - docs/dev/predicate-audit-plague.md（新，本地产物 .gitignore）
+
+### Review Findings (2026-07-03, Epic 3 code-review)
+
+详见 `epic3-code-review-2026-07-03.md`。已处置：
+- [x] [Review][Patch] P2 rangeBucket 缺省距离→false（不静默满足 BEYOND_*）+ 回归测试
+- [x] [Review][Patch] P3 封闭护栏 += condition.op ∈ PREDICATE_OPS 校验（防 typo 谓词 dead-effect）
+- [x] [Review][Defer] W3 dieFaceEquals 谓词已落地但 enforcer evalCondition 未接线（运行期 dead；AC3(d) 已诚实标注，接线标独立任务）

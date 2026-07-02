@@ -71,8 +71,8 @@ development_status:
 
   # Epic 3: 瘟疫战士扩展
   epic-3: in-progress
-  3-1-plague-data-pack: review
-  3-2-predicate-extension-audit: review
+  3-1-plague-data-pack: done
+  3-2-predicate-extension-audit: done
   epic-3-retrospective: optional
 
   # Epic 4: 打磨与 NFR 加固（可选）

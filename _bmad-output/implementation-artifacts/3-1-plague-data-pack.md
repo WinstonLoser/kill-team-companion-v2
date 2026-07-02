@@ -1,6 +1,6 @@
 # Story 3.1: 瘟疫战士数据包与机制接入 (plague-data-pack)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -131,3 +131,14 @@ glm-5.2（dev-story workflow）
 - src/data/packs/plague_marines.v1.json（新）
 - tests/data/plague-golden.test.ts（新：12 测试）
 - tests/rules/predicate-closure.test.ts（改：+ plague pack）
+
+### Review Findings (2026-07-03, Epic 3 code-review)
+
+详见 `epic3-code-review-2026-07-03.md`。已处置：
+- [x] [Review][Patch] P1 plg_blight_grenade 拼写悬空引用（weapon id/equipmentLimits 统一）
+- [x] [Review][Patch] P4 golden #1 毒素时序注释诚实归类（grant 时序 real，剧毒+1 descriptor）
+- [x] [Review][Patch] P5 补「剧毒破灭」descriptor golden（AC6 8→9 覆盖）
+- [x] [Review][Patch] P6 SEQ 注释澄清
+- [x] [Review][Defer] W1 恼人韧性「D6 4+ 每枚独立掷骰」未实现（DAMAGE_MITIGATION 按 count 减伤，roll/threshold 不读；掷骰减伤=pipeline 增强，留引擎强化）
+- [x] [Review][Defer] W2 CAP_PER_ATTACK_DIE + UNIQUE_PER_GROUP 不可兼得（一 effect 一 policy；互斥 OK，每枚独立语义不表达）
+- [x] [Review][Defer] W4 谓词门控 effect（毒素激活/传染/腐烂诅咒/慈父祝福条件）待 evalCondition 接线转 real

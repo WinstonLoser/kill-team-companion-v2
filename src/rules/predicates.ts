@@ -31,8 +31,10 @@ function evalAtom(op: Op, args: (string | number)[], ctx: PredicateContext): boo
     case 'weaponKindIs':
       return ctx.weaponKind !== undefined && args.includes(ctx.weaponKind)
     case 'rangeBucket': {
-      // args = [桶名...]：WITHIN_6IN(≤6) / BEYOND_6IN(>6) 等
-      const r = ctx.rangeInches ?? Infinity
+      // args = [桶名...]：WITHIN_6IN(≤6) / BEYOND_6IN(>6) 等。
+      // P2：rangeInches 缺省（pipeline 未注入距离）→ 恒 false，不静默满足 BEYOND_*。
+      if (ctx.rangeInches === undefined) return false
+      const r = ctx.rangeInches
       return args.some((b) => {
         const s = String(b)
         if (s === 'WITHIN_6IN') return r <= 6

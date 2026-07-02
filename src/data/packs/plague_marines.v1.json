@@ -24,7 +24,7 @@
     { "weaponId": "plg_plague_spewer", "name": "瘟疫喷吐炮", "kind": "RANGED", "profile": { "attacks": 5, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "range": 8, "weaponRules": ["TORRENT", "DEVASTATING", "TOXIN"] }, "keywords": ["FLAME", "PLAGUE"] },
     { "weaponId": "plg_putrescent_spell", "name": "衰败术", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PSYCHIC", "DEVASTATING", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
     { "weaponId": "plg_plague_wind", "name": "瘟疫之风", "kind": "RANGED", "profile": { "attacks": 5, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 12, "weaponRules": ["PSYCHIC", "TORRENT", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
-    { "weaponId": "plg_blght_grenade", "name": "疫病手雷", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 6, "weaponRules": ["CONCEAL", "TOXIN"] }, "keywords": ["PLAGUE"] }
+    { "weaponId": "plg_blight_grenade", "name": "疫病手雷", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 6, "weaponRules": ["CONCEAL", "TOXIN"] }, "keywords": ["PLAGUE"] }
   ],
   "effects": [
     {
@@ -201,7 +201,7 @@
     "equipmentLimitScope": "weaponId",
     "equipmentLimits": {
       "plg_plague_spewer": 1,
-      "plg_blght_grenade": 1,
+      "plg_blight_grenade": 1,
       "plg_corrosive_flail": 1,
       "plg_putrescent_spell": 1,
       "plg_plague_wind": 1

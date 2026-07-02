@@ -17,7 +17,7 @@ function weapon(id: string): Weapon {
   return w as Weapon
 }
 
-// 4 攻击骰（hit3+：4,5,3 普通×3，2 失败）+ 3 防御骰（全 1）→ 基线造伤 3×2=6
+// 4 攻击骰 [4,5,2,3]：hit3+ → 命中 4/5/3（普通×3），2 失败；+ 3 防御骰 [1,1,1] 全失败 → 基线 3×2=6
 const SEQ = [4, 5, 2, 3, 1, 1, 1]
 function shoot(effects: Effect[], seq = SEQ) {
   const dice = new ManualDiceSource()
@@ -49,13 +49,14 @@ describe('golden：瘟疫机制经引擎结算（AC6）', () => {
     expect(shoot([]).woundsDealt).toBe(6)
   })
 
-  it('1. 毒素时序：当次伤害无加成（剧毒 weaponRule 不当次生效）+ 流程结束挂 POISON', () => {
+  it('1. 毒素时序：GRANT_MARKER POISON 路由到流程结束（AT_PIPELINE_END，非当次攻击）', () => {
     const r = shoot([effect('plg_toxin_grant_marker')])
-    // 剧毒是 weaponRule（描述性，引擎不消费）→ 当次无 +1 加成，造伤=基线 6
-    expect(r.woundsDealt).toBe(6)
-    // 指示物在 AT_PIPELINE_END / WOUNDS_APPLY_AND_AFTER 挂上（GRANT_MARKER 引擎消费）
+    // 指示物在 AT_PIPELINE_END / WOUNDS_APPLY_AND_AFTER 挂上（GRANT_MARKER 引擎消费，时序 real）
     const end = r.traces.find((t) => t.stepId === 'WOUNDS_APPLY_AND_AFTER')!
     expect(end.appliedEffectIds).toContain('plg_toxin_grant_marker')
+    // 注：VIRULENT/TOXIN 是 weaponRule（描述性，引擎当前不消费）→「剧毒对已有指示物 +1」是
+    // descriptor（需 VIRULENT 语义 + targetHasMarker 谓词接线，留引擎强化）；本断言只证 grant 时序。
+    expect(r.woundsDealt).toBe(6)
   })
 
   it('2. 恼人韧性减伤（DAMAGE_MITIGATION 每枚上限 1 → 减 1）', () => {
@@ -118,6 +119,14 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
     const sword = weapon('plg_plague_sword')
     expect(sword.profile.weaponRules).toContain('VIRULENT')
     // VIRULENT 语义：对已有 POISON 目标该武器两伤害属性 +1（条件 targetHasMarker(POISON)，谓词留 3.2）
+  })
+
+  it('10. 剧毒破灭（被残废时范围挂 POISON + 已有指示物受 1 伤；范围多目标 descriptor）', () => {
+    const e = effect('plg_virulent_blight')
+    expect(e.trigger.point).toBe('ON_INCAPACITATED')
+    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
+    expect((e.modifier.payload as { hookId: string }).hookId).toBe('virulent-blight-aoe')
+    // 范围多目标 + ON_INCAPACITATED 需流水线支持，留引擎架构故事
   })
 })
 
