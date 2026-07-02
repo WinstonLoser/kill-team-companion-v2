@@ -3,6 +3,7 @@ import { loadPack } from '../../src/rules'
 import { MODIFIER_KINDS, STACKING_POLICIES, TRIGGER_POINTS, PIPELINE_STEPS } from '../../src/rules/types'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
 import legionaries from '../../src/data/packs/legionaries.v1.json'
+import plague from '../../src/data/packs/plague_marines.v1.json'
 
 // Story 2.2 护栏（AQ-3 封闭性）：每个数据包的 effect 必须只用枚举内的 modifier.kind
 // 与 stacking.policy。引入未枚举项 → 红，强制回盘点（加阵营=加数据，不改枚举除非证明必要）。
@@ -10,6 +11,7 @@ import legionaries from '../../src/data/packs/legionaries.v1.json'
 const PACKS = [
   { name: 'angels_of_death', raw: angels },
   { name: 'legionaries', raw: legionaries },
+  { name: 'plague_marines', raw: plague },
 ]
 
 describe('AQ-3 封闭性护栏（Story 2.2）', () => {
