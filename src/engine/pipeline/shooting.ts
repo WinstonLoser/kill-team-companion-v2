@@ -80,12 +80,35 @@ const HIT_ROLL: StepFn<ShootingState> = {
     const profile = ctx.attacker.weapon.profile
     const hmT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_MINUS'])
     const hpT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_PLUS'])
+    const rrT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['REROLL'])
     const hitMinus = hmT.applied
     const hitPlus = hpT.applied
     // P22：命中阈值经 resolveStat 两层模型（base=profile.hit）。HIT_MINUS 升阈(+)，HIT_PLUS 降阈(取负)
     const hitMods = [...hitMinus, ...hitPlus.map((m) => ({ ...m, amount: -m.amount }))]
     const hitThreshold = clampHits(resolveStat(profile.hit, hitMods).effective)
-    const attackDice = ctx.dice.roll(profile.attacks)
+    let attackDice = ctx.dice.roll(profile.attacks)
+    // D1：重掷（REROLL @ BEFORE_HIT_ROLL）——mode ALL 重掷全部攻击骰；CHOOSE 重掷失败骰（上限 count）。
+    // 无分印记「无休」；此前流水线不消费 REROLL kind（Story 2.2 盘点披露）。payload 从原 effect 取。
+    const rerollApplied: string[] = []
+    if (rrT.applied.length > 0) {
+      const appliedIds = new Set(rrT.applied.map((m) => m.id))
+      const effs = effectsAt(ctx.effects, 'BEFORE_HIT_ROLL').filter((e) => e.modifier.kind === 'REROLL' && appliedIds.has(e.effectId))
+      const rerollAll = effs.some((e) => (e.modifier.payload as { mode?: string }).mode === 'ALL')
+      if (rerollAll) {
+        attackDice = ctx.dice.roll(profile.attacks)
+      } else {
+        const count = effs.reduce((s, e) => s + ((e.modifier.payload as { count?: number }).count ?? 0), 0)
+        let budget = count
+        attackDice = attackDice.map((d) => {
+          if (budget > 0 && d.nat !== 6 && (d.nat === 1 || d.nat < hitThreshold)) {
+            budget--
+            return ctx.dice.roll(1)[0]!
+          }
+          return d
+        })
+      }
+      rrT.applied.forEach((m) => rerollApplied.push(m.id))
+    }
     let normalSuccess = 0
     let criticalSuccess = 0
     for (const d of attackDice) {
@@ -95,10 +118,10 @@ const HIT_ROLL: StepFn<ShootingState> = {
     }
     return {
       state: { ...state, hitThreshold, attackDice, normalSuccess, criticalSuccess },
-      summary: `命中${hitThreshold}+ → 普通${normalSuccess} 关键${criticalSuccess}`,
+      summary: `命中${hitThreshold}+ → 普通${normalSuccess} 关键${criticalSuccess}${rerollApplied.length ? '（重掷）' : ''}`,
       dice: attackDice,
-      applied: [...hitMinus, ...hitPlus].map((m) => m.id),
-      rejected: [...hmT.rejected, ...hpT.rejected].map(toRejected),
+      applied: [...hitMinus, ...hitPlus].map((m) => m.id).concat(rerollApplied),
+      rejected: [...hmT.rejected, ...hpT.rejected, ...rrT.rejected].map(toRejected),
     }
   },
 }

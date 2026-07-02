@@ -9,7 +9,7 @@
     "subFactionSelector": {
       "id": "markOfChaos",
       "label": "混沌印记（每特工 5 选 1，per-operative）",
-      "options": ["mark_khrone", "mark_nurgle", "mark_slaanesh", "mark_tzeentch", "mark_unaligned"],
+      "options": ["mark_khorne", "mark_nurgle", "mark_slaanesh", "mark_tzeentch", "mark_unaligned"],
       "max": 1,
       "default": "mark_unaligned"
     }
@@ -21,7 +21,7 @@
       "keywords": ["CHAOS", "CHAMPION"],
       "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
       "base": { "diameterMm": 32 },
-      "weaponRefs": ["leg_plasma_pistol", "leg_bolt_pistol", "leg_power_fist", "leg_chainsword_axe"]
+      "weaponRefs": ["leg_plasma_pistol", "leg_plasma_pistol_overload", "leg_bolt_pistol", "leg_power_fist", "leg_chainsword_axe", "leg_malefic_blade"]
     },
     {
       "operativeId": "leg_chosen",
@@ -107,11 +107,13 @@
     { "weaponId": "leg_heavy_bolter", "name": "重型爆矢枪", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 24, "weaponRules": ["PIERCING1", "HEAVY"] }, "keywords": ["BOLT"] },
     { "weaponId": "leg_warpflamer", "name": "邪火喷射", "kind": "RANGED", "profile": { "attacks": 5, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "range": 8, "weaponRules": ["TORRENT"] }, "keywords": ["FLAME"] },
     { "weaponId": "leg_soulstrike_weapon", "name": "吸魂武器", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["SOULSTRIKE"] }, "keywords": ["PSYCHIC"] },
-    { "weaponId": "leg_talon_claws", "name": "赦罪之爪", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["RELENTLESS", "DEVASTATING"] }, "keywords": ["MELEE", "BEAST"] }
+    { "weaponId": "leg_talon_claws", "name": "赦罪之爪", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["RELENTLESS", "DEVASTATING"] }, "keywords": ["MELEE", "BEAST"] },
+    { "weaponId": "leg_plasma_pistol_overload", "name": "等离子手枪（过载）", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "range": 12, "weaponRules": ["OVERHEAT", "LETHAL5", "PIERCING1"] }, "keywords": ["PLASMA"] },
+    { "weaponId": "leg_malefic_blade", "name": "凶恶利刃", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["DEVASTATING", "LETHAL5"] }, "keywords": ["MELEE", "DAEMON"] }
   ],
   "effects": [
     {
-      "effectId": "mark_khrone",
+      "effectId": "mark_khorne",
       "label": "恐虐印记（近战严重）",
       "source": "markOfChaos:KHORNE",
       "trigger": { "point": "AFTER_HIT_ROLL" },
@@ -152,12 +154,12 @@
     },
     {
       "effectId": "mark_unaligned",
-      "label": "无分印记（无休，6\"内重掷）",
+      "label": "无分印记（无休，重掷攻击骰）",
       "source": "markOfChaos:UNALIGNED",
       "trigger": { "point": "BEFORE_HIT_ROLL" },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mark-unaligned-relentless", "prompt": "无休（6\"内重掷失败；重掷引擎谓词留 Story 2.2 AQ-3）" } },
-      "stacking": { "policy": "CONDITIONAL" },
+      "modifier": { "kind": "REROLL", "payload": { "mode": "ALL" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
       "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-无分" }
     },
 
@@ -203,7 +205,7 @@
     },
     {
       "effectId": "strat_endless_slaughter",
-      "label": "无尽杀戮（交战，恐虐：被残废时出击）",
+      "label": "无尽杀戮（交战，恐虐：被残废时出击；v1 打 marker，出击伤害+残废条件需谓词留 2.2）",
       "source": "stratagem:endlessSlaughter",
       "trigger": { "point": "AT_PIPELINE_END" },
       "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
@@ -294,15 +296,35 @@
       "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "装备-混沌护身符" }
     }
   ],
+  "stratagems": [
+    { "id": "bloodForTheBloodGod", "name": "血祭血神", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "STRATEGY" },
+    { "id": "indomitable", "name": "坚不可摧", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
+    { "id": "swiftSpeed", "name": "迅捷速度", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
+    { "id": "capriciousFate", "name": "无常命运", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
+    { "id": "endlessSlaughter", "name": "无尽杀戮", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" },
+    { "id": "mutationReversal", "name": "变异与扭转", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" },
+    { "id": "balefulAura", "name": "邪恶光环", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" },
+    { "id": "ominousBewitchment", "name": "不祥迷惑", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" }
+  ],
+  "wargear": [
+    { "id": "wardingArmour", "name": "守护护甲" },
+    { "id": "corruptedAmmo", "name": "腐化弹药" },
+    { "id": "chaosTalisman", "name": "混沌护身符" },
+    { "id": "maleficBlade", "name": "凶恶利刃" }
+  ],
   "buildConstraints": {
     "operatives": { "min": 6, "max": 6 },
+    "leaderFrom": ["leg_champion", "leg_chosen"],
+    "maxPerTypeExcept": ["leg_legionary"],
     "equipmentLimitScope": "weaponId",
     "equipmentLimits": {
       "leg_reaper_cannon": 1,
       "leg_heavy_bolter": 1,
       "leg_plasma_pistol": 1,
-      "leg_daemon_blade": 1
+      "leg_plasma_pistol_overload": 1,
+      "leg_daemon_blade": 1,
+      "leg_malefic_blade": 1
     },
-    "notes": "军团兵 v1：1 名野心勇士或神选者（队长）+ 5 名其他；除战士外每类特工限 1（equipmentLimits 覆盖唯一重型/特殊武器）；印记 per-operative 5 选 1（subFactionSelector.max=1）；无点数（D-30）。邪火使徒禁恐虐印记由建队校验（数据层 groupPolicy，引擎谓词留 Story 2.2）。"
+    "notes": "军团兵 v1：1 名野心勇士或神选者（队长，leaderFrom）+ 5 名其他；除战士外每类特工限 1（maxPerTypeExcept）；印记 per-operative 5 选 1（subFactionSelector.max=1）；无点数（D-30）。邪火使徒禁恐虐印记由建队校验（数据层 groupPolicy，引擎谓词留 Story 2.2）。"
   }
 }

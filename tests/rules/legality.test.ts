@@ -134,4 +134,56 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     // 仍因 operatives/equipment ok 而合法
     expect(r.legal).toBe(true)
   })
+
+  it('AC3 队长规则：leaderFrom 缺队长 → 违规', () => {
+    const r = evaluateLegality({
+      pack,
+      operativeIds: ['angels_tactical'],
+      loadout: {},
+      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
+    })
+    // angels 无 leaderFrom → 跳过该项（无 leader check）
+    expect(r.checks.find((c) => c.key === 'leader')).toBeUndefined()
+  })
+
+  it('AC3 队长 + 每类限 1：构造 buildConstraints 校验', () => {
+    const cPack: FactionPack = {
+      ...pack,
+      buildConstraints: {
+        operatives: { min: 1 },
+        leaderFrom: ['angels_tactical'],
+        maxPerTypeExcept: ['angels_sergeant'],
+      },
+    }
+    // 缺队长 → leader warn
+    const noLeader = evaluateLegality({
+      pack: cPack,
+      operativeIds: ['angels_sergeant'],
+      loadout: {},
+      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
+    })
+    expect(noLeader.checks.find((c) => c.key === 'leader')?.status).toBe('warn')
+    expect(noLeader.legal).toBe(false)
+
+    // 有队长 + 每类限 1 合规
+    const ok = evaluateLegality({
+      pack: cPack,
+      operativeIds: ['angels_tactical', 'angels_sergeant', 'angels_sergeant'],
+      loadout: {},
+      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
+    })
+    expect(ok.checks.find((c) => c.key === 'leader')?.status).toBe('ok')
+    // angels_sergeant 在例外 → 重复允许；per-type ok
+    expect(ok.checks.find((c) => c.key === 'per-type')?.status).toBe('ok')
+
+    // 非例外类重复 → per-type warn
+    const dup = evaluateLegality({
+      pack: cPack,
+      operativeIds: ['angels_tactical', 'angels_tactical'],
+      loadout: {},
+      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
+    })
+    expect(dup.checks.find((c) => c.key === 'per-type')?.status).toBe('warn')
+    expect(dup.legal).toBe(false)
+  })
 })

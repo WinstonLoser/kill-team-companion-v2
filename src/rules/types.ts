@@ -144,6 +144,10 @@ export interface Wargear {
 export interface BuildConstraints {
   // 特工来源结构性约束（KT Lite 无点数 D-30，仅 min/max 数量）
   operatives?: { min?: number; max?: number }
+  /** AC3 队长规则：入队特工须 ≥1 名来自该列表（如 [野心勇士, 神选者]）。 */
+  leaderFrom?: string[]
+  /** AC3 每类限 1：除该例外列表（如 [战士]）外，每个 operativeId 全队最多 1 名。 */
+  maxPerTypeExcept?: string[]
   // 装备限制：key 为 weaponId 或武器 keyword（按 equipmentLimitScope 判定），value 为全队上限数量
   equipmentLimits?: Record<string, number>
   equipmentLimitScope?: 'weaponId' | 'keyword'

@@ -101,11 +101,24 @@ const MELEE_SIMULTANEOUS_ROLL: MeleeStep = {
   run: (state, ctx) => {
     const a = rollSuccesses(ctx.dice, ctx.attacker.weapon)
     const d = rollSuccesses(ctx.dice, ctx.defender.weapon)
+    // D1：近战严重（UPGRADE_SUCCESS @ AFTER_HIT_ROLL）——每 effect 把攻方 1 普通升关键。
+    // 恐虐印记/恶魔之刃类「严重」机制；此前近战流水线不消费此 kind（Story 2.2 盘点披露）。
+    const upT = resolveEffectsTraced(ctx.effects, 'AFTER_HIT_ROLL', ['UPGRADE_SUCCESS'])
+    const attackerPool = { ...a.pool }
+    const upApplied: string[] = []
+    for (const m of upT.applied) {
+      if (attackerPool.normal > 0) {
+        attackerPool.normal--
+        attackerPool.critical++
+        upApplied.push(m.id)
+      }
+    }
     return {
-      state: { ...state, attackerPool: a.pool, defenderPool: d.pool },
-      summary: `同时掷骰 攻方 普通${a.pool.normal}/关键${a.pool.critical}；防方 普通${d.pool.normal}/关键${d.pool.critical}`,
-      applied: [],
-      rejected: [],
+      state: { ...state, attackerPool, defenderPool: d.pool },
+      summary: `同时掷骰 攻方 普通${attackerPool.normal}/关键${attackerPool.critical}${upApplied.length ? `（严重升级 ×${upApplied.length}）` : ''}；防方 普通${d.pool.normal}/关键${d.pool.critical}`,
+      dice: [...a.rolls, ...d.rolls],
+      applied: upApplied,
+      rejected: upT.rejected.map(toRejected),
     }
   },
 }

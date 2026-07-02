@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { loadPack } from '../../src/rules'
-import { MODIFIER_KINDS, STACKING_POLICIES } from '../../src/rules/types'
+import { MODIFIER_KINDS, STACKING_POLICIES, TRIGGER_POINTS, PIPELINE_STEPS } from '../../src/rules/types'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
 import legionaries from '../../src/data/packs/legionaries.v1.json'
 
@@ -18,6 +18,8 @@ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
       const pack = loadPack(raw)
       const modifierKinds = new Set(MODIFIER_KINDS as readonly string[])
       const policies = new Set(STACKING_POLICIES as readonly string[])
+      const triggers = new Set(TRIGGER_POINTS as readonly string[])
+      const steps = new Set(PIPELINE_STEPS as readonly string[])
 
       it('每个 effect 的 modifier.kind 属枚举（21 种）', () => {
         const outside: string[] = []
@@ -33,6 +35,22 @@ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
           if (!policies.has(e.stacking.policy)) outside.push(`${e.effectId}: ${e.stacking.policy}`)
         }
         expect(outside, `未枚举 policy: ${outside.join(', ')}`).toEqual([])
+      })
+
+      it('每个 effect 的 trigger.point 属枚举（防 typo dead-effect）', () => {
+        const outside: string[] = []
+        for (const e of pack.effects) {
+          if (!triggers.has(e.trigger.point)) outside.push(`${e.effectId}: ${e.trigger.point}`)
+        }
+        expect(outside, `未枚举 trigger.point: ${outside.join(', ')}`).toEqual([])
+      })
+
+      it('每个 effect 的 pipelineStep 属枚举（防 typo dead-effect）', () => {
+        const outside: string[] = []
+        for (const e of pack.effects) {
+          if (!steps.has(e.pipelineStep)) outside.push(`${e.effectId}: ${e.pipelineStep}`)
+        }
+        expect(outside, `未枚举 pipelineStep: ${outside.join(', ')}`).toEqual([])
       })
 
       it('每个 effect 四问齐全（trigger.point/pipelineStep/modifier.kind/stacking.policy）', () => {

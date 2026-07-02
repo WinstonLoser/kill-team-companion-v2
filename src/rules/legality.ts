@@ -66,6 +66,34 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
   }
   checks.push({ key: 'operatives-source', label: '特工来源', status: srcStatus, detail: srcDetail })
 
+  // ===== AC3 队长规则：≥1 名来自 leaderFrom =====
+  const leaderFrom = constraints?.leaderFrom
+  if (leaderFrom && leaderFrom.length > 0) {
+    const leadSet = new Set(leaderFrom)
+    const hasLeader = operativeIds.some((id) => leadSet.has(id))
+    checks.push({
+      key: 'leader',
+      label: '队长',
+      status: hasLeader ? 'ok' : 'warn',
+      detail: hasLeader ? `有队长（${leaderFrom.join('/')}）` : `需 ≥1 名队长（${leaderFrom.join('/')}）`,
+    })
+  }
+
+  // ===== AC3 每类限 1（除例外）：operativeId 计数 =====
+  const except = constraints?.maxPerTypeExcept
+  if (except) {
+    const exceptSet = new Set(except)
+    const counts = new Map<string, number>()
+    for (const id of operativeIds) if (!exceptSet.has(id)) counts.set(id, (counts.get(id) ?? 0) + 1)
+    const overs = [...counts.entries()].filter(([, n]) => n > 1)
+    checks.push({
+      key: 'per-type',
+      label: '每类限 1',
+      status: overs.length === 0 ? 'ok' : 'warn',
+      detail: overs.length === 0 ? `每类 ≤1（除 ${except.join('/')})` : `超限：${overs.map(([id, n]) => `${id}×${n}`).join(', ')}`,
+    })
+  }
+
   // ===== 子阵营选择：选满 max 且选项合法（无选择器则跳过） =====
   const selector = pack.faction.subFactionSelector
   if (selector) {
