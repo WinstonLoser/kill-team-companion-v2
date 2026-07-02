@@ -33,7 +33,7 @@ export interface EnforcerContext {
   attackDiceCount?: number
 }
 
-/** effect → AppliedModifier（提取 payload.amount/cap + 叠加元数据）。 */
+/** effect → AppliedModifier（提取 payload.amount/cap + 叠加元数据 + W3 接线：trigger.condition）。 */
 export function toAppliedModifier(e: Effect): AppliedModifier {
   const p = e.modifier.payload as { amount?: number; cap?: number }
   return {
@@ -44,6 +44,8 @@ export function toAppliedModifier(e: Effect): AppliedModifier {
     groupKeys: e.stacking.groupKeys,
     priority: e.priority,
     cap: p.cap,
+    // W3 谓词接线：携带 trigger.condition 供 enforcer CONDITIONAL 求值
+    condition: (e.trigger as { condition?: ConditionPredicate }).condition,
   }
 }
 

@@ -4,6 +4,7 @@
 import type { Effect, Weapon } from '../rules/types'
 import type { DiceSource } from '../dice'
 import type { StepTrace } from './context'
+import type { PredicateContext } from '../rules/predicates'
 import {
   createMeleeResolution,
   type MeleeCombatant,
@@ -19,6 +20,8 @@ export interface MeleeInput {
   defender: MeleeCombatant
   effects: Effect[]
   dice: DiceSource
+  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
+  predicate?: PredicateContext
 }
 
 export interface MeleeResult {
@@ -42,6 +45,7 @@ export function runMelee(input: MeleeInput): MeleeResult {
     defender: input.defender,
     effects: input.effects,
     dice: input.dice,
+    predicate: input.predicate,
     pipelineId: 'melee',
     attempt: 1,
   }

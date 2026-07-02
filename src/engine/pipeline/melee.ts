@@ -4,7 +4,9 @@
 import type { Effect, Weapon } from '../../rules/types'
 import type { DiceSource, DiceRoll } from '../../dice'
 import type { StepTrace } from '../context'
+import type { PredicateContext } from '../../rules/predicates'
 import { resolveEffectsTraced } from '../statResolver'
+import { evalConditionFor } from '../../rules/predicates'
 import type { RejectionTrace } from '../enforcer'
 import { parryAllocation, subtractPool, type Pool } from '../parry'
 import type { StepFn, StepResult } from './types'
@@ -23,6 +25,8 @@ export interface MeleeResolutionContext {
   defender: MeleeCombatant
   effects: Effect[]
   dice: DiceSource
+  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
+  predicate?: PredicateContext
   pipelineId: string
   attempt: number
 }
@@ -103,7 +107,7 @@ const MELEE_SIMULTANEOUS_ROLL: MeleeStep = {
     const d = rollSuccesses(ctx.dice, ctx.defender.weapon)
     // D1：近战严重（UPGRADE_SUCCESS @ AFTER_HIT_ROLL）——每 effect 把攻方 1 普通升关键。
     // 恐虐印记/恶魔之刃类「严重」机制；此前近战流水线不消费此 kind（Story 2.2 盘点披露）。
-    const upT = resolveEffectsTraced(ctx.effects, 'AFTER_HIT_ROLL', ['UPGRADE_SUCCESS'])
+    const upT = resolveEffectsTraced(ctx.effects, 'AFTER_HIT_ROLL', ['UPGRADE_SUCCESS'], ctx.predicate ? { evalCondition: evalConditionFor(ctx.predicate) } : {})
     const attackerPool = { ...a.pool }
     const upApplied: string[] = []
     for (const m of upT.applied) {
@@ -171,6 +175,7 @@ const MELEE_DAMAGE_AND_MITIGATE: MeleeStep = {
       state.defenderStrike.normal * wpnD.normalDamage + state.defenderStrike.critical * wpnD.criticalDamage
     // DN5：CAP_PER_ATTACK_DIE 每骰——按造伤方出击骰计上限
     const mitT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'], {
+      ...(ctx.predicate ? { evalCondition: evalConditionFor(ctx.predicate) } : {}),
       attackDiceCount: state.attackerStrike.normal + state.attackerStrike.critical,
     })
     const mit = mitT.applied.length

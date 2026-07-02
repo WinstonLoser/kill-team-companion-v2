@@ -22,6 +22,7 @@ export function runShooting(input: ShootInput): ShootResult {
     dice: input.dice,
     hasCover: input.hasCover,
     geometry: input.geometry,
+    predicate: input.predicate,
     pipelineId: 'shooting',
     attempt: 1,
   }

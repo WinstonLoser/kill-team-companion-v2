@@ -6,7 +6,9 @@ import { validateTarget } from '../../geometry'
 import { parryAllocation } from '../parry'
 import { withAttachedRules, attachedRules } from '../weaponResolver'
 import { resolveEffectsTraced, resolveStat } from '../statResolver'
+import type { EnforcerContext } from '../statResolver'
 import type { AppliedModifier } from '../statResolver'
+import { evalConditionFor } from '../../rules/predicates'
 import type { RejectionTrace } from '../enforcer'
 import type { ShootingState, StepFn, StepResult } from './types'
 
@@ -15,6 +17,10 @@ const effectsAt = (effects: Effect[], point: string): Effect[] =>
 
 const sum = (mods: AppliedModifier[]): number => mods.reduce((s, m) => s + m.amount, 0)
 const clampHits = (n: number): number => Math.max(2, Math.min(6, n))
+
+/** W3 谓词接线：把 ctx.predicate 包成 evalCondition 注入 EnforcerContext。 */
+const withPred = (ctx: { predicate?: import('../../rules/predicates').PredicateContext }, extra: EnforcerContext = {}): EnforcerContext =>
+  ctx.predicate ? { evalCondition: evalConditionFor(ctx.predicate), ...extra } : extra
 
 /** RejectionTrace → StepTrace.rejectedEffectIds 条目（ruleId + reason 留痕） */
 const toRejected = (r: RejectionTrace): { id: string; reason: string } => ({
@@ -86,9 +92,9 @@ const HIT_ROLL: StepFn<ShootingState> = {
   stepId: 'HIT_ROLL',
   run: (state, ctx) => {
     const profile = ctx.attacker.weapon.profile
-    const hmT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_MINUS'])
-    const hpT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_PLUS'])
-    const rrT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['REROLL'])
+    const hmT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_MINUS'], withPred(ctx))
+    const hpT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['HIT_PLUS'], withPred(ctx))
+    const rrT = resolveEffectsTraced(ctx.effects, 'BEFORE_HIT_ROLL', ['REROLL'], withPred(ctx))
     const hitMinus = hmT.applied
     const hitPlus = hpT.applied
     // P22：命中阈值经 resolveStat 两层模型（base=profile.hit）。HIT_MINUS 升阈(+)，HIT_PLUS 降阈(取负)
@@ -168,7 +174,7 @@ const ATTACK_UPGRADE: StepFn<ShootingState> = {
 const DEFENCE_ROLL: StepFn<ShootingState> = {
   stepId: 'DEFENCE_ROLL',
   run: (state, ctx) => {
-    const pierceT = resolveEffectsTraced(ctx.effects, 'BEFORE_DEFENCE_ROLL', ['PIERCE'])
+    const pierceT = resolveEffectsTraced(ctx.effects, 'BEFORE_DEFENCE_ROLL', ['PIERCE'], withPred(ctx))
     const pierce = pierceT.applied
     const defenceDiceCount = Math.max(0, 3 - sum(pierce))
     const defDice = ctx.dice.roll(defenceDiceCount)
@@ -234,7 +240,7 @@ const DAMAGE_PER_DIE: StepFn<ShootingState> = {
   stepId: 'DAMAGE_PER_DIE',
   run: (state, ctx) => {
     const profile = ctx.attacker.weapon.profile
-    const extraT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_PER_DIE', ['EXTRA_DAMAGE_ON_HIT'])
+    const extraT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_PER_DIE', ['EXTRA_DAMAGE_ON_HIT'], withPred(ctx))
     const extraDmg = extraT.applied
     const base = state.atkN * profile.normalDamage + state.atkC * profile.criticalDamage
     // W1：EXTRA_DAMAGE cap 强制——多 effect 叠加时，总额外伤钳到最严 cap（min）。
@@ -256,9 +262,9 @@ const DAMAGE_TOTAL_MITIGATE: StepFn<ShootingState> = {
   stepId: 'DAMAGE_TOTAL_MITIGATE',
   run: (state, ctx) => {
     // DN5：CAP_PER_ATTACK_DIE 每骰语义——减伤按未抵挡命中骰数（atkN+atkC）计上限
-    const mitT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'], {
+    const mitT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_TOTAL', ['DAMAGE_MITIGATION'], withPred(ctx, {
       attackDiceCount: state.atkN + state.atkC,
-    })
+    }))
     const mitMods = mitT.applied
     const reduce = mitMods.length
     const damage = Math.max(0, state.damage - reduce)

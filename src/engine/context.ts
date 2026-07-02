@@ -1,6 +1,7 @@
 import type { Effect, Weapon } from '../rules/types'
 import type { DiceRoll, DiceSource } from '../dice'
 import type { Board, OperativePlacement, Point } from '../geometry'
+import type { PredicateContext } from '../rules/predicates'
 
 export interface Combatant {
   operativeId: string
@@ -25,6 +26,8 @@ export interface ShootInput {
   dice: DiceSource
   hasCover: boolean // 1.8 几何注入：目标是否有掩护
   geometry?: ShootGeometry // P12：目标资格（board/placements/range）
+  /** W3 谓词接线：CONDITIONAL effect 条件求值上下文。 */
+  predicate?: PredicateContext
 }
 
 export interface StepTrace {

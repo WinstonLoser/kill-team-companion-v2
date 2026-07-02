@@ -3,6 +3,7 @@
 import type { Effect, Weapon } from '../../rules/types'
 import type { DiceRoll, DiceSource } from '../../dice'
 import type { Combatant, ShootGeometry } from '../context'
+import type { PredicateContext } from '../../rules/predicates'
 
 /** 解析上下文：只读快照（特工/武器/effect 栈/骰源/几何）。step 不得 mutate。 */
 export interface ResolutionContext {
@@ -12,6 +13,8 @@ export interface ResolutionContext {
   dice: DiceSource
   hasCover: boolean
   geometry?: ShootGeometry // P12：目标资格几何输入
+  /** W3 谓词接线：CONDITIONAL effect 的条件求值上下文（marker/faction/keywords/range/dealtDamage/dieFace）。 */
+  predicate?: PredicateContext
   pipelineId: string
   attempt: number
 }

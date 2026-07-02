@@ -73,6 +73,11 @@ export function evalPredicate(p: ConditionPredicate, ctx: PredicateContext): boo
   return evalAtom(p.op, p.args ?? [], ctx)
 }
 
+/** 谓词接线（W3）：构造 enforcer CONDITIONAL 用的 evalCondition 注入函数，绑定 PredicateContext。 */
+export function evalConditionFor(pred: PredicateContext): (cond: ConditionPredicate) => boolean {
+  return (cond) => evalPredicate(cond, pred)
+}
+
 /** 谓词封闭集清单（文档化，§2.5）。 */
 export const PREDICATE_OPS = [
   'weaponKindIs',
