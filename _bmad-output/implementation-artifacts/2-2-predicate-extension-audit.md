@@ -1,6 +1,6 @@
 # Story 2.2: 谓词/modifier 扩展盘点 (predicate-extension-audit)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -111,3 +111,11 @@ glm-5.2（dev-story workflow）
 - docs/dev/predicate-audit-legionaries.md（新，本地产物 .gitignore）
 - tests/rules/predicate-closure.test.ts（新：7 封闭性护栏测试）
 - .gitignore（改：+ docs/）
+
+### Review Findings (2026-07-02, Epic 2 code-review)
+
+详见 `epic2-code-review-2026-07-02.md`。已处置：
+- [x] [Review][Patch] 封闭护栏 += trigger.point + pipelineStep 枚举校验（P4，防 typo dead-effect）
+- [x] [Review][Decision→Patch] D1 mark_khorne(近战UPGRADE) + mark_unaligned(REROLL) 接引擎流水线 → no-op 从 6 降到 4（APL/移动/save/ATTACH 需架构层，诚实标注）
+- [x] [Review][Patch] 「AQ-3 仍封闭」措辞改写：区分「枚举封闭（kind/policy 不增）」vs「执行层 4 effect 为描述符，需 activation/movement/weaponRule 层」
+- [x] [Review][Defer] DAMAGE_MITIGATION payload 多态（"5+" vs "ignore-once"）schema 校验留后续

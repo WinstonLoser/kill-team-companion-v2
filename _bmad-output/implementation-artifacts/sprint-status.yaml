@@ -65,8 +65,8 @@ development_status:
 
   # Epic 2: 军团兵扩展
   epic-2: in-progress
-  2-1-legionaries-data-pack: review
-  2-2-predicate-extension-audit: review
+  2-1-legionaries-data-pack: done
+  2-2-predicate-extension-audit: done
   epic-2-retrospective: optional
 
   # Epic 3: 瘟疫战士扩展

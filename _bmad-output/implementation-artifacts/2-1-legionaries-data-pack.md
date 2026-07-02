@@ -1,6 +1,6 @@
 # Story 2.1: 军团兵数据包与机制接入 (legionaries-data-pack)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -119,3 +119,14 @@ glm-5.2（dev-story workflow）
 ### File List
 - src/data/packs/legionaries.v1.json（新）
 - tests/data/legionaries-golden.test.ts（新：12 测试）
+
+### Review Findings (2026-07-02, Epic 2 code-review)
+
+详见 `epic2-code-review-2026-07-02.md`。已全修：
+- [x] [Review][Patch] P1 mark_khrone 拼写 → mark_khorne
+- [x] [Review][Patch] P2 缺 stratagems[] + wargear[] 结构化数组 + 凶恶利刃（AC1）
+- [x] [Review][Patch] P3 等离子双模（过载武器）缺失（T3）
+- [x] [Review][Decision→Patch] D2 leaderFrom/maxPerTypeExcept schema + legality 校验（AC3 机器可检）
+- [x] [Review][Decision→Patch] D1 mark_khorne 近战严重 + mark_unaligned 无休 接引擎流水线（real golden）
+- [x] [Review][Defer] W1 EXTRA_DAMAGE_ON_HIT cap 不强制（引擎流水线增强，留后续）
+- [x] [Review][Defer] mark_slaanesh 移动 / APL_PLUS / save 覆写 / ATTACH_WEAPON_RULE 需 activation/movement/weaponRule 语义层（非 pipeline 可解，v1 描述符留引擎架构故事）
