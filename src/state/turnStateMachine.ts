@@ -1,6 +1,8 @@
 // 回合/激活状态机（FR-11/FR-12）。用可测 reducer 表达分层状态；XState 可作生产包装。
 // 行动合法性 guard 是 FR-12 的可测核心。
 
+import type { Effect } from '../rules/types'
+
 export type Order = 'ENGAGED' | 'CONCEALED'
 export type ActionType = 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE' | 'SHOOT' | 'FIGHT'
 
@@ -44,6 +46,19 @@ export interface ActionContext {
 export interface LegalityResult {
   ok: boolean
   reason?: string
+}
+
+/**
+ * 激活期有效 APL（W3a：消费 APL_PLUS kind）。base APL + Σ(本激活生效的 APL_PLUS amount)。
+ * duration=ACTIVATION 的 APL_PLUS（如「变异与扭转」+1 / 「不祥迷惑」−1）在此叠加；
+ * duration=TURNING_POINT/BATTLE 由调用方决定是否计入 active effects（默认全计）。
+ * 纯函数：由 UI/matchStore 在构造 ActionContext.apl 时调用（AR-9 intent 驱动）。
+ */
+export function effectiveApl(baseApl: number, activeEffects: Effect[]): number {
+  const bonus = activeEffects
+    .filter((e) => e.modifier.kind === 'APL_PLUS')
+    .reduce((s, e) => s + (e.modifier.payload as { amount: number }).amount, 0)
+  return baseApl + bonus
 }
 
 /** 行动合法性（FR-12）。纯函数。 */

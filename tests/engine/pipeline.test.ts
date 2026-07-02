@@ -59,6 +59,37 @@ describe('runShooting 射击流水线', () => {
     expect(r.traces[8]?.stepId).toBe('DAMAGE_TOTAL_MITIGATE')
   })
 
+  it('W1：EXTRA_DAMAGE_ON_HIT 多 effect 叠加超 cap → 钳到最严 cap', () => {
+    // 命中 2N+1C → base 10；两条 EXTRA_DAMAGE（不同源 STACKABLE）各 amount 5，一条带 cap 7
+    // 原始 extra = 10，最严 cap = 7 → 造伤 10 + 7 = 17（非 20）
+    const extraA: Effect = {
+      effectId: 'ea', label: '额外甲', source: 'srcA',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 5, cap: 7 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const extraB: Effect = {
+      effectId: 'eb', label: '额外乙', source: 'srcB',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 5 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const r = runShooting(mkInput({ diceSeq: [4, 5, 2, 6, 2, 3, 1], effects: [extraA, extraB] }))
+    expect(r.woundsDealt).toBe(17) // base 10 + min(10, cap 7) = 17
+    expect(r.traces[7]?.summary).toContain('7') // DAMAGE_PER_DIE summary 反映钳后额外 7
+  })
+
+  it('W1：单 EXTRA_DAMAGE 未超 cap → 不钳（向后兼容）', () => {
+    const extra: Effect = {
+      effectId: 'e', label: '额外', source: 'src',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 1, cap: 7 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const r = runShooting(mkInput({ diceSeq: [4, 5, 2, 6, 2, 3, 1], effects: [extra] }))
+    expect(r.woundsDealt).toBe(11) // 10 + 1，未钳
+  })
+
   it('PIERCE 减防御骰', () => {
     const pierce: Effect = {
       effectId: 'p', label: 't', source: 'test',

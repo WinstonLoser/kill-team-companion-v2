@@ -4,6 +4,7 @@
 import type { Effect } from '../../rules/types'
 import { validateTarget } from '../../geometry'
 import { parryAllocation } from '../parry'
+import { withAttachedRules, attachedRules } from '../weaponResolver'
 import { resolveEffectsTraced, resolveStat } from '../statResolver'
 import type { AppliedModifier } from '../statResolver'
 import type { RejectionTrace } from '../enforcer'
@@ -21,9 +22,10 @@ const toRejected = (r: RejectionTrace): { id: string; reason: string } => ({
   reason: `${r.ruleId} ${r.reason}`,
 })
 
-export function createInitialShootingState(profile: { hit: number }): ShootingState {
+export function createInitialShootingState(profile: { hit: number; weaponRules?: string[] }): ShootingState {
   return {
     hitThreshold: profile.hit,
+    effectiveWeaponRules: profile.weaponRules ?? [],
     attackDice: [],
     normalSuccess: 0,
     criticalSuccess: 0,
@@ -41,12 +43,18 @@ export function createInitialShootingState(profile: { hit: number }): ShootingSt
 
 const WEAPON_SELECT: StepFn<ShootingState> = {
   stepId: 'WEAPON_SELECT',
-  run: (state, ctx) => ({
-    state,
-    summary: `武器 ${ctx.attacker.weapon.name}`,
-    applied: [],
-    rejected: [],
-  }),
+  run: (state, ctx) => {
+    // W3b：消费 ATTACH_WEAPON_RULE——解析有效武器规则（base + 附加），写入 state。
+    const weapon = ctx.attacker.weapon
+    const effective = withAttachedRules(weapon, ctx.effects)
+    const added = attachedRules(weapon, ctx.effects)
+    return {
+      state: { ...state, effectiveWeaponRules: effective.profile.weaponRules },
+      summary: `武器 ${weapon.name}${added.length ? ` +附加 ${added.join('/')}` : ''}`,
+      applied: [],
+      rejected: [],
+    }
+  },
 }
 
 const TARGET_VALIDATE: StepFn<ShootingState> = {
@@ -229,10 +237,15 @@ const DAMAGE_PER_DIE: StepFn<ShootingState> = {
     const extraT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_PER_DIE', ['EXTRA_DAMAGE_ON_HIT'])
     const extraDmg = extraT.applied
     const base = state.atkN * profile.normalDamage + state.atkC * profile.criticalDamage
-    const damage = base + sum(extraDmg)
+    // W1：EXTRA_DAMAGE cap 强制——多 effect 叠加时，总额外伤钳到最严 cap（min）。
+    const caps = extraDmg.map((m) => m.cap).filter((c): c is number => typeof c === 'number')
+    const limit = caps.length ? Math.min(...caps) : Infinity
+    const rawExtra = sum(extraDmg)
+    const extra = Math.min(rawExtra, limit)
+    const damage = base + extra
     return {
       state: { ...state, damage },
-      summary: `造伤 ${base} + 额外${sum(extraDmg)} = ${damage}`,
+      summary: `造伤 ${base} + 额外${extra}${extra < rawExtra ? `（钳 cap ${limit}）` : ''} = ${damage}`,
       applied: extraDmg.map((m) => m.id),
       rejected: extraT.rejected.map(toRejected),
     }

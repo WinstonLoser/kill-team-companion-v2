@@ -127,6 +127,7 @@ describe('step 独立可单测（AC7）', () => {
     const hitStep = SHOOTING_PIPELINE[2]!
     const init: ShootingState = {
       hitThreshold: 3,
+      effectiveWeaponRules: [],
       attackDice: [],
       normalSuccess: 0,
       criticalSuccess: 0,

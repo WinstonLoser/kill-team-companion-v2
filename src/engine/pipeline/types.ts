@@ -19,6 +19,7 @@ export interface ResolutionContext {
 /** 射击累积状态：step 间线程传递。每步读入 → 产出新状态（不可变更新）。 */
 export interface ShootingState {
   hitThreshold: number
+  effectiveWeaponRules: string[] // W3b：WEAPON_SELECT 解析的有效武器规则（base + ATTACH_WEAPON_RULE 附加）
   attackDice: DiceRoll[]
   normalSuccess: number
   criticalSuccess: number

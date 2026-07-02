@@ -114,11 +114,7 @@
           "properties": { "point": { "$ref": "#/$defs/triggerPoint" } }
         },
         "pipelineStep": { "$ref": "#/$defs/pipelineStep" },
-        "modifier": {
-          "type": "object",
-          "required": ["kind", "payload"],
-          "properties": { "kind": { "$ref": "#/$defs/modifierKind" }, "payload": { "type": "object" } }
-        },
+        "modifier": { "$ref": "#/$defs/modifier" },
         "stacking": {
           "type": "object",
           "required": ["policy"],
@@ -133,6 +129,247 @@
           "properties": { "doc": { "type": "string" }, "section": { "type": "string" } }
         }
       }
+    },
+    "modifier": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "DAMAGE_MITIGATION" },
+            "payload": {
+              "type": "object",
+              "required": ["threshold", "roll"],
+              "properties": {
+                "threshold": { "type": "integer", "minimum": 1 },
+                "roll": { "type": "string", "pattern": "^(\\d+\\+|ignore-once)$" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "HIT_PLUS" },
+            "payload": { "type": "object", "required": ["amount"], "properties": { "amount": { "type": "number" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "HIT_MINUS" },
+            "payload": { "type": "object", "required": ["amount"], "properties": { "amount": { "type": "number" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "DAMAGE_PLUS" },
+            "payload": {
+              "type": "object",
+              "required": ["amount", "scope"],
+              "properties": {
+                "amount": { "type": "number" },
+                "scope": { "type": "string", "enum": ["NORMAL", "CRITICAL", "BOTH"] }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "DAMAGE_MINUS" },
+            "payload": {
+              "type": "object",
+              "required": ["amount", "scope"],
+              "properties": {
+                "amount": { "type": "number" },
+                "scope": { "type": "string", "enum": ["NORMAL", "CRITICAL", "BOTH"] }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "UPGRADE_SUCCESS" },
+            "payload": { "type": "object", "properties": { "fromNatRoll": { "type": "integer", "minimum": 1, "maximum": 6 } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": { "kind": { "const": "DOWNGRADE_SUCCESS" }, "payload": { "type": "object" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "COUNT_PLUS" },
+            "payload": {
+              "type": "object",
+              "required": ["dice", "amount"],
+              "properties": { "dice": { "type": "string", "enum": ["ATTACK", "DEFENCE"] }, "amount": { "type": "number" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "COUNT_MINUS" },
+            "payload": {
+              "type": "object",
+              "required": ["dice", "amount"],
+              "properties": { "dice": { "type": "string", "enum": ["ATTACK", "DEFENCE"] }, "amount": { "type": "number" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "REROLL" },
+            "payload": {
+              "type": "object",
+              "required": ["mode"],
+              "properties": { "mode": { "type": "string", "enum": ["ALL", "CHOOSE"] }, "count": { "type": "integer", "minimum": 1 } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "AUTO_SUCCESS" },
+            "payload": {
+              "type": "object",
+              "required": ["count", "grade"],
+              "properties": { "count": { "type": "integer", "minimum": 0 }, "grade": { "type": "string", "enum": ["NORMAL", "CRITICAL"] } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "ATTACH_WEAPON_RULE" },
+            "payload": { "type": "object", "required": ["rule"], "properties": { "rule": { "type": "string" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "PIERCE" },
+            "payload": {
+              "type": "object",
+              "required": ["amount"],
+              "properties": { "amount": { "type": "number" }, "criticalOnly": { "type": "boolean" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "COVER_SAVE" },
+            "payload": {
+              "type": "object",
+              "required": ["extraNormal"],
+              "properties": { "extraNormal": { "type": "number" }, "upgradeToCritical": { "type": "boolean" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "IGNORE_DAMAGE" },
+            "payload": { "type": "object", "properties": { "oncePerBattleId": { "type": "string" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "IMMUNITY" },
+            "payload": { "type": "object", "required": ["immuneToEffectGroup"], "properties": { "immuneToEffectGroup": { "type": "string" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "EXTRA_DAMAGE_ON_HIT" },
+            "payload": {
+              "type": "object",
+              "required": ["amount"],
+              "properties": { "amount": { "type": "number" }, "cap": { "type": "number", "minimum": 0 } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "GRANT_MARKER" },
+            "payload": {
+              "type": "object",
+              "required": ["marker", "target"],
+              "properties": {
+                "marker": { "type": "string" },
+                "target": { "type": "string", "enum": ["SELF", "DEFENDER", "ATTACKER"] },
+                "atStep": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "HEAL_OPERATIVE" },
+            "payload": {
+              "type": "object",
+              "required": ["amount", "target"],
+              "properties": {
+                "amount": { "type": "number" },
+                "target": { "type": "string", "enum": ["SELF", "DEFENDER", "ATTACKER"] },
+                "condition": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "APL_PLUS" },
+            "payload": {
+              "type": "object",
+              "required": ["amount", "duration"],
+              "properties": {
+                "amount": { "type": "number" },
+                "duration": { "type": "string", "enum": ["ACTIVATION", "TURNING_POINT", "BATTLE"] }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "CUSTOM_HOOK" },
+            "payload": { "type": "object", "required": ["hookId", "prompt"], "properties": { "hookId": { "type": "string" }, "prompt": { "type": "string" } } }
+          }
+        }
+      ]
     }
   }
 }
