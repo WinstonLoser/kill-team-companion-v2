@@ -14,6 +14,7 @@ export interface TerrainFeature {
   kind: TerrainKind
   vantage?: boolean
   climbable?: boolean
+  difficult?: boolean // 困难地形（移动修正；D2 AC2）
 }
 
 export interface OperativePlacement {

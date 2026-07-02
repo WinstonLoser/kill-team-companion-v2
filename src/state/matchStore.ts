@@ -114,6 +114,8 @@ interface MatchState {
   addTerrain: (t: TerrainFeature) => void
   removeTerrain: (id: string) => void
   clearTerrain: () => void
+  /** D2：自定义板编辑结果一次性提交（地形+目标点+降落区）。 */
+  commitBlankMap: (draft: { terrain: TerrainFeature[]; objectives: ObjectiveMarker[]; dropA: Point[]; dropB: Point[] }) => void
   initTokens: (tokens: MatchToken[]) => void
   placeToken: (uid: string, pos: Point, facing: number) => void
   moveToken: (uid: string, pos: Point) => void
@@ -235,6 +237,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   addTerrain: (t) => set((s) => ({ customTerrain: [...s.customTerrain, t] })),
   removeTerrain: (id) => set((s) => ({ customTerrain: s.customTerrain.filter((t) => t.id !== id) })),
   clearTerrain: () => set({ customTerrain: [] }),
+  commitBlankMap: (draft) => {
+    const s = get()
+    const base = s.mapPack
+    if (!base) { set({ phase: 'deploy' }); return }
+    const merged: MapPack = { ...base, terrain: draft.terrain, objectives: draft.objectives, dropZones: { a: draft.dropA, b: draft.dropB } }
+    set({ mapPack: merged, customTerrain: draft.terrain, phase: 'deploy' })
+  },
   initTokens: (tokens) => set({ tokens }),
   placeToken: (uid, pos, facing) =>
     set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, placed: true, pos, facing } : t)) })),

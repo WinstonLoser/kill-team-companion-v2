@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { loadPack, type FactionPack } from '../'
 import { useMatchStore, type MatchToken } from '../state/matchStore'
 import { useRosterStore } from '../state/rosterStore'
-import { loadMapPack, type MapPack } from '../data/maps'
+import type { Point, TerrainFeature } from '../geometry'
+import { loadMapPack, type MapPack, type ObjectiveMarker } from '../data/maps'
 import { MapSelect } from './match/MapSelect'
 import { TerrainEditor } from './match/TerrainEditor'
 import { DeployPhase } from './match/DeployPhase'
@@ -50,9 +51,7 @@ export function MatchView() {
   const mapPack = useMatchStore((s) => s.mapPack)
   const loadMap = useMatchStore((s) => s.loadMap)
   const startBlank = useMatchStore((s) => s.startBlank)
-  const customTerrain = useMatchStore((s) => s.customTerrain)
-  const addTerrain = useMatchStore((s) => s.addTerrain)
-  const removeTerrain = useMatchStore((s) => s.removeTerrain)
+  const commitBlankMap = useMatchStore((s) => s.commitBlankMap)
   const setPhase = useMatchStore((s) => s.setPhase)
   const initTokens = useMatchStore((s) => s.initTokens)
 
@@ -68,15 +67,10 @@ export function MatchView() {
     startBlank(blankBounds)
     setBlankEditing(true)
   }
-  function onTerrainDone() {
+  function onTerrainDone(draft: { terrain: TerrainFeature[]; objectives: ObjectiveMarker[]; dropA: Point[]; dropB: Point[] }) {
     setBlankEditing(false)
-    // 把自定义地形固化进 mapPack（startBlank 建的空 mapPack 合并 customTerrain）
-    if (mapPack) {
-      loadMap({ ...mapPack, terrain: customTerrain })
-      initTokens(buildTokens())
-    } else {
-      setPhase('deploy')
-    }
+    commitBlankMap(draft)
+    initTokens(buildTokens())
   }
   function beginPlay() {
     useMatchStore.setState((s) => ({ turn: { ...s.turn, activePlayer: 'a' as const } }))
@@ -93,7 +87,14 @@ export function MatchView() {
   }
   if (blankEditing && mapPack) {
     return (
-      <TerrainEditor bounds={mapPack.bounds} terrain={customTerrain} onAdd={addTerrain} onRemove={removeTerrain} onDone={onTerrainDone} />
+      <TerrainEditor
+        bounds={mapPack.bounds}
+        initialTerrain={mapPack.terrain}
+        initialObjectives={mapPack.objectives}
+        initialDropA={mapPack.dropZones.a}
+        initialDropB={mapPack.dropZones.b}
+        onCommit={onTerrainDone}
+      />
     )
   }
   if (phase === 'map-select') {
