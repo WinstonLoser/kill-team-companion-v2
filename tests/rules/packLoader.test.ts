@@ -75,8 +75,8 @@ describe('packLoader', () => {
     expect(() => loadPack(bad)).toThrow(PackValidationError)
   })
 
-  it('W2：DAMAGE_MITIGATION 合法 roll 形状通过（"5+" 与 "ignore-once"）', () => {
-    const mk = (roll: string) => ({
+  it('W2：DAMAGE_MITIGATION 合法 roll 形状通过（"5+" / "ignore-once" / "fixed-N"）', () => {
+    const mk = (roll: string, threshold = 3) => ({
       ...corePack,
       effects: [
         {
@@ -85,13 +85,14 @@ describe('packLoader', () => {
           source: 'test',
           trigger: { point: 'ON_DAMAGE_TOTAL' },
           pipelineStep: 'DAMAGE_TOTAL_MITIGATE',
-          modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold: 3, roll } },
+          modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold, roll } },
           stacking: { policy: 'STACKABLE' },
         },
       ],
     })
     expect(() => loadPack(mk('5+'))).not.toThrow()
     expect(() => loadPack(mk('ignore-once'))).not.toThrow()
+    expect(() => loadPack(mk('fixed-1', 0))).not.toThrow() // 瘟疫包恶心韧性：固定减 1，threshold 0=恒定
   })
 
   it('W2：AUTO_SUCCESS payload 缺 grade 拒绝（per-kind payload-shape 校验）', () => {

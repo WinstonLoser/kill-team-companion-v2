@@ -43,7 +43,7 @@
       "source": "factionRule:plagueToxin",
       "trigger": { "point": "ON_ACTIVATION_START" },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "DAMAGE_MINUS", "payload": { "amount": 1 } },
+      "modifier": { "kind": "DAMAGE_MINUS", "payload": { "amount": 1, "scope": "BOTH" } },
       "stacking": { "policy": "UNIQUE_PER_SOURCE" },
       "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素激活" }
     },

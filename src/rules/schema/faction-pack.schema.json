@@ -141,8 +141,8 @@
               "type": "object",
               "required": ["threshold", "roll"],
               "properties": {
-                "threshold": { "type": "integer", "minimum": 1 },
-                "roll": { "type": "string", "pattern": "^(\\d+\\+|ignore-once)$" }
+                "threshold": { "type": "integer", "minimum": 0 },
+                "roll": { "type": "string", "pattern": "^(\\d+\\+|ignore-once|fixed-\\d+)$" }
               }
             }
           }
