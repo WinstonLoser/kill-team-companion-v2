@@ -35,6 +35,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const scoreAndEndTP = useMatchStore((s) => s.scoreAndEndTP)
   const undoPending = useMatchStore((s) => s.undoPending)
   const resolveAttack = useMatchStore((s) => s.resolveAttack)
+  const replayLast = useMatchStore((s) => s.replayLast)
+  const rewindToSnapshot = useMatchStore((s) => s.rewindToSnapshot)
+  const snapshots = useMatchStore((s) => s.snapshots)
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -110,6 +113,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     else setPendingAsk(null)
   }
 
+  function rewindLast() {
+    // D3：回退到最近一次确认/计分前（全局恢复棋盘+VP+回合）
+    const last = snapshots[snapshots.length - 1]
+    if (last) rewindToSnapshot(last.id)
+  }
+
   function onPointerMove(p: Point) {
     if (dragging && dragOrigin) {
       moveToken(dragging, clampPos(p))
@@ -180,7 +189,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
         <div className="play-right-col">
           <PipelineDrawer onConfirm={confirmCasualties} onQueryRule={onQueryRule} />
-          <LogPanel onReplay={() => {}} onRollbackToHere={undoPending} />
+          <LogPanel onReplay={replayLast} onRollbackToHere={rewindLast} />
         </div>
       </div>
 

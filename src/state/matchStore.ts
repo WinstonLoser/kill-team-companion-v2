@@ -56,6 +56,16 @@ export interface ActiveEffect {
   remainingTP: number // 剩余转折点；TP 结束递减，0 到期移除
 }
 
+/** D3：会话内全局回退快照（确认伤亡 / 计分前各存一份，"回滚到此"恢复棋盘+VP+回合）。 */
+export interface Snapshot {
+  id: number
+  label: string
+  tokens: MatchToken[]
+  vp: { a: number; b: number }
+  turn: TurnState
+  activeEffects: Record<string, ActiveEffect[]>
+}
+
 export interface LastShot {
   targetUid: string
   targetName: string
@@ -90,6 +100,10 @@ interface MatchState {
   overrides: Record<string, boolean>
   /** D4：特工身上的限时 effect（uid → 列表）。 */
   activeEffects: Record<string, ActiveEffect[]>
+  /** D3：会话内回退快照栈（确认/计分前 push）。 */
+  snapshots: Snapshot[]
+  /** D3：最近一次已确认结算的 ResolutionLog，供日志 ▶回放重展。 */
+  replayLog: ResolutionLog | null
   winner: string | null
   intercept: { title: string; reasons: string[] } | null
 
@@ -142,6 +156,12 @@ interface MatchState {
   addEffect: (uid: string, effect: { id: string; label: string; durationTP: number }) => void
   /** D4：TP 结束结算到期 effect（递减、移除、记日志）；返回到期条目数供 push。 */
   tickEffects: () => number
+  /** D3：压一份回退快照（label 描述事件）。 */
+  pushSnapshot: (label: string) => void
+  /** D3：回退到指定快照（恢复 tokens/vp/turn/activeEffects），记日志。 */
+  rewindToSnapshot: (id: number) => void
+  /** D3：重展最近已确认结算（日志 ▶回放）。 */
+  replayLast: () => void
   scoreAndEndTP: (objectiveControl: (o: ObjectiveMarker) => Side | null) => void
   reset: () => void
 }
@@ -151,6 +171,7 @@ function nextLogId(): number {
   logId += 1
   return logId
 }
+let snapshotId = 0
 
 export const useMatchStore = create<MatchState>((set, get) => ({
   phase: 'map-select',
@@ -170,6 +191,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   diceSource: 'electronic',
   overrides: {},
   activeEffects: {},
+  snapshots: [],
+  replayLog: null,
   winner: null,
   intercept: null,
 
@@ -332,9 +355,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     return { ok: true }
   },
   // P1/P2：唯一强制确认——单一数据源(store)应用伤亡，清 lastShot/currentLog。
+  // D3：确认前 push 快照（供日志"回滚到此"恢复棋盘），并把 ResolutionLog 存为 replayLog。
   confirmCasualties: () => {
     const ls = get().lastShot
     if (!ls) return
+    get().pushSnapshot(`确认伤亡 ${ls.targetName}`)
+    const log = get().currentLog
     const target = get().tokens.find((t) => t.uid === ls.targetUid)
     const prevW = target?.wounds ?? 0
     get().applyDamage(ls.targetUid, ls.woundsDealt)
@@ -342,6 +368,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set((s) => ({
       lastShot: null,
       currentLog: null,
+      replayLog: log,
       log: [{ id: nextLogId(), kind: ls.kind, text: `${ls.targetName} 确认伤亡 ${ls.woundsDealt}${newW <= 0 ? '（残废）' : `（剩 ${newW}）`}` }, ...s.log].slice(0, 80),
     }))
   },
@@ -412,10 +439,43 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     })
     return expired.length
   },
+  pushSnapshot: (label) => {
+    const s = get()
+    snapshotId += 1
+    const snap: Snapshot = {
+      id: snapshotId,
+      label,
+      tokens: s.tokens.map((t) => ({ ...t })),
+      vp: { ...s.vp },
+      turn: { ...s.turn, operatives: { ...s.turn.operatives } },
+      activeEffects: Object.fromEntries(Object.entries(s.activeEffects).map(([k, v]) => [k, v.map((e) => ({ ...e }))])),
+    }
+    set({ snapshots: [...s.snapshots, snap] })
+  },
+  rewindToSnapshot: (id) => {
+    const s = get()
+    const snap = s.snapshots.find((x) => x.id === id)
+    if (!snap) return
+    set((cur) => ({
+      tokens: snap.tokens.map((t) => ({ ...t })),
+      vp: { ...snap.vp },
+      turn: { ...snap.turn, operatives: { ...snap.turn.operatives } },
+      activeEffects: Object.fromEntries(Object.entries(snap.activeEffects).map(([k, v]) => [k, v.map((e) => ({ ...e }))])),
+      lastShot: null,
+      currentLog: null,
+      snapshots: cur.snapshots.filter((x) => x.id < id), // 丢弃其后快照
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `↶ 回退：<${snap.label}>` }, ...cur.log].slice(0, 80),
+    }))
+  },
+  replayLast: () => {
+    const r = get().replayLog
+    if (r) set({ currentLog: r })
+  },
   scoreAndEndTP: (objectiveControl) => {
     // D4：先结算到期 effect（递减/移除/记日志/push），再计分推进
     get().tickEffects()
     const s = get() // tickEffects 已 set，重取最新
+    get().pushSnapshot(`TP${s.turn.turningPoint} 计分`) // D3：计分前快照
     const map = s.mapPack
     let scoredA = s.vp.a
     let scoredB = s.vp.b
@@ -462,6 +522,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       shotSeq: 0,
       overrides: {},
       activeEffects: {},
+      snapshots: [],
+      replayLog: null,
       winner: null,
       intercept: null,
     }),

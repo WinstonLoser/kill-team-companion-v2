@@ -9,8 +9,8 @@ export function LogPanel({ onReplay, onRollbackToHere }: { onReplay: () => void;
   const log = useMatchStore((s) => s.log)
   const filter = useMatchStore((s) => s.logFilter)
   const setFilter = useMatchStore((s) => s.setLogFilter)
-  const hasLog = useMatchStore((s) => Boolean(s.currentLog))
-  const hasLast = useMatchStore((s) => Boolean(s.lastShot))
+  const canReplay = useMatchStore((s) => Boolean(s.replayLog))
+  const canRewind = useMatchStore((s) => s.snapshots.length > 0)
 
   const shown = filter === 'all' ? log : log.filter((e) => e.kind === filter)
 
@@ -28,10 +28,12 @@ export function LogPanel({ onReplay, onRollbackToHere }: { onReplay: () => void;
           <li key={e.id} className={`log-entry ${e.kind}`}>
             <span className={`log-kind ${e.kind}`}>{e.kind}</span>
             <span className="log-text">{e.text}</span>
-            {(e.kind === 'shoot' || e.kind === 'melee') && (
+            {(e.kind === 'shoot' || e.kind === 'melee' || e.kind === 'score') && (
               <>
-                <button className="link-btn" disabled={!hasLog} onClick={onReplay}>▶回放</button>
-                <button className="link-btn" disabled={!hasLast} onClick={onRollbackToHere}>↶回滚到此</button>
+                {(e.kind === 'shoot' || e.kind === 'melee') && (
+                  <button className="link-btn" disabled={!canReplay} onClick={onReplay} title="重展最近一次结算流水线">▶回放</button>
+                )}
+                <button className="link-btn" disabled={!canRewind} onClick={onRollbackToHere} title="回退到最近一次确认/计分前（恢复棋盘+VP+回合）">↶回滚到此</button>
               </>
             )}
           </li>
