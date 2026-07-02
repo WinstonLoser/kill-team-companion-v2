@@ -103,6 +103,8 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
         phase="deploy"
         selected={null}
         rangeRing={null}
+        controlRing={null}
+        ownCover={null}
         losLines={[]}
         objControl={mapPack.objectives.map((o) => ({ id: o.id, ctrl: null }))}
         onBoardClick={onBoardClick}

@@ -66,16 +66,18 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
   const showViz = active && activated && active.side === turn.activePlayer
-  const viz = showViz ? attackViz(active!.uid) : { range: 0, targets: [] }
+  const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
   const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
+  const controlRing = viz.controlRing
+  const ownCover = viz.ownCover
   const losLines: LosLine[] = viz.targets.map((tg) => {
     const tok = tokens.find((t) => t.uid === tg.uid)
     if (!tok) return null
     return {
       target: tg.pos,
-      stroke: tg.losFinal ? '#39d98a' : '#ff5c5c',
-      dash: tg.losAmbiguous ? '4 3' : 'none',
-      opacity: 0.7,
+      stroke: tg.obscured ? '#6b7280' : tg.losFinal ? '#39d98a' : '#ff5c5c',
+      dash: tg.obscured ? '2 4' : tg.losAmbiguous ? '4 3' : 'none',
+      opacity: tg.obscured ? 0.4 : 0.7,
     }
   }).filter((x): x is LosLine => x !== null)
 
@@ -164,6 +166,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             phase="play"
             selected={selected}
             rangeRing={rangeRing}
+            controlRing={controlRing}
+            ownCover={ownCover}
             losLines={losLines}
             objControl={objControl}
             onPointerMove={onPointerMove}

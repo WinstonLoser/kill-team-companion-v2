@@ -15,6 +15,8 @@ export function Board({
   phase,
   selected,
   rangeRing,
+  controlRing,
+  ownCover,
   losLines,
   objControl,
   onBoardPointerDown,
@@ -34,6 +36,8 @@ export function Board({
   phase: string
   selected: string | null
   rangeRing: { center: Point; r: number } | null
+  controlRing: { center: Point; r: number } | null
+  ownCover: 'open' | 'cover' | 'exposed' | null
   losLines: LosLine[]
   objControl: ObjControl[]
   onBoardPointerDown?: (p: Point) => void
@@ -100,6 +104,14 @@ export function Board({
             r={rangeRing.r * SCALE}
             className="rangedot"
           />
+        )}
+        {/* 1" 控制范围圈（1.14 AC2） */}
+        {controlRing && (
+          <circle cx={controlRing.center.x * SCALE} cy={controlRing.center.y * SCALE} r={controlRing.r * SCALE} fill="none" stroke="#9aa3b2" strokeWidth={1} strokeDasharray="2 3" opacity={0.6} />
+        )}
+        {/* 自身掩护染色（cover=绿/exposed=灰） */}
+        {ownCover && rangeRing && (
+          <circle cx={rangeRing.center.x * SCALE} cy={rangeRing.center.y * SCALE} r={14} fill="none" stroke={ownCover === 'cover' ? '#39d98a' : ownCover === 'exposed' ? '#6b7280' : 'transparent'} strokeWidth={2} opacity={0.8} />
         )}
 
         {/* LOS 射线 */}

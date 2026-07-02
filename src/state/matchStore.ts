@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Point, TerrainFeature, OperativePlacement, Board as BoardT } from '../geometry'
-import { losFinding, engagementFinding, validateTarget } from '../geometry'
+import { losFinding, engagementFinding, validateTarget, coverFinding, obscuredFinding } from '../geometry'
 import type { ObjectiveMarker, MapPack } from '../data/maps'
 import { createInitialTurnState, turnReducer, type TurnState } from './turnStateMachine'
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
@@ -149,7 +149,7 @@ interface MatchState {
   /** 确认前撤销待结算（清 lastShot/currentLog）。 */
   undoPending: () => void
   /** AR-9：几何可视化由 store 算（UI 不调 geometry）；返回活动特工的射程 + 各敌方 LOS（含 D-24 翻转）。 */
-  attackViz: (activeUid: string | null) => { range: number; targets: { uid: string; pos: Point; losFinal: boolean; losAmbiguous: boolean }[] }
+  attackViz: (activeUid: string | null) => { range: number; controlRing: { center: Point; r: number } | null; ownCover: 'open' | 'cover' | 'exposed' | null; targets: { uid: string; pos: Point; losFinal: boolean; losAmbiguous: boolean; obscured: boolean }[] }
   /** AR-9：控制范围判定（UI 不调 geometry）。 */
   engagementOf: (aUid: string, tUid: string) => boolean
   /** 物理骰录入所需枚数（hit+defense 上限）。 */
@@ -391,19 +391,28 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   attackViz: (activeUid) => {
     const s = get()
     const map = s.mapPack
-    if (!activeUid || !map || !RANGED) return { range: 0, targets: [] }
+    if (!activeUid || !map || !RANGED) return { range: 0, controlRing: null, ownCover: null, targets: [] }
     const attacker = s.tokens.find((t) => t.uid === activeUid)
-    if (!attacker) return { range: 0, targets: [] }
-    const board: BoardT = { terrain: map.terrain, operatives: s.tokens.filter((t) => t.alive && t.placed).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })) }
+    if (!attacker) return { range: 0, controlRing: null, ownCover: null, targets: [] }
+    const placed = s.tokens.filter((t) => t.alive && t.placed)
+    const board: BoardT = { terrain: map.terrain, operatives: placed.map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })) }
     const range = RANGED.profile.range ?? 24
-    const targets = s.tokens
-      .filter((t) => t.alive && t.placed && t.side !== attacker.side)
-      .map((t) => {
-        const los = losFinding(attacker.pos, t.pos, board)
-        const ov = s.overrides[overrideKey(attacker.uid, t.uid, 'LOS')]
-        return { uid: t.uid, pos: t.pos, losFinal: ov ?? los.finalValue, losAmbiguous: los.confidence === 'AMBIGUOUS' }
-      })
-    return { range, targets }
+    // 1.14 AC2：1" 控制范围圈 + 自身掩护染色（COVER 1" 内→绿；2" 内有他特工→灰）
+    const others = placed.filter((t) => t.uid !== attacker.uid).map((t) => t.pos)
+    const cf = coverFinding(attacker.pos, board, others)
+    return {
+      range,
+      controlRing: { center: attacker.pos, r: 1 },
+      ownCover: cf.finalValue ? 'cover' : (others.some((o) => Math.hypot(o.x - attacker.pos.x, o.y - attacker.pos.y) <= 2) ? 'exposed' : 'open'),
+      targets: s.tokens
+        .filter((t) => t.alive && t.placed && t.side !== attacker.side)
+        .map((t) => {
+          const los = losFinding(attacker.pos, t.pos, board)
+          const ov = s.overrides[overrideKey(attacker.uid, t.uid, 'LOS')]
+          const obscured = obscuredFinding(t.pos, board).finalValue
+          return { uid: t.uid, pos: t.pos, losFinal: ov ?? los.finalValue, losAmbiguous: los.confidence === 'AMBIGUOUS', obscured }
+        }),
+    }
   },
   engagementOf: (aUid, tUid) => {
     const s = get()
