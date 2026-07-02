@@ -1,6 +1,6 @@
 # Story 1.13: 对局主界面 + push 指挥区 + 一击交互 (match-ui-one-tap-resolve)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -110,3 +110,14 @@ glm-5.2（dev-story workflow）
 - src/state/matchStore.ts（diceSource/currentLog/intercept + actions）
 - src/ui/match/{PlayView,StatusStrip,ActionBar,InterceptorCard,ManualDiceEntry,PipelineDrawer}.tsx（新）
 - src/ui/MatchView.tsx（改）+ src/index.css（改）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Decision] D1 AR-9：PlayView 直接调引擎/几何/骰源，未走 store intent（架构 §8.3 硬约束）
+- [x] [Review][Patch] P1 确认伤亡未清 lastShot → undo 可撤销已确认伤亡 [src/ui/match/PlayView.tsx:onConfirm]
+- [x] [Review][Patch] P2 伤亡日志双数据源（渲染闭包 vs store）[src/ui/match/PlayView.tsx:onConfirm]
+- [x] [Review][Patch] P4 RANGED/MELEE 非空断言致导入期崩溃（缺近战武器阵营白屏）[src/ui/match/PlayView.tsx]
+- [x] [Review][Patch] P5 activate 双写 operatives 绕过 reducer 校验 [src/state/matchStore.ts:activate]
+- [x] [Review][Patch] P6 物理骰数量不匹配（近战防御方也掷骰 + 升级）[src/ui/match/PlayView.tsx]
+- [x] [Review][Patch] P8 play-board-col/play-mid-col 无 CSS [src/index.css]

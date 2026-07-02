@@ -1,6 +1,6 @@
 # Story 1.12: 开局准备——选图 + 画地形 + 部署 (setup-map-deploy)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -102,3 +102,9 @@ glm-5.2（dev-story workflow）
 - src/data/maps.ts + src/data/packs/maps/{open,ruin,corridor}.v1.json（新）
 - src/geometry/geometry.ts（改：导出部署几何）
 - tests/{geometry/geometry.test.ts,data/maps.test.ts}（改/新）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Decision] D2 画地形缺 复制/镜像 工具 + 独立放目标点/降落区按钮 + 困难地形 flag（AC2 未全）
+- [x] [Review][Patch] P9 loadMapPack 未校验 bounds.w/h>0、polygon≥3 点（违 NFR-5）[src/data/maps.ts]

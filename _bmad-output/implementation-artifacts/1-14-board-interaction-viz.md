@@ -1,6 +1,6 @@
 # Story 1.14: 棋盘交互与几何可视化 (board-interaction-viz)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -99,3 +99,9 @@ Board 共享渲染层 + 拖放英寸数 + 朝向旋转 + LOS/射程/控制范围
 - src/ui/match/PlayView.tsx（新：FindingStrip 内联翻转 + 拖放英寸数 + 一击）
 - src/geometry/geometry.ts（改：导出 distanceToPolygon）
 - src/state/matchStore.ts（overrides/toggleOverride/dragOrigin）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Patch] P3 几何翻转未回算资格（overrides 未注入 validateTarget；引擎已支持 findingOverrides）[src/ui/match/PlayView.tsx]
+- [x] [Review][Decision] D-geom 几何可视化缺 1" 控制圈 / 掩护染色 / 遮挡轮廓（AC2 部分）— 补 or defer

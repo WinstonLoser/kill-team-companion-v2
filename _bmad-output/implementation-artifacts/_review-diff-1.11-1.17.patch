@@ -1,0 +1,3396 @@
+diff --git a/src/data/maps.ts b/src/data/maps.ts
+new file mode 100644
+index 0000000..1fab080
+--- /dev/null
++++ b/src/data/maps.ts
+@@ -0,0 +1,39 @@
++// MapPack（架构 §4.7）：预设地图模板，静态数据随版本发布（不违 D-20）。
++// 自定义手画板会话内有效，刷新即丢。
++
++import type { Point, Polygon, TerrainFeature } from '../geometry'
++
++export interface ObjectiveMarker {
++  id: string
++  pos: Point
++  controlRange: number
++}
++
++export interface DropZones {
++  a: Polygon
++  b: Polygon
++}
++
++export interface MapPack {
++  mapId: string
++  name: string
++  version: string
++  bounds: { w: number; h: number }
++  terrain: TerrainFeature[]
++  objectives: ObjectiveMarker[]
++  dropZones: DropZones
++}
++
++/** 结构校验：必填字段缺失 → 抛错，绝不静默降级（NFR-5）。 */
++export function loadMapPack(raw: unknown): MapPack {
++  const m = raw as MapPack
++  if (!m || typeof m !== 'object') throw new Error('MapPack: not an object')
++  const req = ['mapId', 'name', 'version', 'bounds', 'terrain', 'objectives', 'dropZones'] as const
++  const rec = m as unknown as Record<string, unknown>
++  for (const k of req) {
++    if (rec[k] === undefined) throw new Error(`MapPack: missing '${k}'`)
++  }
++  if (!Array.isArray(m.terrain) || !Array.isArray(m.objectives)) throw new Error('MapPack: terrain/objectives must be arrays')
++  if (!Array.isArray(m.dropZones.a) || !Array.isArray(m.dropZones.b)) throw new Error('MapPack: dropZones.a/b must be polygons')
++  return m
++}
+diff --git a/src/data/packs/angels_of_death.v1.json b/src/data/packs/angels_of_death.v1.json
+index ac66469..0312836 100644
+--- a/src/data/packs/angels_of_death.v1.json
++++ b/src/data/packs/angels_of_death.v1.json
+@@ -5,7 +5,22 @@
+   "faction": {
+     "id": "angels_of_death",
+     "name": "死亡天使",
+-    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"]
++    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"],
++    "subFactionSelector": {
++      "id": "chapterTactic",
++      "label": "战团战术（8 选 2）",
++      "options": [
++        "chapterTactic_relentless",
++        "chapterTactic_duelist",
++        "chapterTactic_resolute",
++        "chapterTactic_concealed",
++        "chapterTactic_mobile",
++        "chapterTactic_stalwart",
++        "chapterTactic_sharpshooter",
++        "chapterTactic_siege"
++      ],
++      "max": 2
++    }
+   },
+   "operatives": [
+     {
+@@ -157,6 +172,8 @@
+     }
+   ],
+   "buildConstraints": {
+-    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；部分 chapterTactic effect 映射为占位 modifier，引擎 effect-hooking 随 AQ-3 扩展。"
++    "operatives": { "min": 1 },
++    "equipmentLimitScope": "weaponId",
++    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；死亡天使无重武器上限，equipmentLimits 空。"
+   }
+ }
+diff --git a/src/data/packs/maps/corridor.v1.json b/src/data/packs/maps/corridor.v1.json
+new file mode 100644
+index 0000000..8ea065d
+--- /dev/null
++++ b/src/data/packs/maps/corridor.v1.json
+@@ -0,0 +1,19 @@
++{
++  "mapId": "corridor",
++  "name": "走廊",
++  "version": "1.0.0",
++  "bounds": { "w": 30, "h": 20 },
++  "terrain": [
++    { "id": "w1", "kind": "BLOCKING", "polygon": [{ "x": 8, "y": 2 }, { "x": 10, "y": 2 }, { "x": 10, "y": 9 }, { "x": 8, "y": 9 }] },
++    { "id": "w2", "kind": "BLOCKING", "polygon": [{ "x": 20, "y": 11 }, { "x": 22, "y": 11 }, { "x": 22, "y": 18 }, { "x": 20, "y": 18 }] },
++    { "id": "obs1", "kind": "OBSCURING", "polygon": [{ "x": 14, "y": 2 }, { "x": 16, "y": 2 }, { "x": 16, "y": 5 }, { "x": 14, "y": 5 }] }
++  ],
++  "objectives": [
++    { "id": "obj1", "pos": { "x": 12, "y": 14 }, "controlRange": 3 },
++    { "id": "obj2", "pos": { "x": 18, "y": 6 }, "controlRange": 3 }
++  ],
++  "dropZones": {
++    "a": [{ "x": 0, "y": 0 }, { "x": 6, "y": 0 }, { "x": 6, "y": 20 }, { "x": 0, "y": 20 }],
++    "b": [{ "x": 24, "y": 0 }, { "x": 30, "y": 0 }, { "x": 30, "y": 20 }, { "x": 24, "y": 20 }]
++  }
++}
+diff --git a/src/data/packs/maps/open.v1.json b/src/data/packs/maps/open.v1.json
+new file mode 100644
+index 0000000..3352bba
+--- /dev/null
++++ b/src/data/packs/maps/open.v1.json
+@@ -0,0 +1,12 @@
++{
++  "mapId": "open",
++  "name": "开阔地",
++  "version": "1.0.0",
++  "bounds": { "w": 30, "h": 20 },
++  "terrain": [],
++  "objectives": [{ "id": "obj1", "pos": { "x": 15, "y": 10 }, "controlRange": 3 }],
++  "dropZones": {
++    "a": [{ "x": 0, "y": 0 }, { "x": 10, "y": 0 }, { "x": 10, "y": 20 }, { "x": 0, "y": 20 }],
++    "b": [{ "x": 20, "y": 0 }, { "x": 30, "y": 0 }, { "x": 30, "y": 20 }, { "x": 20, "y": 20 }]
++  }
++}
+diff --git a/src/data/packs/maps/ruin.v1.json b/src/data/packs/maps/ruin.v1.json
+new file mode 100644
+index 0000000..6bf554d
+--- /dev/null
++++ b/src/data/packs/maps/ruin.v1.json
+@@ -0,0 +1,16 @@
++{
++  "mapId": "ruin",
++  "name": "废墟",
++  "version": "1.0.0",
++  "bounds": { "w": 30, "h": 20 },
++  "terrain": [
++    { "id": "ruin", "kind": "BLOCKING", "polygon": [{ "x": 13, "y": 6 }, { "x": 17, "y": 6 }, { "x": 17, "y": 14 }, { "x": 13, "y": 14 }] },
++    { "id": "cover1", "kind": "COVER", "polygon": [{ "x": 9, "y": 9 }, { "x": 10.5, "y": 9 }, { "x": 10.5, "y": 11 }, { "x": 9, "y": 11 }] },
++    { "id": "cover2", "kind": "COVER", "polygon": [{ "x": 19.5, "y": 9 }, { "x": 21, "y": 9 }, { "x": 21, "y": 11 }, { "x": 19.5, "y": 11 }] }
++  ],
++  "objectives": [{ "id": "obj1", "pos": { "x": 15, "y": 10 }, "controlRange": 3 }],
++  "dropZones": {
++    "a": [{ "x": 0, "y": 0 }, { "x": 10, "y": 0 }, { "x": 10, "y": 20 }, { "x": 0, "y": 20 }],
++    "b": [{ "x": 20, "y": 0 }, { "x": 30, "y": 0 }, { "x": 30, "y": 20 }, { "x": 20, "y": 20 }]
++  }
++}
+diff --git a/src/geometry/geometry.ts b/src/geometry/geometry.ts
+index 38b2e0f..c4c104d 100644
+--- a/src/geometry/geometry.ts
++++ b/src/geometry/geometry.ts
+@@ -87,6 +87,30 @@ function pointInPoly(p: Point, poly: Polygon): boolean {
+   }
+   return inside
+ }
++
++/** 点是否在多边形内（导出版，部署/目标控制复用，FR-24/FR-25）。 */
++export function pointInPolygon(p: Point, poly: Polygon): boolean {
++  return pointInPoly(p, poly)
++}
++
++/**
++ * 底座圆是否完全在多边形内（部署合法性 FR-24）。
++ * 判定：圆心在内，且圆心到多边形各边的最近距离 ≥ 半径。
++ */
++export function circleInsidePolygon(center: Point, radius: number, poly: Polygon): boolean {
++  if (!pointInPoly(center, poly)) return false
++  return nearestPoly(center, poly) >= radius - 1e-9
++}
++
++/** 两底座圆是否重叠（部署/移动合法性）。 */
++export function circlesOverlap(a: Point, ra: number, b: Point, rb: number): boolean {
++  return Math.hypot(a.x - b.x, a.y - b.y) < ra + rb - 1e-9
++}
++
++/** 点到多边形边界最近距离（导出版，掩护/控制范围复用）。 */
++export function distanceToPolygon(p: Point, poly: Polygon): number {
++  return nearestPoly(p, poly)
++}
+ function segIntersectsPoly(a: Point, b: Point, poly: Polygon): boolean {
+   if (poly.length < 2) return false // P9：不足 2 顶点无法成边
+   if (pointInPoly(a, poly) || pointInPoly(b, poly)) return true
+diff --git a/src/index.css b/src/index.css
+index 5867637..ee8bacf 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -89,3 +89,194 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
+   content: ''; position: absolute; inset: 0; border-radius: 8px; pointer-events: none;
+   background: linear-gradient(to right, rgba(58,123,199,0.12) 0 33.33%, transparent 33.33% 66.66%, rgba(199,93,58,0.12) 66.66% 100%);
+ }
++
++/* ===== 建队（Story 1.11）触控与基调兜底（T7，暗色 token，阵营色描边） ===== */
++.roster h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
++.side-toggle { gap: 0.75rem; margin-bottom: 0.75rem; }
++.side-btn { min-height: 48px; padding: 0.5rem 1rem; display: inline-flex; align-items: center; gap: 0.5rem; border-width: 2px; }
++.side-btn.a { border-color: var(--side-a); }
++.side-btn.b { border-color: var(--side-b); }
++.side-btn.active { box-shadow: 0 0 0 2px var(--accent); }
++.side-btn .dot { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; font-size: 0.75rem; font-weight: 700; }
++.side-btn .dot.ok { background: #2f7d52; color: #fff; }
++.side-btn .dot.warn { background: #b5403a; color: #fff; }
++
++.roster-layout { display: grid; grid-template-columns: 1fr 18rem; gap: 1rem; align-items: start; }
++@media (max-width: 720px) { .roster-layout { grid-template-columns: 1fr; } .legality { position: static; } }
++.roster-main { display: flex; flex-direction: column; gap: 1rem; }
++
++.faction-grid h3, .operative-picker h3, .subfaction h3 { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--muted); }
++.cards { display: flex; gap: 0.6rem; flex-wrap: wrap; }
++.faction-card { min-height: 56px; min-width: 120px; display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; padding: 0.6rem 0.9rem; }
++.faction-card.sel { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
++.faction-card:disabled { opacity: 0.4; cursor: not-allowed; }
++
++.op-card { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
++.op-card.in strong { color: var(--accent); }
++.loadout { margin: 0.3rem 0 0.3rem 1.6rem; display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
++.weapon-pick { font-size: 0.78rem; }
++.weapon-pick input { min-height: 0; min-width: 0; width: auto; }
++
++.legality { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
++.legality.has-warn { border-color: #6e3a2e; }
++.legality h3 { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--muted); }
++.legality li.ok strong { color: #39d98a; }
++.legality li.warn strong { color: #ff6b6b; }
++.verdict { margin: 0.5rem 0 0; font-weight: 600; }
++.verdict.ok { color: #39d98a; }
++.verdict.warn { color: #ff6b6b; }
++
++.enter-gate { margin-top: 1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
++.enter-btn { min-height: 56px; padding: 0.6rem 1.4rem; font-size: 1rem; }
++.enter-btn:disabled { opacity: 0.5; cursor: not-allowed; }
++
++/* ===== 对局（Story 1.12-1.17） ===== */
++.map-select h2 { margin: 0 0 0.3rem; font-size: 1.1rem; }
++.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem; margin-top: 0.5rem; }
++.map-card { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.5rem; min-height: 56px; align-items: stretch; }
++.map-card.sel, .map-card:hover { border-color: var(--accent); }
++.map-thumb { background: var(--bg); border-radius: 4px; }
++.map-card-name { font-size: 0.85rem; }
++.blank-thumb { display: flex; align-items: center; justify-content: center; height: 80px; font-size: 2rem; color: var(--muted); background: var(--bg); border-radius: 4px; border: 1px dashed var(--border); }
++
++/* 棋盘渲染层（1.12/1.14 共享） */
++.board { position: relative; background: #0f1115; border: 1px solid var(--border); border-radius: 8px; margin: 0.5rem 0; touch-action: none; }
++.grid-bg { position: absolute; inset: 0; background-image: linear-gradient(#1d2129 1px, transparent 1px), linear-gradient(90deg, #1d2129 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5; pointer-events: none; border-radius: 8px; }
++.terrain { position: absolute; pointer-events: none; border-radius: 2px; }
++.terrain.blocking { background: #5a4030; border: 1px solid #7a5440; }
++.terrain.cover { background: #2f4a2f; border: 1px solid #4a6a4a; }
++.terrain.obscuring { background: #3a3a5a; border: 1px solid #5a5a7a; }
++.objective-wrap { position: absolute; pointer-events: auto; }
++.objective-diamond { width: 18px; height: 18px; background: var(--accent); transform: rotate(45deg); border-radius: 2px; border: 2px solid #6b7280; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: #fff; margin-left: -9px; margin-top: -9px; }
++.token { position: absolute; padding: 0; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
++.token.a { background: var(--side-a); color: #fff; }
++.token.b { background: var(--side-b); color: #fff; }
++.token.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
++.token.dead { opacity: 0.3; filter: grayscale(1); }
++.token-label { font-size: 0.7rem; font-weight: 700; z-index: 1; }
++.facing { pointer-events: none; }
++.inch-readout { display: inline-block; background: var(--panel); border: 1px solid var(--accent); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-top: 0.2rem; }
++
++/* 部署阶段 */
++.deploy-phase .pushbar { margin-bottom: 0.4rem; }
++
++/* 拦截卡 */
++.intercept-card { position: relative; background: #3a1f1c; border: 1px solid #6e3a2e; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.4rem 0; }
++.intercept-card ul { margin: 0.25rem 0 0; padding-left: 1.1rem; color: #ffb4a8; }
++.intercept-card.warn { color: #ff6b6b; }
++.intercept-close { position: absolute; top: 0.25rem; right: 0.4rem; min-width: 28px; min-height: 28px; padding: 0; }
++.intercept-floating { position: relative; margin: 0.4rem 0; }
++.link-btn { background: transparent; border: none; color: var(--accent); cursor: pointer; padding: 0 0.3rem; min-height: 28px; min-width: auto; font-size: 0.8rem; text-decoration: underline; }
++
++/* 状态带（1.13/1.16） */
++.status-strip { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--border); border-left-width: 4px; padding: 0.5rem 0.75rem; border-radius: 6px; }
++.status-strip.a { border-left-color: var(--side-a); }
++.status-strip.b { border-left-color: var(--side-b); }
++.ss-item { font-size: 0.85rem; color: var(--muted); }
++.ss-item strong { color: var(--fg); }
++.ss-item.active-player.a strong { color: var(--side-a); }
++.ss-item.active-player.b strong { color: var(--side-b); }
++
++/* 行动指挥区（1.13） */
++.action-bar { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.4rem 0; }
++.action-bar.a { border-left: 3px solid var(--side-a); }
++.action-bar.b { border-left: 3px solid var(--side-b); }
++.push-text { font-size: 0.9rem; margin-bottom: 0.4rem; }
++.action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
++.main-btn { min-height: 56px; font-size: 0.95rem; font-weight: 600; }
++.main-btn.a { border-color: var(--side-a); }
++.main-btn.b { border-color: var(--side-b); }
++.rollback-btn { min-height: 44px; }
++
++/* 单位面板（1.15） */
++.unit-panel { display: flex; gap: 0.75rem; margin: 0.4rem 0; }
++.unit-side { flex: 1; }
++.unit-side h4 { margin: 0 0 0.25rem; font-size: 0.8rem; color: var(--muted); }
++.unit-side.a h4 { color: var(--side-a); }
++.unit-side.b h4 { color: var(--side-b); }
++.unit-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem; }
++.unit-card { display: flex; gap: 0.4rem; align-items: center; padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
++.unit-card.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
++.unit-card.ready { border-left: 3px solid var(--accent); }
++.unit-card.fresh { border-left: 3px solid #39d98a; }
++.unit-card.hurt { border-left: 3px solid #d9a239; }
++.unit-card.injured { border-left: 3px solid #d97739; }
++.unit-card.dead { border-left: 3px solid #6b7280; opacity: 0.45; filter: grayscale(1); }
++.uc-name { flex: 1; }
++.uc-wounds { color: var(--muted); }
++.uc-tag { font-size: 0.7rem; padding: 0 0.3rem; border-radius: 3px; background: var(--accent); color: #0b0d10; }
++.uc-tag.warn { background: #d97739; }
++
++/* 流水线抽屉（1.13/1.15） */
++.pipeline-drawer { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.4rem 0; }
++.pipeline-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
++.dice-toggle { min-height: 36px; font-size: 0.8rem; }
++.dice-toggle.electronic { border-color: #39d98a; color: #39d98a; }
++.dice-toggle.manual { border-color: #d9a239; color: #d9a239; }
++.pipeline-steps { list-style: none; padding: 0; margin: 0; counter-reset: step; }
++.pipe-step { border-bottom: 1px solid var(--border); padding: 0.3rem 0; font-size: 0.82rem; }
++.pipe-step.greyed { opacity: 0.4; }
++.pipe-head { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
++.pipe-sid { color: var(--accent); font-family: ui-monospace, monospace; font-size: 0.75rem; min-width: 9rem; }
++.pipe-summary { flex: 1; }
++.pipe-detail { margin: 0.3rem 0 0.3rem 1rem; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
++.confirm-btn { min-height: 56px; margin-top: 0.4rem; width: 100%; }
++
++/* 日志面板（1.15） */
++.log-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.4rem 0; }
++.log-panel h4 { margin: 0 0 0.3rem; font-size: 0.8rem; color: var(--muted); }
++.log-filters { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
++.chip { min-height: 36px; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid var(--border); background: transparent; color: var(--fg); cursor: pointer; }
++.chip.active { border-color: var(--accent); color: var(--accent); }
++.chip.finding.ambiguous { border-color: #d9a239; color: #d9a239; }
++.chip.finding.flipped { background: rgba(217,162,57,0.15); }
++.log-list { list-style: none; padding: 0; margin: 0; max-height: 240px; overflow-y: auto; }
++.log-entry { display: flex; gap: 0.4rem; align-items: baseline; padding: 0.2rem 0; font-size: 0.78rem; border-bottom: 1px solid var(--border); }
++.log-kind { font-size: 0.65rem; padding: 0 0.3rem; border-radius: 3px; background: var(--bg); color: var(--muted); min-width: 3rem; text-align: center; }
++.log-kind.score { color: #39d98a; }
++.log-kind.shoot, .log-kind.melee { color: #ff6b6b; }
++.log-text { flex: 1; }
++
++/* 几何 finding 翻转条（1.14） */
++.finding-strip { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.3rem 0; }
++
++/* 物理骰录入浮层（1.13） */
++.overlay-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
++.manual-dice, .rules-query { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; min-width: 320px; max-width: 90vw; }
++.manual-dice-head, .rq-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
++.dice-faces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin: 0.5rem 0; }
++.dice-face { min-height: 56px; font-size: 1.2rem; font-weight: 700; }
++.dice-record { margin: 0.4rem 0; font-size: 0.85rem; }
++.dice-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; min-height: 30px; padding: 0 0.4rem; margin: 0 0.15rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-weight: 700; cursor: pointer; }
++.dice-chip.sm { min-width: 24px; min-height: 24px; font-size: 0.75rem; cursor: default; }
++.ok { color: #39d98a; } .warn { color: #ff6b6b; }
++
++/* 近战/射击歧义 chips */
++.chips-ask { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--accent); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.4rem 0; }
++
++/* 结果页（1.16） */
++.result-page { text-align: center; padding: 2rem 1rem; }
++.result-page .outcome { font-size: 1.2rem; margin: 1rem 0; }
++
++/* 规则查询（1.17） */
++.rules-query { width: 480px; }
++.rq-list { list-style: none; padding: 0; margin: 0.5rem 0; max-height: 50vh; overflow-y: auto; }
++.rq-item { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
++.rq-fields { font-size: 0.78rem; line-height: 1.5; }
++.rq-src { font-size: 0.72rem; font-style: italic; }
++
++/* 地形编辑器（1.12） */
++.terrain-editor h2 { margin: 0 0 0.3rem; font-size: 1.1rem; }
++.te-toolbar { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin: 0.4rem 0; }
++.te-sep { width: 1px; height: 24px; background: var(--border); display: inline-block; }
++.te-canvas { background: #0f1115; border: 1px solid var(--border); border-radius: 6px; touch-action: none; }
++
++/* 三栏布局 shell（1.13） */
++.play-view { display: flex; flex-direction: column; gap: 0.4rem; }
++.play-main { display: grid; grid-template-columns: minmax(0, 1fr) 22rem 18rem; gap: 0.6rem; align-items: start; }
++@media (max-width: 1280px) {
++  .play-main { grid-template-columns: 1fr; }
++  .play-right-col { order: 3; }
++}
++.play-right-col { display: flex; flex-direction: column; gap: 0.4rem; }
++
+diff --git a/src/rules/index.ts b/src/rules/index.ts
+index dbcd666..ec14b6d 100644
+--- a/src/rules/index.ts
++++ b/src/rules/index.ts
+@@ -2,3 +2,4 @@ export * from './types'
+ export * from './version'
+ export { loadPack, PackValidationError, RulesetVersionMismatchError } from './packLoader'
+ export type { PackValidationIssue } from './packLoader'
++export * from './legality'
+diff --git a/src/rules/legality.ts b/src/rules/legality.ts
+new file mode 100644
+index 0000000..55fe8cf
+--- /dev/null
++++ b/src/rules/legality.ts
+@@ -0,0 +1,120 @@
++// 建队合法性判定（纯逻辑，数据驱动，零 UI 依赖）。
++// 读 FactionPack 的 buildConstraints + faction.subFactionSelector，逐条算结构性校验。
++// KT Lite 无点数（D-30），校验仅三类：特工来源 / 子阵营选择 / 装备限制。
++
++import type { FactionPack } from './types'
++
++export type RosterLegalityStatus = 'ok' | 'warn'
++
++export interface RosterLegalityCheck {
++  key: string
++  label: string
++  status: RosterLegalityStatus
++  detail: string
++}
++
++export interface RosterLegalityInput {
++  pack: FactionPack
++  operativeIds: string[]
++  /** opId → 选中的 weaponId 列表（装备配置） */
++  loadout: Record<string, string[]>
++  /** 子阵营选择器已选项 id 列表（战团战术/印记） */
++  subFactionSelection: string[]
++  /**
++   * 合成武器 keyword 覆盖（测试/扩展用）：weaponId → keywords。
++   * 未列出则回退到 pack.weapons 里的 keywords。UI 正常路径留空。
++   */
++  syntheticWeaponKeywords?: Record<string, string[]>
++}
++
++export interface RosterLegalityResult {
++  checks: RosterLegalityCheck[]
++  legal: boolean
++}
++
++function weaponKeywords(pack: FactionPack, synthetic: Record<string, string[]> | undefined) {
++  const map = new Map<string, string[]>()
++  for (const w of pack.weapons) map.set(w.weaponId, w.keywords)
++  if (synthetic) for (const [id, kws] of Object.entries(synthetic)) map.set(id, kws)
++  return map
++}
++
++/** 计算建队合法性。纯函数：相同输入恒定输出，便于单测与回放。 */
++export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResult {
++  const { pack, operativeIds, loadout, subFactionSelection, syntheticWeaponKeywords } = input
++  const constraints = pack.buildConstraints
++  const checks: RosterLegalityCheck[] = []
++
++  // ===== 特工来源：operativeId 全部须存在于阵营列表；数量在 [min,max] =====
++  const knownIds = new Set(pack.operatives.map((o) => o.operativeId))
++  const unknown = operativeIds.filter((id) => !knownIds.has(id))
++  const min = constraints?.operatives?.min
++  const max = constraints?.operatives?.max
++  let srcDetail = `${operativeIds.length} 名`
++  let srcStatus: RosterLegalityStatus = 'ok'
++  if (unknown.length > 0) {
++    srcStatus = 'warn'
++    srcDetail += `；未知特工：${unknown.join(', ')}`
++  }
++  if (min !== undefined && operativeIds.length < min) {
++    srcStatus = 'warn'
++    srcDetail += `；至少 ${min} 名`
++  }
++  if (max !== undefined && operativeIds.length > max) {
++    srcStatus = 'warn'
++    srcDetail += `；上限 ${max} 名`
++  }
++  checks.push({ key: 'operatives-source', label: '特工来源', status: srcStatus, detail: srcDetail })
++
++  // ===== 子阵营选择：选满 max 且选项合法（无选择器则跳过） =====
++  const selector = pack.faction.subFactionSelector
++  if (selector) {
++    const validOptions = new Set(selector.options)
++    const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
++    let sfStatus: RosterLegalityStatus = 'ok'
++    let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
++    if (subFactionSelection.length !== selector.max) {
++      sfStatus = 'warn'
++      sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
++    } else if (invalid.length > 0) {
++      sfStatus = 'warn'
++      sfDetail = `无效选项：${invalid.join(', ')}`
++    }
++    checks.push({ key: 'sub-faction', label: '子阵营选择', status: sfStatus, detail: sfDetail })
++  }
++
++  // ===== 装备限制：按 scope（weaponId|keyword）聚合计数，超限 → 违规 =====
++  const limits = constraints?.equipmentLimits
++  if (limits && Object.keys(limits).length > 0) {
++    const scope = constraints?.equipmentLimitScope ?? 'weaponId'
++    const kwMap = weaponKeywords(pack, syntheticWeaponKeywords)
++    // 把全队所有选中武器按 limit key 维度计数
++    const allSelected: string[] = []
++    for (const opId of Object.keys(loadout)) {
++      const arr = loadout[opId]
++      if (Array.isArray(arr)) allSelected.push(...arr)
++    }
++    let eqStatus: RosterLegalityStatus = 'ok'
++    const overs: string[] = []
++    for (const [key, cap] of Object.entries(limits)) {
++      let count = 0
++      for (const wId of allSelected) {
++        if (scope === 'weaponId') {
++          if (wId === key) count++
++        } else {
++          const kws = kwMap.get(wId) ?? []
++          if (kws.includes(key)) count++
++        }
++      }
++      if (count > cap) {
++        eqStatus = 'warn'
++        overs.push(`${key}: ${count}/${cap}`)
++      }
++    }
++    const eqDetail = overs.length ? `超限 ${overs.join('; ')}` : '符合装备限制'
++    checks.push({ key: 'equipment', label: '装备限制', status: eqStatus, detail: eqDetail })
++  }
++
++  const legal = checks.every((c) => c.status === 'ok')
++  return { checks, legal }
++}
+diff --git a/src/rules/schema/faction-pack.schema.json b/src/rules/schema/faction-pack.schema.json
+index 20dfa81..82c1a9a 100644
+--- a/src/rules/schema/faction-pack.schema.json
++++ b/src/rules/schema/faction-pack.schema.json
+@@ -17,11 +17,12 @@
+         "keywords": { "type": "array", "items": { "type": "string" } },
+         "subFactionSelector": {
+           "type": "object",
+-          "required": ["id", "label", "options"],
++          "required": ["id", "label", "options", "max"],
+           "properties": {
+             "id": { "type": "string" },
+             "label": { "type": "string" },
+             "options": { "type": "array", "items": { "type": "string" } },
++            "max": { "type": "integer", "minimum": 1 },
+             "default": { "type": "string" }
+           }
+         }
+diff --git a/src/rules/types.ts b/src/rules/types.ts
+index b0e38ec..16f8575 100644
+--- a/src/rules/types.ts
++++ b/src/rules/types.ts
+@@ -87,7 +87,8 @@ export interface Effect {
+ export interface SubFactionSelector {
+   id: string
+   label: string
+-  options: string[]
++  options: string[] // option ids（阵营机制 = 数据；死亡天使=战团战术 effectId，军团兵=印记 id）
++  max: number // 可选项数上限（死亡天使 8 选 2 → max=2；军团兵印记 5 选 1 → max=1）
+   default?: string
+ }
+ 
+@@ -141,7 +142,11 @@ export interface Wargear {
+ }
+ 
+ export interface BuildConstraints {
++  // 特工来源结构性约束（KT Lite 无点数 D-30，仅 min/max 数量）
++  operatives?: { min?: number; max?: number }
++  // 装备限制：key 为 weaponId 或武器 keyword（按 equipmentLimitScope 判定），value 为全队上限数量
+   equipmentLimits?: Record<string, number>
++  equipmentLimitScope?: 'weaponId' | 'keyword'
+   notes?: string
+ }
+ 
+diff --git a/src/state/matchStore.ts b/src/state/matchStore.ts
+new file mode 100644
+index 0000000..a44a63d
+--- /dev/null
++++ b/src/state/matchStore.ts
+@@ -0,0 +1,273 @@
++import { create } from 'zustand'
++import type { Point, TerrainFeature } from '../geometry'
++import type { ObjectiveMarker, MapPack } from '../data/maps'
++import { createInitialTurnState, turnReducer, type TurnState } from './turnStateMachine'
++import type { ResolutionLog } from '../engine'
++import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
++
++// 对局聚合状态（1.12-1.16 共享）。UI 只读写 store（AR-9），不直接调引擎/几何。
++
++export type Phase = 'map-select' | 'deploy' | 'play' | 'ended'
++export type Side = 'a' | 'b'
++export type DiceSourceKind = 'electronic' | 'manual'
++
++export interface MatchToken {
++  uid: string
++  side: Side
++  opId: string
++  name: string
++  pos: Point
++  facing: number // 度，0=朝右；双击旋转 45°
++  baseRadius: number
++  wounds: number
++  maxWounds: number // 起始耐伤（受创阈值视觉用，1.15 T4）
++  alive: boolean
++  placed: boolean
++}
++
++export type LogKind = 'turn' | 'shoot' | 'melee' | 'ploy' | 'score' | 'deploy' | 'system'
++export interface LogEntry {
++  id: number
++  kind: LogKind
++  text: string
++}
++
++export interface LastShot {
++  targetUid: string
++  targetName: string
++  woundsDealt: number
++  prevWounds: number
++  attackerUid: string
++  kind: 'shoot' | 'melee'
++}
++
++/** 几何 finding 翻转覆盖（咨询式 D-24）：key=`${attackerUid}>${targetUid}>${kind}`。 */
++type OverrideKey = string
++
++interface MatchState {
++  phase: Phase
++  mapPack: MapPack | null
++  customTerrain: TerrainFeature[] // 自定义板会话内（D-20）
++  tokens: MatchToken[]
++  turn: TurnState
++  vp: { a: number; b: number }
++  log: LogEntry[]
++  logFilter: LogKind | 'all'
++  selected: string | null
++  dragging: string | null
++  dragOrigin: Point | null
++  lastShot: LastShot | null
++  currentLog: ResolutionLog | null
++  shotSeq: number
++  diceSource: DiceSourceKind
++  overrides: Record<OverrideKey, boolean>
++  winner: string | null
++  intercept: { title: string; reasons: string[] } | null
++
++  // actions
++  setPhase: (p: Phase) => void
++  loadMap: (m: MapPack) => void
++  startBlank: (bounds: { w: number; h: number }) => void
++  addTerrain: (t: TerrainFeature) => void
++  removeTerrain: (id: string) => void
++  clearTerrain: () => void
++  initTokens: (tokens: MatchToken[]) => void
++  placeToken: (uid: string, pos: Point, facing: number) => void
++  moveToken: (uid: string, pos: Point) => void
++  rotateToken: (uid: string) => void
++  setSelected: (uid: string | null) => void
++  setDragging: (uid: string | null, origin?: Point | null) => void
++  applyDamage: (uid: string, woundsDealt: number) => void
++  undoLastShot: () => void
++  setLastShot: (s: LastShot | null) => void
++  setCurrentLog: (l: ResolutionLog | null) => void
++  rollbackStep: (index: number) => void // 回滚到某步（保留 0..index，丢弃其后）
++  stepBackCurrent: () => void // 单步回退
++  nextShotSeq: () => number
++  setDiceSource: (d: DiceSourceKind) => void
++  toggleOverride: (key: OverrideKey) => void
++  overrideFor: (key: OverrideKey) => boolean
++  setIntercept: (i: { title: string; reasons: string[] } | null) => void
++  pushLog: (kind: LogKind, text: string) => void
++  setLogFilter: (f: LogKind | 'all') => void
++  activate: (uid: string, side: Side) => void
++  endActivation: (uid: string) => void
++  scoreAndEndTP: (objectiveControl: (o: ObjectiveMarker) => Side | null) => void
++  reset: () => void
++}
++
++let logId = 0
++function nextLogId(): number {
++  logId += 1
++  return logId
++}
++
++export const useMatchStore = create<MatchState>((set, get) => ({
++  phase: 'map-select',
++  mapPack: null,
++  customTerrain: [],
++  tokens: [],
++  turn: createInitialTurnState(),
++  vp: { a: 0, b: 0 },
++  log: [],
++  logFilter: 'all',
++  selected: null,
++  dragging: null,
++  dragOrigin: null,
++  lastShot: null,
++  currentLog: null,
++  shotSeq: 0,
++  diceSource: 'electronic',
++  overrides: {},
++  winner: null,
++  intercept: null,
++
++  setPhase: (phase) => set({ phase }),
++  loadMap: (m) =>
++    set({
++      mapPack: m,
++      customTerrain: [...m.terrain],
++      phase: 'deploy',
++      log: [{ id: nextLogId(), kind: 'system', text: `载入地图「${m.name}」· 部署阶段` }],
++    }),
++  startBlank: (bounds) =>
++    set({
++      mapPack: {
++        mapId: 'blank',
++        name: '自定义板',
++        version: '1.0.0',
++        bounds,
++        terrain: [],
++        objectives: [{ id: 'obj1', pos: { x: bounds.w / 2, y: bounds.h / 2 }, controlRange: 3 }],
++        dropZones: {
++          a: [
++            { x: 0, y: 0 },
++            { x: bounds.w / 3, y: 0 },
++            { x: bounds.w / 3, y: bounds.h },
++            { x: 0, y: bounds.h },
++          ],
++          b: [
++            { x: (bounds.w * 2) / 3, y: 0 },
++            { x: bounds.w, y: 0 },
++            { x: bounds.w, y: bounds.h },
++            { x: (bounds.w * 2) / 3, y: bounds.h },
++          ],
++        },
++      },
++      customTerrain: [],
++      phase: 'deploy',
++      log: [{ id: nextLogId(), kind: 'system', text: '自定义板 · 画地形后部署' }],
++    }),
++  addTerrain: (t) => set((s) => ({ customTerrain: [...s.customTerrain, t] })),
++  removeTerrain: (id) => set((s) => ({ customTerrain: s.customTerrain.filter((t) => t.id !== id) })),
++  clearTerrain: () => set({ customTerrain: [] }),
++  initTokens: (tokens) => set({ tokens }),
++  placeToken: (uid, pos, facing) =>
++    set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, placed: true, pos, facing } : t)) })),
++  moveToken: (uid, pos) => set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, pos } : t)) })),
++  rotateToken: (uid) =>
++    set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, facing: (t.facing + 45) % 360 } : t)) })),
++  setSelected: (selected) => set({ selected }),
++  setDragging: (dragging, origin = null) => set({ dragging, dragOrigin: origin }),
++  applyDamage: (uid, woundsDealt) =>
++    set((s) => ({
++      tokens: s.tokens.map((t) => {
++        if (t.uid !== uid) return t
++        const nw = Math.max(0, t.wounds - woundsDealt)
++        return { ...t, wounds: nw, alive: nw > 0 }
++      }),
++    })),
++  undoLastShot: () => {
++    const ls = get().lastShot
++    if (!ls) return
++    set((s) => ({
++      tokens: s.tokens.map((t) =>
++        t.uid === ls.targetUid ? { ...t, wounds: ls.prevWounds, alive: ls.prevWounds > 0 } : t,
++      ),
++      lastShot: null,
++    }))
++  },
++  setLastShot: (lastShot) => set({ lastShot }),
++  setCurrentLog: (currentLog) => set({ currentLog }),
++  rollbackStep: (index) => set((s) => (s.currentLog ? { currentLog: logRollbackTo(s.currentLog, index) } : {})),
++  stepBackCurrent: () => set((s) => (s.currentLog ? { currentLog: logStepBack(s.currentLog) } : {})),
++  nextShotSeq: () => {
++    const n = get().shotSeq + 1
++    set({ shotSeq: n })
++    return n
++  },
++  setDiceSource: (diceSource) => set({ diceSource }),
++  toggleOverride: (key) => set((s) => ({ overrides: { ...s.overrides, [key]: !s.overrides[key] } })),
++  overrideFor: (key) => Boolean(get().overrides[key]),
++  setIntercept: (intercept) => set({ intercept }),
++  pushLog: (kind, text) =>
++    set((s) => ({ log: [{ id: nextLogId(), kind, text }, ...s.log].slice(0, 80) })),
++  setLogFilter: (logFilter) => set({ logFilter }),
++  activate: (uid, side) =>
++    set((s) => {
++      const base = {
++        ...s,
++        operatives: { ...s.turn.operatives, [uid]: { order: 'ENGAGED' as const, ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false } },
++      }
++      const turn = turnReducer({ ...s.turn, operatives: base.operatives }, { type: 'ACTIVATE', opId: uid, player: side })
++      return { turn }
++    }),
++  endActivation: (uid) =>
++    set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }) })),
++  scoreAndEndTP: (objectiveControl) => {
++    const s = get()
++    const map = s.mapPack
++    let scoredA = s.vp.a
++    let scoredB = s.vp.b
++    const events: string[] = []
++    if (map) {
++      for (const o of map.objectives) {
++        const ctrl = objectiveControl(o)
++        if (ctrl === 'a') { scoredA++; events.push(`${o.id} → A`) }
++        else if (ctrl === 'b') { scoredB++; events.push(`${o.id} → B`) }
++      }
++    }
++    const next = turnReducer(s.turn, { type: 'END_TURNING_POINT' })
++    const newLogs: LogEntry[] = []
++    if (events.length) newLogs.push({ id: nextLogId(), kind: 'score', text: `TP${s.turn.turningPoint} 计分：${events.join('，')}（VP A:${scoredA} B:${scoredB}）` })
++    const ended = next.phase === 'BATTLE_END'
++    let winner: string | null = s.winner
++    if (ended) {
++      winner = scoredA > scoredB ? 'A 胜' : scoredB > scoredA ? 'B 胜' : '平局'
++      newLogs.push({ id: nextLogId(), kind: 'system', text: `战斗结束 → ${winner}（VP A:${scoredA} B:${scoredB}）` })
++    }
++    set({
++      vp: { a: scoredA, b: scoredB },
++      turn: ended ? next : { ...next, activePlayer: next.activePlayer === 'a' ? 'b' : 'a' },
++      winner: ended ? winner : null,
++      phase: ended ? 'ended' : s.phase,
++      selected: null,
++      log: [...newLogs, ...s.log].slice(0, 80),
++    })
++  },
++  reset: () =>
++    set({
++      phase: 'map-select',
++      mapPack: null,
++      customTerrain: [],
++      tokens: [],
++      turn: createInitialTurnState(),
++      vp: { a: 0, b: 0 },
++      log: [],
++      selected: null,
++      dragging: null,
++      dragOrigin: null,
++      lastShot: null,
++      currentLog: null,
++      shotSeq: 0,
++      overrides: {},
++      winner: null,
++      intercept: null,
++    }),
++}))
++
++// ===== 选择器/派生（纯函数，组件用） =====
++export function selectActivated(state: MatchState, uid: string | null): boolean {
++  if (!uid) return false
++  return Boolean(state.turn.operatives[uid]?.ready)
++}
+diff --git a/src/state/rosterStore.ts b/src/state/rosterStore.ts
+index f61456e..e14830e 100644
+--- a/src/state/rosterStore.ts
++++ b/src/state/rosterStore.ts
+@@ -1,14 +1,48 @@
+ import { create } from 'zustand'
+ 
+-// 建队结果（H4 接线：RosterView 写入，MatchView 读取建队→对局数据流）
++// 建队结果（T1：UI 层 roster store 切片）。UI 只读写 store，不直接调引擎/数据包。
++// AC4 双方建队：rosterA / rosterB 各持一队（阵营可同可异）。
++
++export type Side = 'a' | 'b'
++
++/** 单支建队结果（阵营 + 特工 + 装备配置 + 子阵营选择）。 */
++export interface RosterEntry {
++  factionId: string | null // 选定阵营 id（null=未选阵营）
++  operativeIds: string[] // 入队特工 operativeId 列表
++  /** opId → 选中的 weaponId 列表（装备配置） */
++  loadout: Record<string, string[]>
++  /** 子阵营选择器已选项 id（死亡天使战团战术 / 军团兵印记） */
++  subFactionSelection: string[]
++}
++
++export function emptyRoster(): RosterEntry {
++  return { factionId: null, operativeIds: [], loadout: {}, subFactionSelection: [] }
++}
++
+ interface RosterState {
+-  aOps: string[] // A 方特工 operativeId 列表
+-  aTactics: string[] // A 方战团战术 effectId 列表（8 选 2）
+-  setRoster: (ops: string[], tactics: string[]) => void
++  rosterA: RosterEntry
++  rosterB: RosterEntry
++  /** 当前在建哪一方（A/B 交替建队） */
++  editing: Side
++  /** 全量替换某方建队结果 */
++  setRoster: (side: Side, entry: RosterEntry) => void
++  /** 局部更新某方（浅合并） */
++  patchRoster: (side: Side, patch: Partial<RosterEntry>) => void
++  setEditing: (side: Side) => void
++  reset: () => void
+ }
+ 
+ export const useRosterStore = create<RosterState>((set) => ({
+-  aOps: [],
+-  aTactics: [],
+-  setRoster: (aOps, aTactics) => set({ aOps, aTactics }),
++  rosterA: emptyRoster(),
++  rosterB: emptyRoster(),
++  editing: 'a',
++  setRoster: (side, entry) => set(side === 'a' ? { rosterA: entry } : { rosterB: entry }),
++  patchRoster: (side, patch) =>
++    set((s) => {
++      const cur = side === 'a' ? s.rosterA : s.rosterB
++      const next = { ...cur, ...patch }
++      return side === 'a' ? { rosterA: next } : { rosterB: next }
++    }),
++  setEditing: (editing) => set({ editing }),
++  reset: () => set({ rosterA: emptyRoster(), rosterB: emptyRoster(), editing: 'a' }),
+ }))
+diff --git a/src/ui/MatchView.tsx b/src/ui/MatchView.tsx
+index 6de6386..1b12e9e 100644
+--- a/src/ui/MatchView.tsx
++++ b/src/ui/MatchView.tsx
+@@ -1,302 +1,112 @@
+ import { useState } from 'react'
+-import { loadPack, runShooting, losFinding, rangeFinding, coverFinding } from '../'
+-import { ElectronicDiceSource, hashSeed } from '../dice'
+-import { createInitialTurnState, turnReducer, type TurnState } from '../state/turnStateMachine'
++import { loadPack, type FactionPack } from '../'
++import { useMatchStore, type MatchToken } from '../state/matchStore'
+ import { useRosterStore } from '../state/rosterStore'
+-import type { ShootResult } from '../engine'
+-import type { Effect } from '../rules'
+-import type { Board, OperativePlacement, Point, TerrainFeature } from '../geometry'
++import { loadMapPack, type MapPack } from '../data/maps'
++import { MapSelect } from './match/MapSelect'
++import { TerrainEditor } from './match/TerrainEditor'
++import { DeployPhase } from './match/DeployPhase'
++import { PlayView } from './match/PlayView'
++import { ResultPage } from './match/ResultPage'
++import { RulesQuery, useRulesQuery } from './match/RulesQuery'
++import openMap from '../data/packs/maps/open.v1.json'
++import ruinMap from '../data/packs/maps/ruin.v1.json'
++import corridorMap from '../data/packs/maps/corridor.v1.json'
+ import angelsPack from '../data/packs/angels_of_death.v1.json'
+ 
+-const pack = loadPack(angelsPack)
+-const weapon = pack.weapons.find((w) => w.kind === 'RANGED')!
+-const BASE_R = 0.63
+-const SCALE = 20
+-const BOARD_W = 30
+-const BOARD_H = 20
+-const RANGE = weapon.profile.range ?? 24
+-
+-interface Token {
+-  uid: string
+-  side: 'a' | 'b'
+-  name: string
+-  pos: Point
+-  wounds: number
+-  alive: boolean
+-  placed: boolean
+-}
+-const MAPS: Record<string, TerrainFeature[]> = {
+-  open: [],
+-  ruin: [{ id: 'ruin', kind: 'BLOCKING', polygon: [{ x: 13, y: 6 }, { x: 17, y: 6 }, { x: 17, y: 14 }, { x: 13, y: 14 }] }],
+-  corridor: [
+-    { id: 'w1', kind: 'BLOCKING', polygon: [{ x: 8, y: 2 }, { x: 10, y: 2 }, { x: 10, y: 9 }, { x: 8, y: 9 }] },
+-    { id: 'w2', kind: 'BLOCKING', polygon: [{ x: 20, y: 11 }, { x: 22, y: 11 }, { x: 22, y: 18 }, { x: 20, y: 18 }] },
+-  ],
+-}
++const pack: FactionPack = loadPack(angelsPack)
++const MAPS: MapPack[] = [openMap, ruinMap, corridorMap].map((m) => loadMapPack(m))
+ 
+ const DEFAULT_IDS = [pack.operatives[0]!.operativeId, (pack.operatives[1] ?? pack.operatives[0]!).operativeId]
+-const opById = (id: string) => pack.operatives.find((o) => o.operativeId === id) ?? pack.operatives[0]!
+ 
+-function mkToken(side: 'a' | 'b', opId: string, idx: number): Token {
+-  const op = opById(opId)
+-  return { uid: `${side}${idx}`, side, name: `${op.name}-${side.toUpperCase()}${idx}`, pos: { x: -1, y: -1 }, wounds: op.stats.wounds, alive: true, placed: false }
+-}
+-
+-function initialTokens(): Token[] {
+-  const ids = useRosterStore.getState().aOps.length ? useRosterStore.getState().aOps : DEFAULT_IDS
+-  const out: Token[] = []
+-  ids.forEach((id, i) => { out.push(mkToken('a', id, i + 1)); out.push(mkToken('b', id, i + 1)) })
++function buildTokens(): MatchToken[] {
++  const picked = useRosterStore.getState().rosterA.operativeIds
++  const ids = picked.length ? picked : DEFAULT_IDS
++  const out: MatchToken[] = []
++  ids.forEach((opId, i) => {
++    const op = pack.operatives.find((o) => o.operativeId === opId) ?? pack.operatives[0]!
++    const baseRadius = op.base.diameterMm / 2 / 25.4 // mm→英寸半径（D-27）
++    ;(['a', 'b'] as const).forEach((side) => {
++      out.push({
++        uid: `${side}${i + 1}`,
++        side,
++        opId,
++        name: `${op.name}-${side.toUpperCase()}${i + 1}`,
++        pos: { x: -1, y: -1 },
++        facing: 0,
++        baseRadius,
++        wounds: op.stats.wounds,
++        maxWounds: op.stats.wounds,
++        alive: true,
++        placed: false,
++      })
++    })
++  })
+   return out
+ }
+ 
+-function tacticEffects(): Effect[] {
+-  return useRosterStore.getState().aTactics
+-    .map((id) => pack.effects.find((e) => e.effectId === id))
+-    .filter((e): e is Effect => Boolean(e))
+-}
+-
+-interface LastShot { result: ShootResult; targetUid: string; targetName: string; woundsDealt: number; prevWounds: number }
+-
+ export function MatchView() {
+-  const [tokens, setTokens] = useState<Token[]>(initialTokens)
+-  const [objectives] = useState<Point[]>([{ x: 15, y: 10 }])
+-  const [turn, setTurn] = useState<TurnState>(createInitialTurnState())
+-  const [vp, setVp] = useState<{ a: number; b: number }>({ a: 0, b: 0 })
+-  const [log, setLog] = useState<string[]>(['部署阶段：双方在降落区交替放置特工'])
+-  const [selected, setSelected] = useState<string | null>(null)
+-  const [dragging, setDragging] = useState<string | null>(null)
+-  const [mapKey, setMapKey] = useState('ruin')
+-  const [phase, setPhase] = useState<'deploy' | 'play'>('deploy')
+-  const [lastShot, setLastShot] = useState<LastShot | null>(null)
+-  const [shotSeq, setShotSeq] = useState(0) // H1：单调计数器，替代 log.length 做 seed
+-  const [winner, setWinner] = useState<string | null>(null)
+-  const terrain = MAPS[mapKey] ?? MAPS.ruin!
+-
+-  const active = tokens.find((t) => t.uid === selected) ?? null
+-  const pushLog = (s: string) => setLog((l) => [s, ...l].slice(0, 40))
+-  const toBoard = (): Board => ({ terrain, operatives: tokens.filter((t) => t.alive && t.placed).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: BASE_R })) })
+-
+-  // ===== 部署阶段 =====
+-  const unplacedA = tokens.filter((t) => t.side === 'a' && !t.placed)
+-  const unplacedB = tokens.filter((t) => t.side === 'b' && !t.placed)
+-  const deploySide: 'a' | 'b' = unplacedA.length >= unplacedB.length ? 'a' : 'b'
+-  const allPlaced = unplacedA.length === 0 && unplacedB.length === 0
+-
+-  function placeAt(p: Point) {
+-    if (phase !== 'deploy' || allPlaced) return
+-    const inZone = deploySide === 'a' ? p.x < 10 : p.x > 20
+-    if (!inZone) { pushLog(`⚠ 须在 ${deploySide.toUpperCase()} 方降落区放置`); return }
+-    const next = tokens.find((t) => t.side === deploySide && !t.placed)
+-    if (!next) return
+-    setTokens((ts) => ts.map((t) => (t.uid === next.uid ? { ...t, placed: true, pos: clampPos(p) } : t)))
+-    pushLog(`${next.name} 部署于 ${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+-  }
+-
+-  function beginPlay() {
+-    if (phase !== 'deploy' || !allPlaced) return // 防御兜底
+-    setPhase('play'); setSelected(null); setTurn((s) => ({ ...s, activePlayer: 'a' }))
+-    pushLog('部署完成 · 战斗开始（占领目标点）')
+-  }
+-
+-  // ===== 对局阶段 =====
+-  const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
+-  const guidance = !active
+-    ? `轮到 ${turn.activePlayer.toUpperCase()}：点一名己方特工激活`
+-    : active.side !== turn.activePlayer
+-      ? `选中了对方特工（仅查看）；请激活 ${turn.activePlayer.toUpperCase()} 方`
+-      : activated
+-        ? `已激活 ${active.name}：点空地移动 / 点敌方射击 / [结束激活]`
+-        : `${active.name}：先 [激活] 才能行动`
+-
+-  function activate() {
+-    if (!active || active.side !== turn.activePlayer) return
+-    setTurn((s) => {
+-      const next = { ...s, operatives: { ...s.operatives, [active.uid]: { order: 'ENGAGED' as const, ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false } } }
+-      return turnReducer(next, { type: 'ACTIVATE', opId: active.uid, player: active.side })
+-    })
+-    pushLog(`${active.name} 激活`)
+-  }
+-
+-  function moveToken(uid: string, p: Point) {
+-    setTokens((ts) => ts.map((t) => (t.uid === uid ? { ...t, pos: clampPos(p) } : t)))
++  const phase = useMatchStore((s) => s.phase)
++  const mapPack = useMatchStore((s) => s.mapPack)
++  const loadMap = useMatchStore((s) => s.loadMap)
++  const startBlank = useMatchStore((s) => s.startBlank)
++  const customTerrain = useMatchStore((s) => s.customTerrain)
++  const addTerrain = useMatchStore((s) => s.addTerrain)
++  const removeTerrain = useMatchStore((s) => s.removeTerrain)
++  const setPhase = useMatchStore((s) => s.setPhase)
++  const initTokens = useMatchStore((s) => s.initTokens)
++
++  const [blankBounds] = useState({ w: 30, h: 20 })
++  const [blankEditing, setBlankEditing] = useState(false)
++  const rulesQuery = useRulesQuery()
++
++  function onLoadMap(m: MapPack) {
++    loadMap(m)
++    initTokens(buildTokens())
+   }
+-
+-  function shoot(targetUid: string) {
+-    // C1/C2/C3 守卫：须激活 + 当前玩家 + 目标存活
+-    if (!active || active.side !== turn.activePlayer || !activated) return
+-    const target = tokens.find((t) => t.uid === targetUid)
+-    if (!target || target.side === active.side || !target.alive) return
+-    const board = toBoard()
+-    const aPl: OperativePlacement = { operativeId: active.uid, pos: active.pos, baseRadius: BASE_R }
+-    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: BASE_R }
+-    const los = losFinding(active.pos, target.pos, board)
+-    const range = rangeFinding(aPl, dPl, RANGE)
+-    const others = tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
+-    const cover = coverFinding(target.pos, board, others)
+-    if (!los.finalValue) { pushLog(`⚠ 拦截：${target.name} 不可见（LOS 阻断）`); return }
+-    if (!range.finalValue) { pushLog(`⚠ 拦截：${target.name} 超射程 ${RANGE}"`); return }
+-    // H4：A 方应用建队所选战团战术
+-    const effects = active.side === 'a' ? tacticEffects() : []
+-    const dice = new ElectronicDiceSource(hashSeed(`${active.uid}>${target.uid}`, 'SHOOT', shotSeq))
+-    const r = runShooting({ attacker: { operativeId: active.uid, weapon }, defender: { operativeId: target.uid, save: 3, wounds: target.wounds }, effects, dice, hasCover: cover.finalValue })
+-    setShotSeq((s) => s + 1)
+-    const prevWounds = target.wounds
+-    const nw = Math.max(0, target.wounds - r.woundsDealt)
+-    setLastShot({ result: r, targetUid: target.uid, targetName: target.name, woundsDealt: r.woundsDealt, prevWounds })
+-    setTokens((ts) => ts.map((t) => (t.uid === target.uid ? { ...t, wounds: nw, alive: nw > 0 } : t)))
+-    pushLog(`${active.name} → ${target.name}：造伤 ${r.woundsDealt}${nw <= 0 ? '（残废）' : `（剩 ${nw}）`}${cover.finalValue ? ' [掩护]' : ''}${los.confidence === 'AMBIGUOUS' ? ' [LOS模糊]' : ''}${effects.length ? ` [${effects.length}战术]` : ''}`)
+-  }
+-
+-  function undoLastShot() {
+-    if (!lastShot) return
+-    const exists = tokens.some((t) => t.uid === lastShot.targetUid) // 守卫：目标仍在
+-    const restore = lastShot.prevWounds
+-    if (exists) setTokens((ts) => ts.map((t) => (t.uid === lastShot.targetUid ? { ...t, wounds: restore, alive: restore > 0 } : t)))
+-    pushLog(exists ? `↶ 回滚：${lastShot.targetName} 耐伤恢复至 ${restore}` : `↶ 回滚：${lastShot.targetName} 已不在场（仅清记录）`)
+-    setLastShot(null)
++  function onBlank() {
++    startBlank(blankBounds)
++    setBlankEditing(true)
+   }
+-
+-  function endActivation() {
+-    if (!active || active.side !== turn.activePlayer || !activated) return
+-    setTurn((s) => turnReducer(s, { type: 'END_ACTIVATION', opId: active.uid }))
+-    setSelected(null)
+-    pushLog(`${active.name} 结束激活`)
+-  }
+-
+-  function scoreAndEndTP() {
+-    const scored = { a: vp.a, b: vp.b }
+-    for (const o of objectives) {
+-      const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && dist(t.pos, o) <= 3).length
+-      const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && dist(t.pos, o) <= 3).length
+-      if (nA > nB) scored.a++
+-      else if (nB > nA) scored.b++
+-    }
+-    setVp(scored)
+-    setSelected(null) // H2：清残留选中
+-    const next = turnReducer(turn, { type: 'END_TURNING_POINT' })
+-    setTurn(next)
+-    pushLog(`转折点 ${turn.turningPoint} 结束 — VP A:${scored.a} B:${scored.b}`)
+-    if (next.phase === 'BATTLE_END') {
+-      const w = scored.a > scored.b ? 'A 胜' : scored.b > scored.a ? 'B 胜' : '平局'
+-      setWinner(w); pushLog(`战斗结束 → ${w}`)
++  function onTerrainDone() {
++    setBlankEditing(false)
++    // 把自定义地形固化进 mapPack（startBlank 建的空 mapPack 合并 customTerrain）
++    if (mapPack) {
++      loadMap({ ...mapPack, terrain: customTerrain })
++      initTokens(buildTokens())
+     } else {
+-      setTurn((s) => ({ ...s, activePlayer: s.activePlayer === 'a' ? 'b' : 'a' }))
++      setPhase('deploy')
+     }
+   }
+-
+-  function boardPoint(e: { clientX: number; clientY: number; currentTarget: HTMLDivElement }): Point {
+-    const r = e.currentTarget.getBoundingClientRect()
+-    return clampPos({ x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE })
++  function beginPlay() {
++    useMatchStore.setState((s) => ({ turn: { ...s.turn, activePlayer: 'a' as const } }))
++    setPhase('play')
+   }
+ 
+-  function reset() {
+-    setTokens(initialTokens()); setTurn(createInitialTurnState()); setVp({ a: 0, b: 0 }); setWinner(null)
+-    setPhase('deploy'); setSelected(null); setLastShot(null); setDragging(null); setMapKey('ruin'); setShotSeq(0)
+-    setLog(['部署阶段：双方在降落区交替放置特工'])
++  if (phase === 'ended') {
++    return (
++      <>
++        <ResultPage onQueryRule={() => rulesQuery.open('胜负')} />
++        {rulesQuery.node && <RulesQuery ctrl={rulesQuery} />}
++      </>
++    )
+   }
+-
+-  if (winner) {
++  if (blankEditing && mapPack) {
+     return (
+-      <div className="demo">
+-        <h2>战斗结束</h2>
+-        <p className="outcome">胜负：<strong>{winner}</strong> — VP A:{vp.a} B:{vp.b}</p>
+-        <button className="primary" onClick={reset}>再开一局</button>
+-      </div>
++      <TerrainEditor bounds={mapPack.bounds} terrain={customTerrain} onAdd={addTerrain} onRemove={removeTerrain} onDone={onTerrainDone} />
+     )
+   }
+-
+-  const deployGuidance = phase === 'deploy'
+-    ? `部署 · 轮到 ${deploySide.toUpperCase()} 方 · 点击己方降落区放置${allPlaced ? '（已完成，可开战）' : ''}`
+-    : guidance
+-
++  if (phase === 'map-select') {
++    return <MapSelect maps={MAPS} onLoad={onLoadMap} onBlank={onBlank} />
++  }
++  if (phase === 'deploy') {
++    return <DeployPhase onBeginPlay={beginPlay} />
++  }
++  // play
+   return (
+-    <div className="demo">
+-      <div className="pushbar">{deployGuidance}</div>
+-      <div className="row">
+-        {phase === 'deploy' ? (
+-          <button className="primary" disabled={!allPlaced} onClick={beginPlay}>开始对局 ▶</button>
+-        ) : (
+-          <>
+-            <button onClick={activate} disabled={!active || active.side !== turn.activePlayer}>激活选中</button>
+-            <button onClick={endActivation} disabled={!active || active.side !== turn.activePlayer || !activated}>结束激活</button>
+-            <button className="primary" onClick={scoreAndEndTP}>结束转折点（计分）</button>
+-            {lastShot && <button onClick={undoLastShot}>↶ 回滚上次结算</button>}
+-          </>
+-        )}
+-        <label>地图
+-          <select value={mapKey} onChange={(e) => setMapKey(e.target.value)} disabled={phase === 'play'}>
+-            {Object.keys(MAPS).map((k) => <option key={k} value={k}>{k}</option>)}
+-          </select>
+-        </label>
+-        {phase === 'play' && <span className="muted">TP {turn.turningPoint}/4 · 主动 {turn.activePlayer.toUpperCase()} · VP A:{vp.a} B:{vp.b}</span>}
+-      </div>
+-
+-      <div
+-        className={`board ${phase === 'deploy' ? 'deploying' : ''}`}
+-        style={{ width: BOARD_W * SCALE, height: BOARD_H * SCALE }}
+-        onPointerMove={(e) => { if (phase === 'play' && dragging) { e.preventDefault(); moveToken(dragging, boardPoint(e)) } }}
+-        onPointerUp={() => setDragging(null)}
+-        onPointerLeave={() => setDragging(null)}
+-        onClick={(e) => { const p = boardPoint(e); if (phase === 'deploy') placeAt(p); else if (!dragging) moveSelectedTo(p) }}
+-      >
+-        <svg className="overlay" width={BOARD_W * SCALE} height={BOARD_H * SCALE}>
+-          {phase === 'play' && active && activated && (
+-            <>
+-              <circle cx={active.pos.x * SCALE} cy={active.pos.y * SCALE} r={RANGE * SCALE} className="rangedot" />
+-              {tokens.filter((t) => t.alive && t.placed && t.side !== active.side).map((t) => {
+-                const los = losFinding(active.pos, t.pos, toBoard())
+-                const stroke = los.finalValue ? '#39d98a' : '#ff5c5c'
+-                return <line key={t.uid} x1={active.pos.x * SCALE} y1={active.pos.y * SCALE} x2={t.pos.x * SCALE} y2={t.pos.y * SCALE} stroke={stroke} strokeWidth={2} strokeDasharray={los.confidence === 'AMBIGUOUS' ? '4 3' : 'none'} opacity={0.7} />
+-              })}
+-            </>
+-          )}
+-        </svg>
+-        {terrain.filter((t) => t.kind === 'BLOCKING').map((t) => {
+-          const xs = t.polygon.map((p) => p.x); const ys = t.polygon.map((p) => p.y)
+-          return <div key={t.id} className="terrain" style={{ left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE, width: (Math.max(...xs) - Math.min(...xs)) * SCALE, height: (Math.max(...ys) - Math.min(...ys)) * SCALE }} />
+-        })}
+-        {phase === 'play' && objectives.map((o, i) => <div key={i} className="objective" style={{ left: o.x * SCALE - 8, top: o.y * SCALE - 8 }} title="目标点 控制3英寸" />)}
+-        {tokens.filter((t) => t.placed && t.alive).map((t) => (
+-          <button
+-            key={t.uid}
+-            className={`token ${t.side} ${selected === t.uid ? 'sel' : ''}`}
+-            style={{ left: t.pos.x * SCALE - 11, top: t.pos.y * SCALE - 11 }}
+-            onPointerDown={(e) => { if (phase === 'play' && t.side === turn.activePlayer) { e.stopPropagation(); setSelected(t.uid); setDragging(t.uid) } }}
+-            onClick={(e) => { if (phase === 'play') { e.stopPropagation(); if (t.side !== turn.activePlayer) shoot(t.uid) } }}
+-            title={`${t.name} 耐伤${t.wounds}`}
+-          >{t.side.toUpperCase()}</button>
+-        ))}
+-      </div>
+-      <p className="muted">
+-        {phase === 'deploy'
+-          ? `降落区：A 左 1/3、B 右 1/3。交替放置（当前 ${deploySide.toUpperCase()}）。`
+-          : '拖己方特工移动 / 点敌方射击（绿=可见 红=阻挡 虚=模糊）/ 选中有射程环。'}
+-      </p>
+-
+-      <div className="cols">
+-        <div>
+-          <h3>日志</h3>
+-          <ul className="trace">{log.map((l, i) => <li key={i}><span className="sum">{l}</span></li>)}</ul>
+-        </div>
+-        <div>
+-          <h3>上次结算{lastShot ? `（${lastShot.targetName}）` : ''}</h3>
+-          {lastShot ? (
+-            <>
+-              <ol className="trace">{lastShot.result.traces.map((t, i) => <li key={i}><span className="sid">{t.stepId}</span><span className="sum">{t.summary}</span></li>)}</ol>
+-              <button onClick={undoLastShot}>↶ 回滚（恢复耐伤 {lastShot.prevWounds}）</button>
+-            </>
+-          ) : <p className="muted">尚无结算</p>}
+-        </div>
+-      </div>
+-    </div>
++    <>
++      <PlayView onQueryRule={(hint) => rulesQuery.open(hint)} />
++      {rulesQuery.node && <RulesQuery ctrl={rulesQuery} />}
++    </>
+   )
+-
+-  function moveSelectedTo(p: Point) {
+-    if (!active || active.side !== turn.activePlayer || !activated) return
+-    moveToken(active.uid, p)
+-    pushLog(`${active.name} 移动 → ${p.x.toFixed(1)},${p.y.toFixed(1)}`)
+-  }
+ }
+-
+-function dist(a: Point, b: Point): number { return Math.hypot(a.x - b.x, a.y - b.y) }
+-function clampPos(p: Point): Point { return { x: Math.max(0.5, Math.min(BOARD_W - 0.5, p.x)), y: Math.max(0.5, Math.min(BOARD_H - 0.5, p.y)) } }
+diff --git a/src/ui/RosterView.tsx b/src/ui/RosterView.tsx
+index 2017fba..5916719 100644
+--- a/src/ui/RosterView.tsx
++++ b/src/ui/RosterView.tsx
+@@ -1,72 +1,140 @@
+-import { useState } from 'react'
+-import { loadPack } from '../'
++import { loadPack, evaluateLegality, type FactionPack } from '../'
+ import { useViewStore } from '../state/viewStore'
+-import { useRosterStore } from '../state/rosterStore'
++import { useRosterStore, type Side } from '../state/rosterStore'
++import { FactionSelect, type FactionOption } from './roster/FactionSelect'
++import { OperativePicker } from './roster/OperativePicker'
++import { SubFactionSelect } from './roster/SubFactionSelect'
++import { LegalityPanel } from './roster/LegalityPanel'
+ import angelsPack from '../data/packs/angels_of_death.v1.json'
+ 
+-const pack = loadPack(angelsPack)
+-const tactics = pack.effects.filter((e) => e.source.startsWith('chapterTactic:'))
++// T2 阵营注册表：阵营机制 = 数据。本 Epic 仅死亡天使数据可用（Story 1.3）。
++const angelsLoaded: FactionPack = loadPack(angelsPack)
++const FACTIONS: FactionOption[] = [
++  { id: 'angels_of_death', name: '死亡天使', available: true, pack: angelsLoaded },
++  { id: 'legionaries', name: '军团兵', available: false, epic: 'Epic 2' },
++  { id: 'plague_marines', name: '瘟疫战士', available: false, epic: 'Epic 3' },
++]
++
++function packFor(factionId: string | null): FactionPack | null {
++  if (!factionId) return null
++  return FACTIONS.find((f) => f.id === factionId)?.pack ?? null
++}
++
++function legalityOf(side: Side) {
++  const s = useRosterStore.getState()
++  const entry = side === 'a' ? s.rosterA : s.rosterB
++  const pack = packFor(entry.factionId)
++  if (!pack) return { checks: [], legal: false }
++  return evaluateLegality({
++    pack,
++    operativeIds: entry.operativeIds,
++    loadout: entry.loadout,
++    subFactionSelection: entry.subFactionSelection,
++  })
++}
+ 
+ export function RosterView() {
+   const setView = useViewStore((s) => s.setView)
+-  const setRoster = useRosterStore((s) => s.setRoster)
+-  const [picked, setPicked] = useState<string[]>([pack.operatives[0]!.operativeId])
+-  const [tacticPick, setTacticPick] = useState<string[]>([])
++  const editing = useRosterStore((s) => s.editing)
++  const setEditing = useRosterStore((s) => s.setEditing)
++  const patchRoster = useRosterStore((s) => s.patchRoster)
++  const rosterA = useRosterStore((s) => s.rosterA)
++  const rosterB = useRosterStore((s) => s.rosterB)
+ 
++  const entry = editing === 'a' ? rosterA : rosterB
++  const pack = packFor(entry.factionId)
++  const selector = pack?.faction.subFactionSelector
++  const result = legalityOf(editing)
++
++  const resultA = legalityOf('a')
++  const resultB = legalityOf('b')
++  const bothGreen = resultA.legal && resultB.legal
++  const unresolved = (resultA.legal ? 0 : 1) + (resultB.legal ? 0 : 1)
++
++  // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切 setup-map-deploy（当前=match 视图）
+   function enterMatch() {
+-    setRoster(picked, tacticPick) // H4：建队结果写入 store，MatchView 读取
++    if (!bothGreen) return
+     setView('match')
+   }
+ 
+-  const toggleOp = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+-  const toggleTactic = (id: string) =>
+-    setTacticPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length >= 2 ? p : [...p, id]))
+-
+-  const opOk = picked.length >= 1
+-  const tacticOk = tacticPick.length === 2
+-  const legal = opOk && tacticOk
++  const sideLabel = (side: Side) => `${side.toUpperCase()} 方`
+ 
+   return (
+-    <section>
+-      <h2>建队 · {pack.faction.name}（无点数 D-30）</h2>
+-      <div className="cols">
+-        <div>
+-          <h3>特工（{picked.length}）</h3>
+-          <ul className="list">
+-            {pack.operatives.map((o) => (
+-              <li key={o.operativeId}>
+-                <label className="cover">
+-                  <input type="checkbox" checked={picked.includes(o.operativeId)} onChange={() => toggleOp(o.operativeId)} />
+-                  <strong>{o.name}</strong> — 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}"
+-                </label>
+-              </li>
+-            ))}
+-          </ul>
+-        </div>
+-        <div>
+-          <h3>战团战术（{tacticPick.length}/2，8 选 2）</h3>
+-          <ul className="list">
+-            {tactics.map((e) => (
+-              <li key={e.effectId}>
+-                <label className="cover">
+-                  <input type="checkbox" checked={tacticPick.includes(e.effectId)} onChange={() => toggleTactic(e.effectId)} />
+-                  {e.label}
+-                </label>
+-              </li>
+-            ))}
+-          </ul>
++    <section className="roster">
++      <h2>建队（无点数 D-30 · 双方各建一队）</h2>
++
++      {/* A/B 双方建队切换 */}
++      <div className="row side-toggle">
++        {(['a', 'b'] as const).map((side) => {
++          const r = side === 'a' ? resultA : resultB
++          const e = side === 'a' ? rosterA : rosterB
++          return (
++            <button
++              key={side}
++              className={`side-btn ${side} ${editing === side ? 'active' : ''}`}
++              onClick={() => setEditing(side)}
++            >
++              {sideLabel(side)}{e.factionId ? ` · ${e.factionId}` : ' · 未选阵营'}
++              <span className={`dot ${r.legal ? 'ok' : 'warn'}`}>{r.legal ? '✓' : '!'}</span>
++            </button>
++          )
++        })}
++      </div>
++
++      <div className="roster-layout">
++        <div className="roster-main">
++          {/* AC1 顺序可达：选阵营 → 选特工+装备 → 子阵营选择器 */}
++          <FactionSelect
++            factions={FACTIONS}
++            selectedId={entry.factionId}
++            sideLabel={sideLabel(editing)}
++            onSelect={(f) => {
++              if (!f.available || !f.pack) return
++              // 切阵营：清空特工/装备/子阵营（避免跨阵营脏数据）
++              patchRoster(editing, {
++                factionId: f.id,
++                operativeIds: [],
++                loadout: {},
++                subFactionSelection: [],
++              })
++            }}
++          />
++
++          {pack && (
++            <>
++              <OperativePicker
++                pack={pack}
++                operativeIds={entry.operativeIds}
++                loadout={entry.loadout}
++                onChange={(next) => patchRoster(editing, next)}
++              />
++              {selector && (
++                <SubFactionSelect
++                  selector={selector}
++                  pack={pack}
++                  selection={entry.subFactionSelection}
++                  onChange={(next) => patchRoster(editing, { subFactionSelection: next })}
++                />
++              )}
++            </>
++          )}
+         </div>
++
++        {/* T5 合法性面板（实时） */}
++        <LegalityPanel result={result} sideLabel={sideLabel(editing)} />
+       </div>
+-      <div className="legality">
+-        <h3>合法性</h3>
+-        <ul className="list">
+-          <li>{opOk ? '✓' : '✗'} 特工来源（{picked.length} 名）</li>
+-          <li>{tacticOk ? '✓' : '✗'} 战团战术 2/2</li>
+-          <li>✓ 装备限制（阵营包无限制项）</li>
+-        </ul>
+-        <button className="primary" disabled={!legal} onClick={enterMatch}>
+-          {legal ? '进入对局 ▶' : '先满足合法性'}
++
++      {/* T6 进入对局门禁 */}
++      <div className="enter-gate">
++        <button
++          className="primary enter-btn"
++          disabled={!bothGreen}
++          onClick={enterMatch}
++          title={bothGreen ? '双方阵容合规，进入对局' : `先解决 ${unresolved} 方违规`}
++        >
++          {bothGreen ? '进入对局 ▶' : `先满足合法性（${unresolved} 方未合规）`}
+         </button>
++        {!bothGreen && <span className="muted"> 先解决 {unresolved} 方违规再进入对局</span>}
+       </div>
+     </section>
+   )
+diff --git a/src/ui/match/ActionBar.tsx b/src/ui/match/ActionBar.tsx
+new file mode 100644
+index 0000000..2030633
+--- /dev/null
++++ b/src/ui/match/ActionBar.tsx
+@@ -0,0 +1,70 @@
++import type { Side } from '../../state/matchStore'
++
++// 1.13 T3：行动指挥区。按状态机当前态渲染 push；永远一个主操作大按钮(56px) + 1-3 次操作。
++// 主按钮用主动玩家阵营色描边。结束类附内联微提示。纯展示 + 回调，不直接持状态机逻辑。
++export function ActionBar({
++  active,
++  selectedName,
++  selectedSide,
++  activated,
++  hasLastShot,
++  onActivate,
++  onEndActivation,
++  onEndTP,
++  onUndo,
++}: {
++  active: Side
++  selectedName: string | null
++  selectedSide: Side | null
++  activated: boolean
++  hasLastShot: boolean
++  onActivate: () => void
++  onEndActivation: () => void
++  onEndTP: () => void
++  onUndo: () => void
++}) {
++  const canSelect = selectedSide === active
++  const push = !selectedName
++    ? `轮到 ${active.toUpperCase()}：点一名己方特工`
++    : !canSelect
++      ? `选中了${selectedSide === 'a' ? 'A' : 'B'}方特工（仅查看）；请激活 ${active.toUpperCase()} 方`
++      : !activated
++        ? `${selectedName}：先激活才能行动`
++        : `${selectedName} 已激活：拖动移动 / 点敌方一击结算`
++
++  return (
++    <div className={`action-bar ${active}`}>
++      <div className="push-text">{push}</div>
++      <div className="action-row">
++        {!activated ? (
++          <button
++            className={`primary main-btn ${active}`}
++            disabled={!canSelect}
++            onClick={onActivate}
++            title={!canSelect ? '请先选己方特工' : '激活选中特工'}
++          >
++            激活选中 ▶
++          </button>
++        ) : (
++          <button
++            className={`main-btn ${active}`}
++            onClick={onEndActivation}
++            title="结束后该特工本回合不能再行动"
++          >
++            结束激活
++          </button>
++        )}
++        <button
++          className="primary"
++          onClick={onEndTP}
++          title="结束转折点 → 计分 + effect 到期结算"
++        >
++          结束转折点
++        </button>
++        {hasLastShot && (
++          <button onClick={onUndo} className="rollback-btn" title="撤销上次结算，恢复耐伤（会话内 FR-16）">↶ 回滚上次结算</button>
++        )}
++      </div>
++    </div>
++  )
++}
+diff --git a/src/ui/match/Board.tsx b/src/ui/match/Board.tsx
+new file mode 100644
+index 0000000..268f5b4
+--- /dev/null
++++ b/src/ui/match/Board.tsx
+@@ -0,0 +1,203 @@
++import type { Point, TerrainFeature } from '../../geometry'
++import type { ObjectiveMarker, MapPack } from '../../data/maps'
++import type { MatchToken, Side } from '../../state/matchStore'
++
++export const SCALE = 20 // 像素/英寸
++
++export interface LosLine { target: Point; stroke: string; dash: string; opacity: number }
++export interface ObjControl { id: string; ctrl: Side | null }
++
++export function Board({
++  mapPack,
++  terrain,
++  tokens,
++  objectives,
++  phase,
++  selected,
++  rangeRing,
++  losLines,
++  objControl,
++  onBoardPointerDown,
++  onBoardClick,
++  onPointerMove,
++  onPointerUp,
++  onPointerLeave,
++  onTokenPointerDown,
++  onTokenDoubleClick,
++  onTokenClick,
++  onObjectiveHover,
++}: {
++  mapPack: MapPack | null
++  terrain: TerrainFeature[]
++  tokens: MatchToken[]
++  objectives: ObjectiveMarker[]
++  phase: string
++  selected: string | null
++  rangeRing: { center: Point; r: number } | null
++  losLines: LosLine[]
++  objControl: ObjControl[]
++  onBoardPointerDown?: (p: Point) => void
++  onBoardClick?: (p: Point) => void
++  onPointerMove?: (p: Point) => void
++  onPointerUp?: () => void
++  onPointerLeave?: () => void
++  onTokenPointerDown?: (t: MatchToken) => void
++  onTokenDoubleClick?: (t: MatchToken) => void
++  onTokenClick?: (t: MatchToken) => void
++  onObjectiveHover?: (o: ObjectiveMarker | null) => void
++}) {
++  const bounds = mapPack?.bounds ?? { w: 30, h: 20 }
++  const W = bounds.w * SCALE
++  const H = bounds.h * SCALE
++  const ctrlColor = (c: Side | null) => (c === 'a' ? 'var(--side-a)' : c === 'b' ? 'var(--side-b)' : '#6b7280')
++
++  function evtPoint(e: { clientX: number; clientY: number; currentTarget: HTMLDivElement }): Point {
++    const r = e.currentTarget.getBoundingClientRect()
++    return { x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE }
++  }
++
++  return (
++    <div
++      className={`board ${phase === 'deploy' ? 'deploying' : ''}`}
++      style={{ width: W, height: H }}
++      onPointerMove={(e) => onPointerMove?.(evtPoint(e))}
++      onPointerUp={() => onPointerUp?.()}
++      onPointerLeave={() => onPointerLeave?.()}
++      onPointerDown={(e) => {
++        if (e.target === e.currentTarget) onBoardPointerDown?.(evtPoint(e))
++      }}
++      onClick={(e) => {
++        if (e.target === e.currentTarget) onBoardClick?.(evtPoint(e))
++      }}
++    >
++      {/* 网格背景 */}
++      <div className="grid-bg" style={{ width: W, height: H }} />
++
++      <svg className="overlay" width={W} height={H}>
++        {/* 降落区 */}
++        {phase === 'deploy' && mapPack && (
++          <>
++            <polygon
++              points={mapPack.dropZones.a.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
++              fill="rgba(199,93,58,0.10)"
++              stroke="var(--side-a)"
++              strokeDasharray="4 3"
++            />
++            <polygon
++              points={mapPack.dropZones.b.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
++              fill="rgba(58,123,199,0.10)"
++              stroke="var(--side-b)"
++              strokeDasharray="4 3"
++            />
++          </>
++        )}
++
++        {/* 射程环 */}
++        {rangeRing && (
++          <circle
++            cx={rangeRing.center.x * SCALE}
++            cy={rangeRing.center.y * SCALE}
++            r={rangeRing.r * SCALE}
++            className="rangedot"
++          />
++        )}
++
++        {/* LOS 射线 */}
++        {losLines.map((l, i) => (
++          <line
++            key={i}
++            x1={rangeRing ? rangeRing.center.x * SCALE : 0}
++            y1={rangeRing ? rangeRing.center.y * SCALE : 0}
++            x2={l.target.x * SCALE}
++            y2={l.target.y * SCALE}
++            stroke={l.stroke}
++            strokeWidth={2}
++            strokeDasharray={l.dash}
++            opacity={l.opacity}
++          />
++        ))}
++      </svg>
++
++      {/* 地形 */}
++      {terrain.map((t) => {
++        const xs = t.polygon.map((p) => p.x)
++        const ys = t.polygon.map((p) => p.y)
++        const left = Math.min(...xs) * SCALE
++        const top = Math.min(...ys) * SCALE
++        const w = (Math.max(...xs) - Math.min(...xs)) * SCALE
++        const h = (Math.max(...ys) - Math.min(...ys)) * SCALE
++        const cls = t.kind === 'BLOCKING' ? 'terrain blocking' : t.kind === 'COVER' ? 'terrain cover' : 'terrain obscuring'
++        return (
++          <div
++            key={t.id}
++            className={cls}
++            style={{ left, top, width: w, height: h }}
++            title={`${t.kind}${t.vantage ? ' · 制高点' : ''}${t.climbable ? ' · 可攀爬' : ''}`}
++          />
++        )
++      })}
++
++      {/* 目标点（1.16 控制染色） */}
++      {phase !== 'map-select' &&
++        objectives.map((o, i) => {
++          const ctrl = objControl.find((c) => c.id === o.id)?.ctrl ?? null
++          return (
++            <div
++              key={o.id}
++              className="objective-wrap"
++              style={{ left: o.pos.x * SCALE, top: o.pos.y * SCALE }}
++              onMouseEnter={() => onObjectiveHover?.(o)}
++              onMouseLeave={() => onObjectiveHover?.(null)}
++            >
++              <svg width={o.controlRange * 2 * SCALE} height={o.controlRange * 2 * SCALE}
++                style={{ position: 'absolute', left: -o.controlRange * SCALE, top: -o.controlRange * SCALE }}
++                className="overlay">
++                <circle cx={o.controlRange * SCALE} cy={o.controlRange * SCALE} r={o.controlRange * SCALE}
++                  fill="none" stroke={ctrlColor(ctrl)} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.6} />
++              </svg>
++              <div className="objective-diamond" style={{ borderColor: ctrlColor(ctrl) }}>
++                {i + 1}
++              </div>
++            </div>
++          )
++        })}
++
++      {/* 特工 token */}
++      {tokens
++        .filter((t) => t.placed && (phase === 'deploy' || t.alive))
++        .map((t) => {
++          const r = t.baseRadius * SCALE
++          const isSel = selected === t.uid
++          return (
++            <button
++              key={t.uid}
++              className={`token ${t.side} ${isSel ? 'sel' : ''} ${t.alive ? '' : 'dead'}`}
++              style={{
++                left: t.pos.x * SCALE,
++                top: t.pos.y * SCALE,
++                width: r * 2,
++                height: r * 2,
++                marginLeft: -r,
++                marginTop: -r,
++                borderRadius: '50%',
++              }}
++              onPointerDown={(e) => { e.stopPropagation(); onTokenPointerDown?.(t) }}
++              onDoubleClick={(e) => { e.stopPropagation(); onTokenDoubleClick?.(t) }}
++              onClick={(e) => { e.stopPropagation(); onTokenClick?.(t) }}
++              title={`${t.name} · 耐伤 ${t.wounds}${!t.alive ? '（残废）' : ''}`}
++            >
++              {/* 朝向三角 */}
++              <svg className="facing" width={r * 2} height={r * 2} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
++                <polygon
++                  points={`${r},${r * 0.2} ${r * 0.6},${r * 0.9} ${r * 1.4},${r * 0.9}`}
++                  fill="rgba(255,255,255,0.85)"
++                  transform={`rotate(${t.facing} ${r} ${r})`}
++                />
++              </svg>
++              <span className="token-label">{t.side.toUpperCase()}</span>
++            </button>
++          )
++        })}
++    </div>
++  )
++}
+diff --git a/src/ui/match/DeployPhase.tsx b/src/ui/match/DeployPhase.tsx
+new file mode 100644
+index 0000000..38957d0
+--- /dev/null
++++ b/src/ui/match/DeployPhase.tsx
+@@ -0,0 +1,117 @@
++import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
++import { circleInsidePolygon, circlesOverlap, type Point } from '../../geometry'
++import { Board } from './Board'
++
++// 1.12 T3-T6：部署阶段。交替 A/B 在己方降落区落子；合法性拦截（底座圆在降落区 + 不重叠）；
++// 双击旋转朝向；全部署完 → 「开始转折点 1」门禁。
++
++function clampPos(p: Point, bounds: { w: number; h: number }): Point {
++  return { x: Math.max(0.5, Math.min(bounds.w - 0.5, p.x)), y: Math.max(0.5, Math.min(bounds.h - 0.5, p.y)) }
++}
++
++export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
++  const mapPack = useMatchStore((s) => s.mapPack)!
++  const tokens = useMatchStore((s) => s.tokens)
++  const placeToken = useMatchStore((s) => s.placeToken)
++  const rotateToken = useMatchStore((s) => s.rotateToken)
++  const moveToken = useMatchStore((s) => s.moveToken)
++  const dragging = useMatchStore((s) => s.dragging)
++  const setDragging = useMatchStore((s) => s.setDragging)
++  const pushLog = useMatchStore((s) => s.pushLog)
++  const setIntercept = useMatchStore((s) => s.setIntercept)
++  const intercept = useMatchStore((s) => s.intercept)
++
++  const bounds = mapPack.bounds
++  const unplacedA = tokens.filter((t) => t.side === 'a' && !t.placed)
++  const unplacedB = tokens.filter((t) => t.side === 'b' && !t.placed)
++  const deploySide: Side = unplacedA.length >= unplacedB.length ? 'a' : 'b'
++  const allPlaced = unplacedA.length === 0 && unplacedB.length === 0
++
++  function tryPlace(side: Side, p: Point) {
++    const zone = side === 'a' ? mapPack.dropZones.a : mapPack.dropZones.b
++    const pos = clampPos(p, bounds)
++    const next = tokens.find((t) => t.side === side && !t.placed)
++    if (!next) return
++    // T4 合法性：底座圆完全在降落区 + 不与已部署重叠
++    if (!circleInsidePolygon(pos, next.baseRadius, zone)) {
++      setIntercept({ title: '出降落区', reasons: [`落点 ${pos.x.toFixed(1)},${pos.y.toFixed(1)} 底座未完全在 ${side.toUpperCase()} 方降落区内`] })
++      return
++    }
++    const overlap = tokens.filter((t) => t.placed).find((t) => circlesOverlap(pos, next.baseRadius, t.pos, t.baseRadius))
++    if (overlap) {
++      setIntercept({ title: '与特工重叠', reasons: [`与 ${overlap.name} 底座重叠`] })
++      return
++    }
++    setIntercept(null)
++    placeToken(next.uid, pos, next.facing)
++    pushLog('deploy', `${next.name} 部署于 ${pos.x.toFixed(1)},${pos.y.toFixed(1)}`)
++  }
++
++  function onBoardClick(p: Point) {
++    if (allPlaced) return
++    tryPlace(deploySide, p)
++  }
++
++  function onTokenPointerDown(t: MatchToken) {
++    if (t.placed) setDragging(t.uid, t.pos)
++  }
++  function onPointerMove(p: Point) {
++    if (dragging) moveToken(dragging, clampPos(p, bounds))
++  }
++  function onPointerUp() {
++    if (dragging) {
++      const t = tokens.find((x) => x.uid === dragging)
++      if (t) {
++        // 拖动落定也校验降落区
++        const zone = t.side === 'a' ? mapPack.dropZones.a : mapPack.dropZones.b
++        if (!circleInsidePolygon(t.pos, t.baseRadius, zone)) {
++          setIntercept({ title: '出降落区', reasons: [`${t.name} 拖出己方降落区，已拉回`] })
++        } else pushLog('deploy', `${t.name} 移动至 ${t.pos.x.toFixed(1)},${t.pos.y.toFixed(1)}`)
++      }
++      setDragging(null)
++    }
++  }
++
++  return (
++    <div className="deploy-phase">
++      <div className="pushbar">
++        {allPlaced
++          ? `部署完成 · 可开始转折点 1`
++          : `部署 · 轮到 ${deploySide.toUpperCase()} 方 · 点击己方降落区放置特工（A 暖 / B 冷）`}
++      </div>
++
++      <div className="row">
++        <button className="primary" disabled={!allPlaced} onClick={onBeginPlay} title={allPlaced ? '开始转折点 1' : `待部署：A×${unplacedA.length} B×${unplacedB.length}`}>
++          开始转折点 1 ▶
++        </button>
++        <span className="muted"> 待部署 A×{unplacedA.length} B×{unplacedB.length} · 双击特工旋转朝向 · 拖动微调</span>
++      </div>
++
++      {intercept && (
++        <div className="intercept-card">
++          <strong>⚠ {intercept.title}</strong>
++          <button className="intercept-close" onClick={() => setIntercept(null)}>✕</button>
++          <ul>{intercept.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
++        </div>
++      )}
++
++      <Board
++        mapPack={mapPack}
++        terrain={mapPack.terrain}
++        tokens={tokens}
++        objectives={mapPack.objectives}
++        phase="deploy"
++        selected={null}
++        rangeRing={null}
++        losLines={[]}
++        objControl={mapPack.objectives.map((o) => ({ id: o.id, ctrl: null }))}
++        onBoardClick={onBoardClick}
++        onPointerMove={onPointerMove}
++        onPointerUp={onPointerUp}
++        onPointerLeave={onPointerUp}
++        onTokenPointerDown={onTokenPointerDown}
++        onTokenDoubleClick={(t) => rotateToken(t.uid)}
++      />
++    </div>
++  )
++}
+diff --git a/src/ui/match/InterceptorCard.tsx b/src/ui/match/InterceptorCard.tsx
+new file mode 100644
+index 0000000..a184d63
+--- /dev/null
++++ b/src/ui/match/InterceptorCard.tsx
+@@ -0,0 +1,23 @@
++// 1.13 T5：拦截卡（非阻塞，不遮棋盘，可一键关）。
++// 列每条缺失条件 + 规则要点入口（接 1.17 规则查询）。
++// 行动限制类（AP 不足等）用按钮置灰 + tooltip，不走卡片（在 ActionBar 处理）。
++export function InterceptorCard({
++  title,
++  reasons,
++  onClose,
++  onQueryRule,
++}: {
++  title: string
++  reasons: string[]
++  onClose: () => void
++  onQueryRule?: () => void
++}) {
++  return (
++    <div className="intercept-card">
++      <strong>⚠ {title}</strong>
++      <button className="intercept-close" onClick={onClose} title="关闭">✕</button>
++      <ul>{reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
++      {onQueryRule && <button className="link-btn" onClick={onQueryRule}>查看规则要点 ▸</button>}
++    </div>
++  )
++}
+diff --git a/src/ui/match/LogPanel.tsx b/src/ui/match/LogPanel.tsx
+new file mode 100644
+index 0000000..ff37df4
+--- /dev/null
++++ b/src/ui/match/LogPanel.tsx
+@@ -0,0 +1,42 @@
++import { useMatchStore, type LogKind } from '../../state/matchStore'
++
++// 1.15 T3：日志回放面板。按时间倒序渲染动作日志；筛选(全部/射击/近战/计谋/回合/计分/部署)。
++// 结算类条目 [▶回放]（重新展开该 ResolutionLog 流水线）；[↶回滚到此] 回退到该事件前（会话内 D-20）。
++// v1：回放重展最近一次 currentLog；全局回退映射到最近一次结算撤销（FR-16）。
++const FILTERS: (LogKind | 'all')[] = ['all', 'shoot', 'melee', 'ploy', 'turn', 'score', 'deploy']
++
++export function LogPanel({ onReplay, onRollbackToHere }: { onReplay: () => void; onRollbackToHere: () => void }) {
++  const log = useMatchStore((s) => s.log)
++  const filter = useMatchStore((s) => s.logFilter)
++  const setFilter = useMatchStore((s) => s.setLogFilter)
++  const hasLog = useMatchStore((s) => Boolean(s.currentLog))
++  const hasLast = useMatchStore((s) => Boolean(s.lastShot))
++
++  const shown = filter === 'all' ? log : log.filter((e) => e.kind === filter)
++
++  return (
++    <div className="log-panel">
++      <h4>历史</h4>
++      <div className="log-filters">
++        {FILTERS.map((f) => (
++          <button key={f} className={`chip ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>{f === 'all' ? '全部' : f}</button>
++        ))}
++      </div>
++      <ul className="log-list">
++        {shown.length === 0 && <li className="muted">（无）</li>}
++        {shown.map((e) => (
++          <li key={e.id} className={`log-entry ${e.kind}`}>
++            <span className={`log-kind ${e.kind}`}>{e.kind}</span>
++            <span className="log-text">{e.text}</span>
++            {(e.kind === 'shoot' || e.kind === 'melee') && (
++              <>
++                <button className="link-btn" disabled={!hasLog} onClick={onReplay}>▶回放</button>
++                <button className="link-btn" disabled={!hasLast} onClick={onRollbackToHere}>↶回滚到此</button>
++              </>
++            )}
++          </li>
++        ))}
++      </ul>
++    </div>
++  )
++}
+diff --git a/src/ui/match/ManualDiceEntry.tsx b/src/ui/match/ManualDiceEntry.tsx
+new file mode 100644
+index 0000000..f564b7d
+--- /dev/null
++++ b/src/ui/match/ManualDiceEntry.tsx
+@@ -0,0 +1,52 @@
++import { useState } from 'react'
++
++// 1.13 T7：物理骰录入浮层（非全屏模态，可关）。6 面网格点选累加，再点减一；
++// 显示「已录: [...] 总数 N/M ✓」；总数达标才确认。规避键盘输入（平板触控）。
++// 确认 → 产出 number[]（每枚骰的面值）给流水线（FR-3 两源同后续）。
++export function ManualDiceEntry({
++  needed,
++  label,
++  onConfirm,
++  onClose,
++}: {
++  needed: number
++  label: string
++  onConfirm: (rolls: number[]) => void
++  onClose: () => void
++}) {
++  const [rolls, setRolls] = useState<number[]>([])
++  const add = (face: number) =>
++    setRolls((r) => (r.length < needed ? [...r, face] : r))
++  const removeAt = (i: number) => setRolls((r) => r.filter((_, idx) => idx !== i))
++  const ready = rolls.length === needed
++
++  return (
++    <div className="overlay-backdrop" onClick={onClose}>
++      <div className="manual-dice" onClick={(e) => e.stopPropagation()}>
++        <div className="manual-dice-head">
++          <strong>物理骰录入 · {label}</strong>
++          <button className="intercept-close" onClick={onClose}>✕</button>
++        </div>
++        <div className="dice-faces">
++          {[1, 2, 3, 4, 5, 6].map((f) => (
++            <button key={f} className="dice-face" onClick={() => add(f)} disabled={rolls.length >= needed}>
++              {f}
++            </button>
++          ))}
++        </div>
++        <div className="dice-record">
++          已录：
++          {rolls.length === 0 ? <span className="muted">（点面值累加，需 {needed} 枚）</span> : (
++            rolls.map((r, i) => (
++              <button key={i} className="dice-chip" onClick={() => removeAt(i)} title="点击移除">{r}</button>
++            ))
++          )}
++          <span className={ready ? 'ok' : 'warn'}> 总数 {rolls.length}/{needed} {ready ? '✓' : ''}</span>
++        </div>
++        <button className="primary" disabled={!ready} onClick={() => onConfirm(rolls)}>
++          确认 ▶
++        </button>
++      </div>
++    </div>
++  )
++}
+diff --git a/src/ui/match/MapSelect.tsx b/src/ui/match/MapSelect.tsx
+new file mode 100644
+index 0000000..043e230
+--- /dev/null
++++ b/src/ui/match/MapSelect.tsx
+@@ -0,0 +1,64 @@
++import type { MapPack } from '../../data/maps'
++
++// 1.12 T1：地图选择视图。预设模板网格（缩略图 + 名称 + 预览）+ 「空白板」进自定义画地形。
++function Thumb({ map }: { map: MapPack }) {
++  const tw = 120
++  const th = (map.bounds.h / map.bounds.w) * tw
++  const sx = tw / map.bounds.w
++  const sy = th / map.bounds.h
++  return (
++    <svg width={tw} height={th} className="map-thumb">
++      {/* 降落区底色 */}
++      <polygon points={map.dropZones.a.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(199,93,58,0.18)" />
++      <polygon points={map.dropZones.b.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(58,123,199,0.18)" />
++      {/* 地形 */}
++      {map.terrain.map((t) => {
++        const fill = t.kind === 'BLOCKING' ? '#5a4030' : t.kind === 'COVER' ? '#3a5a3a' : '#4a4a6a'
++        return (
++          <polygon
++            key={t.id}
++            points={t.polygon.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')}
++            fill={fill}
++            opacity={0.8}
++          />
++        )
++      })}
++      {/* 目标点 */}
++      {map.objectives.map((o) => (
++        <circle key={o.id} cx={o.pos.x * sx} cy={o.pos.y * sy} r={2.5} fill="var(--accent)" />
++      ))}
++    </svg>
++  )
++}
++
++export function MapSelect({
++  maps,
++  onLoad,
++  onBlank,
++}: {
++  maps: MapPack[]
++  onLoad: (m: MapPack) => void
++  onBlank: () => void
++}) {
++  return (
++    <div className="map-select">
++      <h2>选图开局</h2>
++      <p className="muted">载入预设模板，或选「空白板」自定义画地形（会话内有效，刷新重置 D-20）。</p>
++      <div className="map-grid">
++        {maps.map((m) => (
++          <button key={m.mapId} className="map-card" onClick={() => onLoad(m)} title={`载入「${m.name}」`}>
++            <Thumb map={m} />
++            <div className="map-card-name">
++              <strong>{m.name}</strong>
++              <span className="muted"> {m.objectives.length} 目标点 · {m.terrain.length} 地形</span>
++            </div>
++          </button>
++        ))}
++        <button className="map-card blank" onClick={onBlank} title="空白板，自定义画地形">
++          <div className="blank-thumb">＋</div>
++          <div className="map-card-name"><strong>空白板</strong><span className="muted"> 自定义地形</span></div>
++        </button>
++      </div>
++    </div>
++  )
++}
+diff --git a/src/ui/match/PipelineDrawer.tsx b/src/ui/match/PipelineDrawer.tsx
+new file mode 100644
+index 0000000..64665db
+--- /dev/null
++++ b/src/ui/match/PipelineDrawer.tsx
+@@ -0,0 +1,73 @@
++import { useState } from 'react'
++import { useMatchStore } from '../../state/matchStore'
++
++// 1.13 T8 流水线展开态 + 1.15 T1 单步回滚 + T2 每步依据展开。
++// 订阅 currentLog(ResolutionLog)；渲染步骤列表，cursor 之后变灰；
++// 每步 [▾依据]（stepId/输入骰/applied/rejected/原文来源 rulesRef 占位 D-29）+ [◀回滚此步]；
++// 底部 [确认伤亡 ▶]（唯一强制确认）。骰源就近切换在此区顶栏。
++export function PipelineDrawer({
++  onConfirm,
++  onQueryRule,
++}: {
++  onConfirm: () => void
++  onQueryRule: (hint: string) => void
++}) {
++  const log = useMatchStore((s) => s.currentLog)
++  const rollbackStep = useMatchStore((s) => s.rollbackStep)
++  const diceSource = useMatchStore((s) => s.diceSource)
++  const setDiceSource = useMatchStore((s) => s.setDiceSource)
++  const [open, setOpen] = useState<number | null>(null)
++
++  return (
++    <div className="pipeline-drawer">
++      <div className="pipeline-top">
++        <strong>流水线{log ? ` · ${log.pipelineKind}` : ''}</strong>
++        <button
++          className={`dice-toggle ${diceSource}`}
++          onClick={() => setDiceSource(diceSource === 'electronic' ? 'manual' : 'electronic')}
++          title="就近切换电子骰 / 物理骰（FR-3 两源同后续）"
++        >
++          {diceSource === 'electronic' ? '电子骰 ⇄ 物理骰' : '物理骰 ⇄ 电子骰'}
++        </button>
++      </div>
++
++      {!log ? (
++        <p className="muted">尚无结算。一击结算后此处展开步骤。</p>
++      ) : (
++        <ol className="pipeline-steps">
++          {log.records.map((tr, i) => {
++            const greyed = i >= log.cursor
++            return (
++              <li key={i} className={`pipe-step ${greyed ? 'greyed' : ''}`}>
++                <div className="pipe-head">
++                  <span className="pipe-sid">{tr.stepId}</span>
++                  <span className="pipe-summary">{tr.summary}</span>
++                  <button className="link-btn" onClick={() => setOpen(open === i ? null : i)}>▾依据</button>
++                  <button className="rollback-btn" onClick={() => rollbackStep(i)} title="回滚到此步（保留此前，丢弃其后）">◀回滚</button>
++                </div>
++                {open === i && (
++                  <div className="pipe-detail">
++                    {tr.dice && tr.dice.length > 0 && (
++                      <div>骰：{tr.dice.map((d, j) => <span key={j} className="dice-chip sm">{d.nat}{d.grade === 'CRITICAL' ? '★' : ''}</span>)}</div>
++                    )}
++                    {tr.appliedEffectIds.length > 0 && <div className="ok">生效 effect：{tr.appliedEffectIds.join(', ')}</div>}
++                    {tr.rejectedEffectIds.length > 0 && (
++                      <div className="warn">被拒 effect：{tr.rejectedEffectIds.map((r) => `${r.id}(${r.reason})`).join('; ')}</div>
++                    )}
++                    {tr.rulings && tr.rulings.length > 0 && <div className="warn">人工裁定：{tr.rulings.join(', ')}</div>}
++                    <button className="link-btn" onClick={() => onQueryRule(tr.stepId)}>查看规则要点 ▸</button>
++                    <span className="muted"> 来源：KT Lite 规则（本地 docs/rules，不显示原文 D-29）</span>
++                  </div>
++                )}
++              </li>
++            )
++          })}
++        </ol>
++      )}
++
++      <button className="primary confirm-btn" disabled={!log} onClick={onConfirm}>
++        确认伤亡 ▶
++      </button>
++    </div>
++  )
++}
+diff --git a/src/ui/match/PlayView.tsx b/src/ui/match/PlayView.tsx
+new file mode 100644
+index 0000000..339fca9
+--- /dev/null
++++ b/src/ui/match/PlayView.tsx
+@@ -0,0 +1,335 @@
++import { useState } from 'react'
++import { loadPack, runShooting, runMelee, losFinding, coverFinding, engagementFinding, validateTarget, ElectronicDiceSource, ManualDiceSource, hashSeed, type FactionPack, type Effect } from '../..'
++import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
++import { useRosterStore } from '../../state/rosterStore'
++import { buildShootingLog, buildMeleeLog, type ResolutionLog } from '../../engine'
++import type { Point, OperativePlacement, Board as BoardT } from '../../geometry'
++import type { ObjectiveMarker } from '../../data/maps'
++import angelsPack from '../../data/packs/angels_of_death.v1.json'
++import { Board, type LosLine, type ObjControl } from './Board'
++import { StatusStrip } from './StatusStrip'
++import { ActionBar } from './ActionBar'
++import { UnitPanel } from './UnitPanel'
++import { PipelineDrawer } from './PipelineDrawer'
++import { LogPanel } from './LogPanel'
++import { InterceptorCard } from './InterceptorCard'
++import { ManualDiceEntry } from './ManualDiceEntry'
++
++const pack: FactionPack = loadPack(angelsPack)
++const RANGED = pack.weapons.find((w) => w.kind === 'RANGED')!
++const MELEE = pack.weapons.find((w) => w.kind === 'MELEE')!
++
++function clampPos(p: Point): Point {
++  const b = useMatchStore.getState().mapPack?.bounds ?? { w: 30, h: 20 }
++  return { x: Math.max(0.5, Math.min(b.w - 0.5, p.x)), y: Math.max(0.5, Math.min(b.h - 0.5, p.y)) }
++}
++
++function tacticEffects(): Effect[] {
++  return useRosterStore.getState().rosterA.subFactionSelection
++    .map((id) => pack.effects.find((e) => e.effectId === id))
++    .filter((e): e is Effect => Boolean(e))
++}
++
++export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void }) {
++  const mapPack = useMatchStore((s) => s.mapPack)!
++  const tokens = useMatchStore((s) => s.tokens)
++  const turn = useMatchStore((s) => s.turn)
++  const selected = useMatchStore((s) => s.selected)
++  const setSelected = useMatchStore((s) => s.setSelected)
++  const dragging = useMatchStore((s) => s.dragging)
++  const dragOrigin = useMatchStore((s) => s.dragOrigin)
++  const setDragging = useMatchStore((s) => s.setDragging)
++  const moveToken = useMatchStore((s) => s.moveToken)
++  const rotateToken = useMatchStore((s) => s.rotateToken)
++  const activate = useMatchStore((s) => s.activate)
++  const endActivation = useMatchStore((s) => s.endActivation)
++  const scoreAndEndTP = useMatchStore((s) => s.scoreAndEndTP)
++  const undoLastShot = useMatchStore((s) => s.undoLastShot)
++  const applyDamage = useMatchStore((s) => s.applyDamage)
++  const setLastShot = useMatchStore((s) => s.setLastShot)
++  const setCurrentLog = useMatchStore((s) => s.setCurrentLog)
++  const nextShotSeq = useMatchStore((s) => s.nextShotSeq)
++  const diceSource = useMatchStore((s) => s.diceSource)
++  const overrides = useMatchStore((s) => s.overrides)
++  const toggleOverride = useMatchStore((s) => s.toggleOverride)
++  const intercept = useMatchStore((s) => s.intercept)
++  const setIntercept = useMatchStore((s) => s.setIntercept)
++  const pushLog = useMatchStore((s) => s.pushLog)
++  const lastShot = useMatchStore((s) => s.lastShot)
++
++  const [pendingAttack, setPendingAttack] = useState<{ attacker: MatchToken; target: MatchToken; mode: 'ask' } | null>(null)
++  const [manualCollect, setManualCollect] = useState<{ attacker: MatchToken; target: MatchToken; kind: 'SHOOT' | 'MELEE'; needed: number } | null>(null)
++  const [hoverInch, setHoverInch] = useState<string | null>(null)
++
++  const active = tokens.find((t) => t.uid === selected) ?? null
++  const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
++
++  function toBoard(): BoardT {
++    return {
++      terrain: mapPack.terrain,
++      operatives: tokens.filter((t) => t.alive && t.placed).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })),
++    }
++  }
++
++  // ===== 目标控制（1.16） =====
++  function controlOf(o: ObjectiveMarker): Side | null {
++    const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
++    const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
++    if (nA > nB && nA > 0) return 'a'
++    if (nB > nA && nB > 0) return 'b'
++    return null
++  }
++  const objControl: ObjControl[] = mapPack.objectives.map((o) => ({ id: o.id, ctrl: controlOf(o) }))
++
++  // ===== 几何可视化（1.14）：选中已激活特工 → 射程环 + LOS 射线 =====
++  const showViz = active && activated && active.side === turn.activePlayer
++  const rangeRing = showViz ? { center: active!.pos, r: RANGED.profile.range ?? 24 } : null
++  const losLines: LosLine[] = showViz
++    ? tokens
++        .filter((t) => t.alive && t.placed && t.side !== active!.side)
++        .map((t) => {
++          const los = losFinding(active!.pos, t.pos, toBoard())
++          const stroke = los.finalValue ? '#39d98a' : '#ff5c5c'
++          const dash = los.confidence === 'AMBIGUOUS' ? '4 3' : 'none'
++          return { target: t.pos, stroke, dash, opacity: 0.7 }
++        })
++    : []
++
++  // ===== 一击交互（1.13 T4） =====
++  function onClickToken(t: MatchToken) {
++    if (t.side === turn.activePlayer) {
++      setSelected(t.uid)
++      setIntercept(null)
++      return
++    }
++    // 点敌方 → 一击结算
++    if (!active || active.side !== turn.activePlayer || !activated) {
++      setIntercept({ title: '未激活', reasons: ['须先激活己方特工再攻击'] })
++      return
++    }
++    startAttackWithDice(active, t)
++  }
++
++  function startAttack(attacker: MatchToken, target: MatchToken) {
++    const aPl: OperativePlacement = { operativeId: attacker.uid, pos: attacker.pos, baseRadius: attacker.baseRadius, facing: attacker.facing }
++    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: target.baseRadius }
++    const board = toBoard()
++    const others = tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
++    const elig = validateTarget(aPl, dPl, RANGED.profile.range ?? 24, board, others)
++    if (!elig.ok) {
++      setIntercept({ title: '不可攻击', reasons: elig.missing })
++      return
++    }
++    // 近战/射击歧义：控制范围内 → 给 chips
++    const engaged = engagementFinding(aPl, dPl, losFinding(attacker.pos, target.pos, board).finalValue).finalValue
++    setIntercept(null)
++    if (engaged) {
++      setPendingAttack({ attacker, target, mode: 'ask' })
++    } else {
++      resolveShoot(attacker, target)
++    }
++  }
++
++  function resolveShoot(attacker: MatchToken, target: MatchToken, manualNats?: number[]) {
++    const board = toBoard()
++    const others = tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
++    const cover = coverFinding(target.pos, board, others).finalValue
++    const effects = attacker.side === 'a' ? tacticEffects() : []
++    const dice = manualNats
++      ? (() => { const m = new ManualDiceSource(); m.provide(manualNats); return m })()
++      : new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, 'SHOOT', nextShotSeq()))
++    const r = runShooting({
++      attacker: { operativeId: attacker.uid, weapon: RANGED },
++      defender: { operativeId: target.uid, save: 3, wounds: target.wounds },
++      effects,
++      dice,
++      hasCover: cover,
++    })
++    finalize(attacker, target, r.woundsDealt, buildShootingLog(`${attacker.uid}>${target.uid}`, { attacker: { operativeId: attacker.uid, weapon: RANGED }, defender: { operativeId: target.uid, save: 3, wounds: target.wounds }, effects, dice, hasCover: cover }, r), 'shoot')
++  }
++
++  function resolveMelee(attacker: MatchToken, target: MatchToken, manualNats?: number[]) {
++    const effects = attacker.side === 'a' ? tacticEffects() : []
++    const dice = manualNats
++      ? (() => { const m = new ManualDiceSource(); m.provide(manualNats); return m })()
++      : new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, 'MELEE', nextShotSeq()))
++    const input = {
++      attacker: { operativeId: attacker.uid, weapon: MELEE, save: 3, wounds: attacker.wounds },
++      defender: { operativeId: target.uid, weapon: MELEE, save: 3, wounds: target.wounds },
++      effects,
++      dice,
++    }
++    const r = runMelee(input)
++    finalize(attacker, target, r.woundsToDefender, buildMeleeLog(`${attacker.uid}>${target.uid}`, input, r), 'melee')
++  }
++
++  function finalize(attacker: MatchToken, target: MatchToken, woundsDealt: number, log: ResolutionLog, kind: 'shoot' | 'melee') {
++    setLastShot({ targetUid: target.uid, targetName: target.name, woundsDealt, prevWounds: target.wounds, attackerUid: attacker.uid, kind })
++    setCurrentLog(log)
++    // 1.13 §4.1：唯一强制确认 = 确认伤亡。damage 在确认时写回（见 onConfirm）。
++    pushLog(kind, `${attacker.name} → ${target.name}：待确认伤亡 ${woundsDealt}`)
++    setPendingAttack(null)
++  }
++
++  function onConfirm() {
++    if (!lastShot) return
++    const t = tokens.find((x) => x.uid === lastShot.targetUid)
++    const nw = Math.max(0, (t?.wounds ?? 0) - lastShot.woundsDealt)
++    applyDamage(lastShot.targetUid, lastShot.woundsDealt)
++    pushLog(lastShot.kind, `${lastShot.targetName} 确认伤亡 ${lastShot.woundsDealt}${nw <= 0 ? '（残废）' : `（剩 ${nw}）`}`)
++    setCurrentLog(null)
++  }
++
++  // manual 模式：先收集骰（攻击+防御上限 2×attacks），电子模式直接结算
++  function startAttackWithDice(attacker: MatchToken, target: MatchToken) {
++    if (diceSource !== 'manual') { startAttack(attacker, target); return }
++    const aPl: OperativePlacement = { operativeId: attacker.uid, pos: attacker.pos, baseRadius: attacker.baseRadius }
++    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: target.baseRadius }
++    const elig = validateTarget(aPl, dPl, RANGED.profile.range ?? 24, toBoard(), tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos))
++    if (!elig.ok) { setIntercept({ title: '不可攻击', reasons: elig.missing }); return }
++    const engaged = engagementFinding(aPl, dPl, losFinding(attacker.pos, target.pos, toBoard()).finalValue).finalValue
++    if (engaged) { setPendingAttack({ attacker, target, mode: 'ask' }); return }
++    setManualCollect({ attacker, target, kind: 'SHOOT', needed: RANGED.profile.attacks * 2 })
++  }
++
++  function onPointerMove(p: Point) {
++    if (dragging && dragOrigin) {
++      moveToken(dragging, clampPos(p))
++      const d = Math.hypot(p.x - dragOrigin.x, p.y - dragOrigin.y)
++      setHoverInch(`移动 ${d.toFixed(1)}"`)
++    }
++  }
++  function onPointerUp() {
++    if (dragging) {
++      const t = tokens.find((x) => x.uid === dragging)
++      if (t && dragOrigin) {
++        const d = Math.hypot(t.pos.x - dragOrigin.x, t.pos.y - dragOrigin.y)
++        if (d > 0.1) pushLog('turn', `${t.name} 移动 ${d.toFixed(1)}"`)
++      }
++      setDragging(null)
++      setHoverInch(null)
++    }
++  }
++
++  function onEndTP() {
++    scoreAndEndTP(controlOf)
++  }
++
++  return (
++    <div className="play-view">
++      <StatusStrip />
++
++      {/* 几何 finding 内联翻转（1.14 T5 / 1.15 咨询式）：显示当前选中→目标的关键 finding */}
++      {showViz && <FindingStrip active={active!} tokens={tokens} board={toBoard()} overrides={overrides} onToggle={toggleOverride} />}
++
++      <div className="play-main">
++        <div className="play-board-col">
++          <Board
++            mapPack={mapPack}
++            terrain={mapPack.terrain}
++            tokens={tokens}
++            objectives={mapPack.objectives}
++            phase="play"
++            selected={selected}
++            rangeRing={rangeRing}
++            losLines={losLines}
++            objControl={objControl}
++            onPointerMove={onPointerMove}
++            onPointerUp={onPointerUp}
++            onPointerLeave={onPointerUp}
++            onTokenPointerDown={(t) => { if (t.side === turn.activePlayer) { setSelected(t.uid); setDragging(t.uid, t.pos); setIntercept(null) } }}
++            onTokenDoubleClick={(t) => rotateToken(t.uid)}
++            onTokenClick={onClickToken}
++          />
++          {hoverInch && <div className="inch-readout">{hoverInch}</div>}
++          <p className="muted">拖己方特工移动（实时英寸数）· 双击旋转 45° · 点敌方一击结算（绿=可见 红=阻挡 虚=模糊）</p>
++        </div>
++
++        <div className="play-mid-col">
++          <ActionBar
++            active={turn.activePlayer}
++            selectedName={active?.name ?? null}
++            selectedSide={active?.side ?? null}
++            activated={activated}
++            hasLastShot={Boolean(lastShot)}
++            onActivate={() => { if (active) { activate(active.uid, active.side); pushLog('turn', `${active.name} 激活`) } }}
++            onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null) } }}
++            onEndTP={onEndTP}
++            onUndo={undoLastShot}
++          />
++          <UnitPanel startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} />
++        </div>
++
++        <div className="play-right-col">
++          <PipelineDrawer onConfirm={onConfirm} onQueryRule={onQueryRule} />
++          <LogPanel onReplay={() => { /* currentLog 已展 */ }} onRollbackToHere={undoLastShot} />
++        </div>
++      </div>
++
++      {intercept && <div className="intercept-floating"><InterceptorCard title={intercept.title} reasons={intercept.reasons} onClose={() => setIntercept(null)} onQueryRule={() => onQueryRule(intercept.title)} /></div>}
++
++      {/* 近战/射击歧义 chips（零模态） */}
++      {pendingAttack?.mode === 'ask' && (
++        <div className="chips-ask">
++          <span>{pendingAttack.attacker.name} 控制范围内有 {pendingAttack.target.name}：</span>
++          <button className="primary" onClick={() => { const a = pendingAttack.attacker, t = pendingAttack.target; if (diceSource === 'manual') setManualCollect({ attacker: a, target: t, kind: 'SHOOT', needed: RANGED.profile.attacks * 2 }); else resolveShoot(a, t) }}>射击 ▸</button>
++          <button className="primary" onClick={() => { const a = pendingAttack.attacker, t = pendingAttack.target; if (diceSource === 'manual') setManualCollect({ attacker: a, target: t, kind: 'MELEE', needed: MELEE.profile.attacks * 2 }); else resolveMelee(a, t) }}>近战 ▸</button>
++          <button onClick={() => setPendingAttack(null)}>取消</button>
++        </div>
++      )}
++
++      {/* 物理骰录入浮层 */}
++      {manualCollect && (
++        <ManualDiceEntry
++          needed={manualCollect.needed}
++          label={`${manualCollect.kind === 'SHOOT' ? '射击' : '近战'}：攻击+防御骰共 ${manualCollect.needed} 枚`}
++          onClose={() => setManualCollect(null)}
++          onConfirm={(nats) => {
++            const { attacker, target, kind } = manualCollect
++            setManualCollect(null)
++            if (kind === 'SHOOT') resolveShoot(attacker, target, nats)
++            else resolveMelee(attacker, target, nats)
++          }}
++        />
++      )}
++    </div>
++  )
++}
++
++// 1.14 T5：几何 finding 内联翻转条（咨询式 D-24，不弹框）
++function FindingStrip({
++  active,
++  tokens,
++  board,
++  overrides,
++  onToggle,
++}: {
++  active: MatchToken
++  tokens: MatchToken[]
++  board: BoardT
++  overrides: Record<string, boolean>
++  onToggle: (key: string) => void
++}) {
++  const enemies = tokens.filter((t) => t.alive && t.placed && t.side !== active.side).slice(0, 4)
++  const items: { key: string; label: string; ambiguous: boolean }[] = []
++  for (const e of enemies) {
++    const los = losFinding(active.pos, e.pos, board)
++    const k = `${active.uid}>${e.uid}>LOS`
++    items.push({ key: k, label: `${e.name} LOS=${los.finalValue ? '可见' : '阻挡'}`, ambiguous: los.confidence === 'AMBIGUOUS' })
++  }
++  if (items.length === 0) return null
++  return (
++    <div className="finding-strip">
++      {items.map((it) => (
++        <button
++          key={it.key}
++          className={`chip finding ${it.ambiguous ? 'ambiguous' : ''} ${overrides[it.key] ? 'flipped' : ''}`}
++          onClick={() => onToggle(it.key)}
++          title={it.ambiguous ? '⚠ 可翻转（咨询式，1 击翻转假设，不弹框）' : 'CLEAR（可手动翻转）'}
++        >
++          {it.ambiguous ? '⚠ ' : ''}{it.label}{overrides[it.key] ? ' ⟲' : ''}
++        </button>
++      ))}
++    </div>
++  )
++}
+diff --git a/src/ui/match/ResultPage.tsx b/src/ui/match/ResultPage.tsx
+new file mode 100644
+index 0000000..386175a
+--- /dev/null
++++ b/src/ui/match/ResultPage.tsx
+@@ -0,0 +1,19 @@
++import { useMatchStore } from '../../state/matchStore'
++
++// 1.16 T5：胜负结果页。4 TP 结束 → 全屏结果（VP 总高者胜 / 平局）；
++// [再开一局] = window.location.reload()（D-20 刷新重置，无存档清理）。
++export function ResultPage({ onQueryRule }: { onQueryRule: () => void }) {
++  const winner = useMatchStore((s) => s.winner)
++  const vp = useMatchStore((s) => s.vp)
++
++  return (
++    <div className="result-page">
++      <h2>战斗结束</h2>
++      <p className="outcome">胜负：<strong>{winner}</strong> — VP A:{vp.a} B:{vp.b}</p>
++      {winner === '平局' && (
++        <p className="muted">平局规则要点：<button className="link-btn" onClick={onQueryRule}>查看 ▸</button>（VP 总分相同）</p>
++      )}
++      <button className="primary main-btn" onClick={() => window.location.reload()}>再开一局</button>
++    </div>
++  )
++}
+diff --git a/src/ui/match/RulesQuery.tsx b/src/ui/match/RulesQuery.tsx
+new file mode 100644
+index 0000000..f2d5090
+--- /dev/null
++++ b/src/ui/match/RulesQuery.tsx
+@@ -0,0 +1,88 @@
++import { useState, useEffect } from 'react'
++import { loadPack, type FactionPack, type Effect, type Weapon } from '../..'
++import angelsPack from '../../data/packs/angels_of_death.v1.json'
++
++const pack: FactionPack = loadPack(angelsPack)
++
++// 1.17 T3/T4：规则查询浮层 + 引擎接入。
++// 输入关键词 / effectId / weaponId / pipelineStep；返回引擎参数化要点
++// （数值/profile/触发步骤/modifier.kind/stacking.policy/规则编号），不渲染 GW 原文（D-29）。
++// rulesRef 指向本地 docs/rules（不入公开仓），显示为「来源: KT Lite §section」占位。
++
++export interface RulesQueryCtrl {
++  node: { hint: string } | null
++  open: (hint: string) => void
++  close: () => void
++}
++
++export function useRulesQuery(): RulesQueryCtrl {
++  const [node, setNode] = useState<{ hint: string } | null>(null)
++  return { node, open: (hint) => setNode({ hint }), close: () => setNode(null) }
++}
++
++interface EffectHit { kind: 'effect'; e: Effect }
++interface WeaponHit { kind: 'weapon'; w: Weapon }
++type Hit = EffectHit | WeaponHit
++
++function search(q: string): Hit[] {
++  const k = q.trim().toLowerCase()
++  if (!k) return []
++  const hits: Hit[] = []
++  for (const e of pack.effects) {
++    if (`${e.effectId} ${e.label} ${e.modifier.kind} ${e.trigger.point} ${e.pipelineStep} ${e.source}`.toLowerCase().includes(k)) {
++      hits.push({ kind: 'effect', e })
++    }
++  }
++  for (const w of pack.weapons) {
++    if (`${w.weaponId} ${w.name} ${w.kind} ${w.keywords.join(' ')}`.toLowerCase().includes(k)) {
++      hits.push({ kind: 'weapon', w })
++    }
++  }
++  return hits.slice(0, 12)
++}
++
++export function RulesQuery({ ctrl }: { ctrl: RulesQueryCtrl }) {
++  const [q, setQ] = useState(ctrl.node?.hint ?? '')
++  useEffect(() => {
++    if (ctrl.node) setQ(ctrl.node.hint)
++  }, [ctrl.node])
++  if (!ctrl.node) return null
++  const hits = search(q)
++
++  return (
++    <div className="overlay-backdrop" onClick={ctrl.close}>
++      <div className="rules-query" onClick={(e) => e.stopPropagation()}>
++        <div className="rq-head">
++          <strong>规则查询</strong>
++          <button className="intercept-close" onClick={ctrl.close}>✕</button>
++        </div>
++        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索 effect / 武器 / 触发步骤 / 关键词…" autoFocus />
++        <ul className="rq-list">
++          {hits.length === 0 && <li className="muted">无匹配（显示引擎参数化要点，不含 GW 原文 D-29）</li>}
++          {hits.map((h) =>
++            h.kind === 'effect' ? (
++              <li key={h.e.effectId} className="rq-item">
++                <strong>{h.e.label}</strong>
++                <div className="muted rq-fields">
++                  effectId: {h.e.effectId} · 触发 {h.e.trigger.point} · 步骤 {h.e.pipelineStep}<br />
++                  modifier: {h.e.modifier.kind} · 叠加 {h.e.stacking.policy}
++                  {h.e.stacking.groupKeys?.length ? ` · 组 ${h.e.stacking.groupKeys.join('/')}` : ''}
++                </div>
++                {h.e.rulesRef && <div className="muted rq-src">来源: KT Lite §{h.e.rulesRef.section}（本地 docs/rules）</div>}
++              </li>
++            ) : (
++              <li key={h.w.weaponId} className="rq-item">
++                <strong>{h.w.name}</strong> <span className="muted">({h.w.kind})</span>
++                <div className="muted rq-fields">
++                  攻击 {h.w.profile.attacks} · 命中 {h.w.profile.hit}+ · 普通伤 {h.w.profile.normalDamage} · 关键伤 {h.w.profile.criticalDamage}
++                  {h.w.profile.range != null ? ` · 射程 ${h.w.profile.range}"` : ''}<br />
++                  武器规则: {h.w.profile.weaponRules.join(', ') || '无'} · 关键词: {h.w.keywords.join(', ') || '无'}
++                </div>
++              </li>
++            ),
++          )}
++        </ul>
++      </div>
++    </div>
++  )
++}
+diff --git a/src/ui/match/StatusStrip.tsx b/src/ui/match/StatusStrip.tsx
+new file mode 100644
+index 0000000..675e1d6
+--- /dev/null
++++ b/src/ui/match/StatusStrip.tsx
+@@ -0,0 +1,17 @@
++import { useMatchStore } from '../../state/matchStore'
++
++// 1.13 T2 / 1.16 T3：状态带。转折点 X/4 · 阶段 · 主动玩家(阵营色) · CP/AP · VP 常驻。
++// 切换主动玩家由色带横扫表达（D-19 不弹模态）。
++export function StatusStrip() {
++  const turn = useMatchStore((s) => s.turn)
++  const vp = useMatchStore((s) => s.vp)
++  const active = turn.activePlayer
++  return (
++    <div className={`status-strip ${active}`}>
++      <span className="ss-item">转折点 <strong>{turn.turningPoint}/4</strong></span>
++      <span className="ss-item">阶段 <strong>{turn.phase}</strong></span>
++      <span className={`ss-item active-player ${active}`}>主动 <strong>{active.toUpperCase()}</strong></span>
++      <span className="ss-item vp">VP <strong>A:{vp.a} B:{vp.b}</strong></span>
++    </div>
++  )
++}
+diff --git a/src/ui/match/TerrainEditor.tsx b/src/ui/match/TerrainEditor.tsx
+new file mode 100644
+index 0000000..2afdf77
+--- /dev/null
++++ b/src/ui/match/TerrainEditor.tsx
+@@ -0,0 +1,166 @@
++import { useState, useRef } from 'react'
++import type { Point, TerrainFeature, TerrainKind } from '../../geometry'
++import { SCALE } from './Board'
++
++// 1.12 T2：自定义画地形。工具：矩形/多边形/橡皮 + 网格吸附；
++// 属性标签多选（kind: BLOCKING/COVER/OBSCURING + 制高点/可攀爬）。
++// 会话内有效（D-20）。与对局期画地形（1.14 T6）共享 TerrainFeature 产物结构。
++type Tool = 'rect' | 'polygon' | 'eraser'
++
++let pieceId = 0
++
++export function TerrainEditor({
++  bounds,
++  terrain,
++  onAdd,
++  onRemove,
++  onDone,
++}: {
++  bounds: { w: number; h: number }
++  terrain: TerrainFeature[]
++  onAdd: (t: TerrainFeature) => void
++  onRemove: (id: string) => void
++  onDone: () => void
++}) {
++  const [tool, setTool] = useState<Tool>('rect')
++  const [kind, setKind] = useState<TerrainKind>('BLOCKING')
++  const [vantage, setVantage] = useState(false)
++  const [climbable, setClimbable] = useState(false)
++  const [snap, setSnap] = useState(true)
++  const [dragStart, setDragStart] = useState<Point | null>(null)
++  const [dragCur, setDragCur] = useState<Point | null>(null)
++  const [polyVerts, setPolyVerts] = useState<Point[]>([])
++  const svgRef = useRef<SVGSVGElement>(null)
++
++  const W = bounds.w * SCALE
++  const H = bounds.h * SCALE
++
++  function snapPt(p: Point): Point {
++    return snap ? { x: Math.round(p.x), y: Math.round(p.y) } : p
++  }
++  function evtPt(e: { clientX: number; clientY: number }): Point {
++    const r = svgRef.current!.getBoundingClientRect()
++    return snapPt({ x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE })
++  }
++  function makePiece(poly: Point[]): TerrainFeature | null {
++    if (poly.length < 3) return null
++    pieceId += 1
++    return { id: `t${pieceId}`, kind, polygon: poly, vantage: vantage || undefined, climbable: climbable || undefined }
++  }
++
++  function onDown(e: React.PointerEvent) {
++    const p = evtPt(e)
++    if (tool === 'rect') setDragStart(p)
++    else if (tool === 'polygon') setPolyVerts((v) => [...v, p])
++    else if (tool === 'eraser') {
++      // 命中删除：点中其 bbox 的最近一块
++      const hit = [...terrain].reverse().find((t) => {
++        const xs = t.polygon.map((q) => q.x), ys = t.polygon.map((q) => q.y)
++        return p.x >= Math.min(...xs) && p.x <= Math.max(...xs) && p.y >= Math.min(...ys) && p.y <= Math.max(...ys)
++      })
++      if (hit) onRemove(hit.id)
++    }
++  }
++  function onMove(e: React.PointerEvent) {
++    if (tool === 'rect' && dragStart) setDragCur(evtPt(e))
++  }
++  function onUp() {
++    if (tool === 'rect' && dragStart && dragCur) {
++      const a = dragStart, b = dragCur
++      const poly = [
++        { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) },
++        { x: Math.max(a.x, b.x), y: Math.min(a.y, b.y) },
++        { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) },
++        { x: Math.min(a.x, b.x), y: Math.max(a.y, b.y) },
++      ]
++      const piece = makePiece(poly)
++      if (piece) onAdd(piece)
++    }
++    setDragStart(null)
++    setDragCur(null)
++  }
++  function finishPolygon() {
++    const piece = makePiece(polyVerts)
++    if (piece) onAdd(piece)
++    setPolyVerts([])
++  }
++
++  const previewRect =
++    tool === 'rect' && dragStart && dragCur
++      ? [
++          { x: Math.min(dragStart.x, dragCur.x), y: Math.min(dragStart.y, dragCur.y) },
++          { x: Math.max(dragStart.x, dragCur.x), y: Math.min(dragStart.y, dragCur.y) },
++          { x: Math.max(dragStart.x, dragCur.x), y: Math.max(dragStart.y, dragCur.y) },
++          { x: Math.min(dragStart.x, dragCur.x), y: Math.max(dragStart.y, dragCur.y) },
++        ]
++      : null
++
++  const fillFor = (k: TerrainKind) => (k === 'BLOCKING' ? '#5a4030' : k === 'COVER' ? '#3a5a3a' : '#4a4a6a')
++
++  return (
++    <div className="terrain-editor">
++      <h2>画地形（自定义板）</h2>
++      <div className="te-toolbar">
++        {(['rect', 'polygon', 'eraser'] as Tool[]).map((t) => (
++          <button key={t} className={tool === t ? 'active' : ''} onClick={() => { setTool(t); setPolyVerts([]) }}>
++            {t === 'rect' ? '矩形' : t === 'polygon' ? '多边形' : '橡皮'}
++          </button>
++        ))}
++        <span className="te-sep" />
++        {(['BLOCKING', 'COVER', 'OBSCURING'] as TerrainKind[]).map((k) => (
++          <label key={k} className="cover">
++            <input type="radio" name="kind" checked={kind === k} onChange={() => setKind(k)} />
++            <span style={{ color: fillFor(k) }}>■</span> {k}
++          </label>
++        ))}
++        <span className="te-sep" />
++        <label className="cover"><input type="checkbox" checked={vantage} onChange={(e) => setVantage(e.target.checked)} /> 制高点</label>
++        <label className="cover"><input type="checkbox" checked={climbable} onChange={(e) => setClimbable(e.target.checked)} /> 可攀爬</label>
++        <label className="cover"><input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} /> 网格吸附</label>
++        {tool === 'polygon' && (
++          <button className="primary" onClick={finishPolygon} disabled={polyVerts.length < 3}>
++            完成多边形（{polyVerts.length}）
++          </button>
++        )}
++        <button className="primary" onClick={onDone}>进入部署 ▶</button>
++      </div>
++
++      <svg
++        ref={svgRef}
++        className="te-canvas"
++        width={W}
++        height={H}
++        style={{ cursor: tool === 'eraser' ? 'not-allowed' : 'crosshair' }}
++        onPointerDown={onDown}
++        onPointerMove={onMove}
++        onPointerUp={onUp}
++      >
++        {/* 网格 */}
++        {snap &&
++          Array.from({ length: Math.floor(bounds.w) + 1 }, (_, i) => (
++            <line key={`vx${i}`} x1={i * SCALE} y1={0} x2={i * SCALE} y2={H} stroke="#22262e" strokeWidth={0.5} />
++          ))}
++        {snap &&
++          Array.from({ length: Math.floor(bounds.h) + 1 }, (_, i) => (
++            <line key={`hy${i}`} x1={0} y1={i * SCALE} x2={W} y2={i * SCALE} stroke="#22262e" strokeWidth={0.5} />
++          ))}
++        {/* 已绘地形 */}
++        {terrain.map((t) => (
++          <polygon key={t.id} points={t.polygon.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill={fillFor(t.kind)} opacity={0.8} stroke="#000" strokeWidth={0.5} />
++        ))}
++        {/* 预览矩形 */}
++        {previewRect && (
++          <polygon points={previewRect.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill={fillFor(kind)} opacity={0.5} />
++        )}
++        {/* 多边形顶点 */}
++        {polyVerts.map((v, i) => (
++          <circle key={i} cx={v.x * SCALE} cy={v.y * SCALE} r={3} fill="var(--accent)" />
++        ))}
++        {polyVerts.length >= 2 && (
++          <polyline points={polyVerts.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill="none" stroke={fillFor(kind)} strokeWidth={1} opacity={0.6} />
++        )}
++      </svg>
++      <p className="muted">英寸坐标 {bounds.w}×{bounds.h}。属性标签在下一次绘制生效。橡皮点中地形块即删。</p>
++    </div>
++  )
++}
+diff --git a/src/ui/match/UnitPanel.tsx b/src/ui/match/UnitPanel.tsx
+new file mode 100644
+index 0000000..773f237
+--- /dev/null
++++ b/src/ui/match/UnitPanel.tsx
+@@ -0,0 +1,48 @@
++import { useMatchStore, type MatchToken } from '../../state/matchStore'
++
++// 1.13 单位面板 + 1.15 T4 状态反馈。
++// 特工卡：耐伤阈值视觉（黄<起始 / 橙<一半=受创 / 灰阶=残废）+ 激活态。
++// effect 剩余 TP / 受创自动修正由引擎两层属性模型产出（FR-2），本面板读引擎结果（v1 显示耐伤态）。
++function woundClass(t: MatchToken, startWounds: number): string {
++  if (!t.alive) return 'dead'
++  if (t.wounds < startWounds / 2) return 'injured'
++  if (t.wounds < startWounds) return 'hurt'
++  return 'fresh'
++}
++
++export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => number }) {
++  const tokens = useMatchStore((s) => s.tokens)
++  const turn = useMatchStore((s) => s.turn)
++  const selected = useMatchStore((s) => s.selected)
++  const setSelected = useMatchStore((s) => s.setSelected)
++  const setIntercept = useMatchStore((s) => s.setIntercept)
++
++  const sides: ('a' | 'b')[] = ['a', 'b']
++  return (
++    <div className="unit-panel">
++      {sides.map((side) => (
++        <div key={side} className={`unit-side ${side}`}>
++          <h4>{side.toUpperCase()} 方</h4>
++          <ul className="unit-list">
++            {tokens.filter((t) => t.side === side).map((t) => {
++              const cls = woundClass(t, startWoundsOf(t.uid))
++              const ready = Boolean(turn.operatives[t.uid]?.ready)
++              return (
++                <li
++                  key={t.uid}
++                  className={`unit-card ${cls} ${selected === t.uid ? 'sel' : ''} ${ready ? 'ready' : ''}`}
++                  onClick={() => { setSelected(t.uid); setIntercept(null) }}
++                >
++                  <span className="uc-name">{t.name}</span>
++                  <span className="uc-wounds">耐伤 {t.wounds}{!t.alive && ' ✕'}</span>
++                  {ready && <span className="uc-tag">激活中</span>}
++                  {cls === 'injured' && <span className="uc-tag warn">受创</span>}
++                </li>
++              )
++            })}
++          </ul>
++        </div>
++      ))}
++    </div>
++  )
++}
+diff --git a/src/ui/roster/FactionSelect.tsx b/src/ui/roster/FactionSelect.tsx
+new file mode 100644
+index 0000000..e302399
+--- /dev/null
++++ b/src/ui/roster/FactionSelect.tsx
+@@ -0,0 +1,43 @@
++import type { FactionPack } from '../../rules'
++
++// T2：阵营选择卡。阵营机制 = 数据；本 Epic 仅死亡天使数据可用（Story 1.3），
++// 军团兵/瘟疫战士置灰标 Epic 2/3。阵营可同可异（AC4）。
++export interface FactionOption {
++  id: string
++  name: string
++  available: boolean
++  epic?: string // 未就绪时标注来源 Epic
++  pack?: FactionPack // available=true 时提供已加载的数据包
++}
++
++export function FactionSelect({
++  factions,
++  selectedId,
++  sideLabel,
++  onSelect,
++}: {
++  factions: FactionOption[]
++  selectedId: string | null
++  sideLabel: string
++  onSelect: (f: FactionOption) => void
++}) {
++  return (
++    <div className="faction-grid">
++      <h3>选阵营 · {sideLabel}</h3>
++      <div className="cards">
++        {factions.map((f) => (
++          <button
++            key={f.id}
++            className={`faction-card ${selectedId === f.id ? 'sel' : ''}`}
++            disabled={!f.available}
++            onClick={() => onSelect(f)}
++            title={f.available ? f.name : `${f.name}（${f.epic ?? '待定'}）`}
++          >
++            <strong>{f.name}</strong>
++            <span className="muted">{f.available ? (selectedId === f.id ? '✓ 已选' : '可选') : `${f.epic ?? '待定'}`}</span>
++          </button>
++        ))}
++      </div>
++    </div>
++  )
++}
+diff --git a/src/ui/roster/LegalityPanel.tsx b/src/ui/roster/LegalityPanel.tsx
+new file mode 100644
+index 0000000..85bfec9
+--- /dev/null
++++ b/src/ui/roster/LegalityPanel.tsx
+@@ -0,0 +1,24 @@
++import type { RosterLegalityResult } from '../../rules'
++
++// T5：合法性面板。读 buildConstraints 经 evaluateLegality 算出的 checks，逐条渲染。
++// 桌面右侧固定、平板底部抽屉（index.css 响应式）。违规红字 + 定位（detail 含特工/武器名）。
++// 全绿才解锁「进入对局」（门禁逻辑在 RosterView，本组件纯展示）。
++export function LegalityPanel({ result, sideLabel }: { result: RosterLegalityResult; sideLabel: string }) {
++  return (
++    <aside className={`legality ${result.legal ? '' : 'has-warn'}`}>
++      <h3>合法性 · {sideLabel}</h3>
++      <ul className="list">
++        {result.checks.map((c) => (
++          <li key={c.key} className={c.status === 'warn' ? 'warn' : 'ok'}>
++            <strong>{c.status === 'ok' ? '✓' : '✗'} {c.label}</strong>
++            <span className="muted"> {c.detail}</span>
++          </li>
++        ))}
++        {result.checks.length === 0 && <li className="muted">未选阵营</li>}
++      </ul>
++      <p className={`verdict ${result.legal ? 'ok' : 'warn'}`}>
++        {result.legal ? '阵容合规' : '存在违规，先解决再进入对局'}
++      </p>
++    </aside>
++  )
++}
+diff --git a/src/ui/roster/OperativePicker.tsx b/src/ui/roster/OperativePicker.tsx
+new file mode 100644
+index 0000000..21453d9
+--- /dev/null
++++ b/src/ui/roster/OperativePicker.tsx
+@@ -0,0 +1,74 @@
++import type { FactionPack } from '../../rules'
++
++// T3：选特工 + 装备配置视图。
++// 入队/出队特工（来自 faction pack operatives[]），每名入队特工可勾选其 weaponRefs 装备配置。
++// UI 只消费 state（AR-9）：所有变更通过 onChange 回调上抛，不在组件内自持引擎调用。
++export function OperativePicker({
++  pack,
++  operativeIds,
++  loadout,
++  onChange,
++}: {
++  pack: FactionPack
++  operativeIds: string[]
++  loadout: Record<string, string[]>
++  onChange: (next: { operativeIds: string[]; loadout: Record<string, string[]> }) => void
++}) {
++  const weaponName = (id: string) => pack.weapons.find((w) => w.weaponId === id)?.name ?? id
++
++  function toggleOp(opId: string) {
++    if (operativeIds.includes(opId)) {
++      // 出队：同时清掉其 loadout
++      const nextLoadout = { ...loadout }
++      delete nextLoadout[opId]
++      onChange({ operativeIds: operativeIds.filter((x) => x !== opId), loadout: nextLoadout })
++    } else {
++      // 入队：默认勾选其全部 weaponRefs（玩家可再手动取消）
++      const op = pack.operatives.find((o) => o.operativeId === opId)
++      const nextLoadout = { ...loadout, [opId]: op ? [...op.weaponRefs] : [] }
++      onChange({ operativeIds: [...operativeIds, opId], loadout: nextLoadout })
++    }
++  }
++
++  function toggleWeapon(opId: string, weaponId: string) {
++    const cur = loadout[opId] ?? []
++    const next = cur.includes(weaponId) ? cur.filter((w) => w !== weaponId) : [...cur, weaponId]
++    onChange({ operativeIds, loadout: { ...loadout, [opId]: next } })
++  }
++
++  return (
++    <div className="operative-picker">
++      <h3>选特工 + 装备配置（{operativeIds.length} 名）</h3>
++      <ul className="list">
++        {pack.operatives.map((o) => {
++          const inTeam = operativeIds.includes(o.operativeId)
++          return (
++            <li key={o.operativeId} className={`op-card ${inTeam ? 'in' : ''}`}>
++              <label className="cover">
++                <input type="checkbox" checked={inTeam} onChange={() => toggleOp(o.operativeId)} />
++                <strong>{o.name}</strong>
++                <span className="muted">
++                  {' '}— 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}"
++                </span>
++              </label>
++              {inTeam && (
++                <div className="loadout">
++                  {o.weaponRefs.map((wId) => (
++                    <label key={wId} className="cover weapon-pick">
++                      <input
++                        type="checkbox"
++                        checked={(loadout[o.operativeId] ?? []).includes(wId)}
++                        onChange={() => toggleWeapon(o.operativeId, wId)}
++                      />
++                      {weaponName(wId)}
++                    </label>
++                  ))}
++                </div>
++              )}
++            </li>
++          )
++        })}
++      </ul>
++    </div>
++  )
++}
+diff --git a/src/ui/roster/SubFactionSelect.tsx b/src/ui/roster/SubFactionSelect.tsx
+new file mode 100644
+index 0000000..a2a073b
+--- /dev/null
++++ b/src/ui/roster/SubFactionSelect.tsx
+@@ -0,0 +1,55 @@
++import type { FactionPack, SubFactionSelector } from '../../rules'
++
++// T4：子阵营选择器（通用）。读 faction.subFactionSelector（阵营机制 = 数据）。
++// 死亡天使=战团战术 8 选 2；军团兵印记 5 选 1 在 Epic 2 复用同组件（按 selector.max dispatch）。
++// 多选拦截：超过 max 不再允许加入；选满 max 才该项 ✓（合法性面板据此判定）。
++export function SubFactionSelect({
++  selector,
++  pack,
++  selection,
++  onChange,
++}: {
++  selector: SubFactionSelector
++  pack: FactionPack
++  selection: string[]
++  onChange: (next: string[]) => void
++}) {
++  // option 标签解析：优先用 effect.label / operative.name 等 pack 内可读名，回退到 option id
++  function optionLabel(optId: string): string {
++    const e = pack.effects.find((x) => x.effectId === optId)
++    if (e) return e.label
++    const o = pack.operatives.find((x) => x.operativeId === optId)
++    if (o) return o.name
++    return optId
++  }
++
++  function toggle(optId: string) {
++    if (selection.includes(optId)) {
++      onChange(selection.filter((x) => x !== optId))
++    } else if (selection.length < selector.max) {
++      onChange([...selection, optId])
++    }
++    // 超过 max：忽略（多选拦截，由数据约束）
++  }
++
++  return (
++    <div className="subfaction">
++      <h3>{selector.label}（{selection.length}/{selector.max}）</h3>
++      <ul className="list">
++        {selector.options.map((opt) => (
++          <li key={opt}>
++            <label className="cover">
++              <input
++                type="checkbox"
++                checked={selection.includes(opt)}
++                onChange={() => toggle(opt)}
++                disabled={!selection.includes(opt) && selection.length >= selector.max}
++              />
++              {optionLabel(opt)}
++            </label>
++          </li>
++        ))}
++      </ul>
++    </div>
++  )
++}
+diff --git a/tests/data/maps.test.ts b/tests/data/maps.test.ts
+new file mode 100644
+index 0000000..e9cc829
+--- /dev/null
++++ b/tests/data/maps.test.ts
+@@ -0,0 +1,37 @@
++import { describe, it, expect } from 'vitest'
++import { loadMapPack } from '../../src/data/maps'
++import openMap from '../../src/data/packs/maps/open.v1.json'
++import ruinMap from '../../src/data/packs/maps/ruin.v1.json'
++import corridorMap from '../../src/data/packs/maps/corridor.v1.json'
++
++describe('MapPack 加载（Story 1.12）', () => {
++  it('三预设地图结构合法', () => {
++    for (const raw of [openMap, ruinMap, corridorMap]) {
++      const m = loadMapPack(raw)
++      expect(m.mapId).toBeTruthy()
++      expect(m.bounds.w).toBeGreaterThan(0)
++      expect(m.bounds.h).toBeGreaterThan(0)
++      expect(m.objectives.length).toBeGreaterThan(0)
++      expect(m.dropZones.a.length).toBeGreaterThanOrEqual(3)
++      expect(m.dropZones.b.length).toBeGreaterThanOrEqual(3)
++    }
++  })
++
++  it('降落区 A 左 / B 右不重叠（x 分离）', () => {
++    const m = loadMapPack(openMap)
++    const aMaxX = Math.max(...m.dropZones.a.map((p) => p.x))
++    const bMinX = Math.min(...m.dropZones.b.map((p) => p.x))
++    expect(aMaxX).toBeLessThanOrEqual(bMinX)
++  })
++
++  it('corridor 含 BLOCKING + OBSCURING 多种地形', () => {
++    const m = loadMapPack(corridorMap)
++    const kinds = new Set(m.terrain.map((t) => t.kind))
++    expect(kinds.has('BLOCKING')).toBe(true)
++    expect(kinds.has('OBSCURING')).toBe(true)
++  })
++
++  it('缺字段 → 抛错（NFR-5 不静默降级）', () => {
++    expect(() => loadMapPack({ mapId: 'x' })).toThrow(/missing/)
++  })
++})
+diff --git a/tests/geometry/geometry.test.ts b/tests/geometry/geometry.test.ts
+index 142f20e..aa41b4f 100644
+--- a/tests/geometry/geometry.test.ts
++++ b/tests/geometry/geometry.test.ts
+@@ -6,6 +6,9 @@ import {
+   engagementFinding,
+   validateTarget,
+   flipFinding,
++  pointInPolygon,
++  circleInsidePolygon,
++  circlesOverlap,
+   type Board,
+   type OperativePlacement,
+   type Point,
+@@ -112,3 +115,29 @@ describe('资格判定 + 咨询式翻转', () => {
+     expect(r.ok).toBe(true)
+   })
+ })
++
++describe('部署/控制几何（Story 1.12/1.16 导出）', () => {
++  const square = (x: number, y: number, w: number, h: number) => [
++    { x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h },
++  ]
++  const zone = square(0, 0, 10, 20)
++
++  it('pointInPolygon：内/外/边界', () => {
++    expect(pointInPolygon({ x: 5, y: 5 }, zone)).toBe(true)
++    expect(pointInPolygon({ x: 15, y: 5 }, zone)).toBe(false)
++    expect(pointInPolygon({ x: 0, y: 0 }, zone)).toBe(true) // 顶点算内（奇偶规则）
++  })
++
++  it('circleInsidePolygon：圆完全在内 / 贴边外', () => {
++    expect(circleInsidePolygon({ x: 5, y: 10 }, 0.6, zone)).toBe(true)
++    // 圆心在内但半径触边 → 不完全在内
++    expect(circleInsidePolygon({ x: 9.7, y: 10 }, 0.6, zone)).toBe(false)
++    // 圆心在外
++    expect(circleInsidePolygon({ x: 11, y: 10 }, 0.6, zone)).toBe(false)
++  })
++
++  it('circlesOverlap：重叠 / 分离', () => {
++    expect(circlesOverlap({ x: 5, y: 5 }, 0.6, { x: 6, y: 5 }, 0.6)).toBe(true)
++    expect(circlesOverlap({ x: 5, y: 5 }, 0.6, { x: 9, y: 5 }, 0.6)).toBe(false)
++  })
++})
+diff --git a/tests/rules/legality.test.ts b/tests/rules/legality.test.ts
+new file mode 100644
+index 0000000..8ae87b9
+--- /dev/null
++++ b/tests/rules/legality.test.ts
+@@ -0,0 +1,137 @@
++import { describe, it, expect } from 'vitest'
++import { evaluateLegality } from '../../src/rules/legality'
++import type { FactionPack } from '../../src/rules'
++import angels from '../../src/data/packs/angels_of_death.v1.json'
++import { loadPack } from '../../src/rules'
++
++const pack = loadPack(angels) as FactionPack
++
++// 仅用于装备超限分支测试的合成约束包（不动 canonical 死亡天使包）
++function synthPackWithEquipmentLimit(): FactionPack {
++  return {
++    ...pack,
++    buildConstraints: {
++      ...(pack.buildConstraints ?? {}),
++      operatives: { min: 1 },
++      equipmentLimitScope: 'keyword',
++      equipmentLimits: { HEAVY: 1 },
++    },
++  }
++}
++
++describe('建队合法性判定（纯逻辑，数据驱动）', () => {
++  it('全绿：1 特工 + 战团战术满 2 选', () => {
++    const r = evaluateLegality({
++      pack,
++      operativeIds: ['angels_tactical'],
++      loadout: { angels_tactical: ['angels_bolt_rifle'] },
++      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
++    })
++    expect(r.legal).toBe(true)
++    expect(r.checks.every((c) => c.status === 'ok')).toBe(true)
++  })
++
++  it('特工来源违规：operativeId 不在阵营列表', () => {
++    const r = evaluateLegality({
++      pack,
++      operativeIds: ['legionary_chosen'],
++      loadout: {},
++      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
++    })
++    expect(r.legal).toBe(false)
++    const src = r.checks.find((c) => c.key === 'operatives-source')
++    expect(src?.status).toBe('warn')
++    expect(src?.detail).toContain('legionary_chosen')
++  })
++
++  it('特工数量违规：低于 min', () => {
++    const r = evaluateLegality({
++      pack,
++      operativeIds: [],
++      loadout: {},
++      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
++    })
++    expect(r.legal).toBe(false)
++    const src = r.checks.find((c) => c.key === 'operatives-source')
++    expect(src?.status).toBe('warn')
++    expect(src?.detail).toContain('至少')
++  })
++
++  it('子阵营未选满：战团战术只选 1（应 2）', () => {
++    const r = evaluateLegality({
++      pack,
++      operativeIds: ['angels_tactical'],
++      loadout: {},
++      subFactionSelection: ['chapterTactic_relentless'],
++    })
++    expect(r.legal).toBe(false)
++    const sf = r.checks.find((c) => c.key === 'sub-faction')
++    expect(sf?.status).toBe('warn')
++  })
++
++  it('子阵营超选：战团战术选 3（应 2）', () => {
++    const r = evaluateLegality({
++      pack,
++      operativeIds: ['angels_tactical'],
++      loadout: {},
++      subFactionSelection: [
++        'chapterTactic_relentless',
++        'chapterTactic_duelist',
++        'chapterTactic_resolute',
++      ],
++    })
++    expect(r.legal).toBe(false)
++    const sf = r.checks.find((c) => c.key === 'sub-faction')
++    expect(sf?.status).toBe('warn')
++  })
++
++  it('装备超限：HEAVY 上限 1，选了 2 → 违规并定位武器', () => {
++    const sp = synthPackWithEquipmentLimit()
++    // 构造两把 HEAVY 武器挂载（合成 loadout，不依赖真实包有无 HEAVY）
++    const r = evaluateLegality({
++      pack: sp,
++      operativeIds: ['angels_tactical', 'angels_sergeant'],
++      loadout: {
++        angels_tactical: ['angels_bolt_rifle', 'synth_heavy_a'],
++        angels_sergeant: ['synth_heavy_b'],
++      },
++      syntheticWeaponKeywords: {
++        synth_heavy_a: ['HEAVY'],
++        synth_heavy_b: ['HEAVY'],
++        angels_bolt_rifle: ['BOLT'],
++      },
++      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
++    })
++    expect(r.legal).toBe(false)
++    const eq = r.checks.find((c) => c.key === 'equipment')
++    expect(eq?.status).toBe('warn')
++    expect(eq?.detail).toContain('HEAVY')
++  })
++
++  it('装备未超限：HEAVY 上限 1，选了 1 → ok', () => {
++    const sp = synthPackWithEquipmentLimit()
++    const r = evaluateLegality({
++      pack: sp,
++      operativeIds: ['angels_tactical'],
++      loadout: { angels_tactical: ['synth_heavy_a'] },
++      syntheticWeaponKeywords: { synth_heavy_a: ['HEAVY'] },
++      subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
++    })
++    const eq = r.checks.find((c) => c.key === 'equipment')
++    expect(eq?.status).toBe('ok')
++  })
++
++  it('无子阵营选择器的阵营：跳过子阵营检查', () => {
++    const noSelector: FactionPack = { ...pack, faction: { ...pack.faction } }
++    delete (noSelector.faction as { subFactionSelector?: unknown }).subFactionSelector
++    const r = evaluateLegality({
++      pack: noSelector,
++      operativeIds: ['angels_tactical'],
++      loadout: {},
++      subFactionSelection: [],
++    })
++    expect(r.checks.find((c) => c.key === 'sub-faction')).toBeUndefined()
++    // 仍因 operatives/equipment ok 而合法
++    expect(r.legal).toBe(true)
++  })
++})
+diff --git a/tests/rules/rules-query.test.ts b/tests/rules/rules-query.test.ts
+new file mode 100644
+index 0000000..312c992
+--- /dev/null
++++ b/tests/rules/rules-query.test.ts
+@@ -0,0 +1,47 @@
++import { describe, it, expect } from 'vitest'
++import { loadPack } from '../../src/rules'
++import angels from '../../src/data/packs/angels_of_death.v1.json'
++
++// 1.17 T6：规则查询参数化要点单测。
++// 每个 effect 必须暴露引擎参数化字段集（trigger/pipelineStep/modifier/stacking），
++// rulesRef 指向本地 doc（不渲染 GW 原文 D-29）。无「原文文本」字段。
++const pack = loadPack(angels)
++
++describe('规则查询参数化要点（Story 1.17, D-29）', () => {
++  it('每个 effect 含完整参数化字段集', () => {
++    for (const e of pack.effects) {
++      expect(e.trigger.point).toBeTruthy()
++      expect(e.pipelineStep).toBeTruthy()
++      expect(e.modifier.kind).toBeTruthy()
++      expect(e.stacking.policy).toBeTruthy()
++      expect(typeof e.label).toBe('string')
++    }
++  })
++
++  it('effectId 查询命中且字段不含 GW 原文 blob', () => {
++    const e = pack.effects.find((x) => x.effectId === 'chapterTactic_sharpshooter')!
++    expect(e).toBeTruthy()
++    // 参数化要点字段（查询渲染的就是这些）
++    const parametric = { kind: e.modifier.kind, point: e.trigger.point, step: e.pipelineStep, policy: e.stacking.policy }
++    expect(parametric.kind).toBe('AUTO_SUCCESS')
++    expect(parametric.step).toBe('ATTACK_UPGRADE')
++    // 无 rawText/gwText/原文 字段
++    expect((e as unknown as Record<string, unknown>).rawText).toBeUndefined()
++    expect((e as unknown as Record<string, unknown>).gwText).toBeUndefined()
++  })
++
++  it('rulesRef 指向本地 docs/rules（doc 名 + section，非公开仓原文）', () => {
++    const e = pack.effects.find((x) => x.rulesRef)!
++    expect(e.rulesRef!.doc).toBe('merged_kt_angels_of_death_zh.md')
++    expect(e.rulesRef!.section).toBeTruthy()
++  })
++
++  it('武器 profile 参数化字段齐全（查询武器时渲染）', () => {
++    const w = pack.weapons[0]!
++    expect(w.profile.attacks).toBeGreaterThan(0)
++    expect(w.profile.hit).toBeGreaterThanOrEqual(2)
++    expect(w.profile.normalDamage).toBeGreaterThanOrEqual(0)
++    expect(w.profile.criticalDamage).toBeGreaterThanOrEqual(0)
++    expect(Array.isArray(w.profile.weaponRules)).toBe(true)
++  })
++})

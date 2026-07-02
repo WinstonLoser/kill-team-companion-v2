@@ -1,6 +1,6 @@
 # Story 1.17: 规则查询与触控/视觉兜底 (rules-query-touch-visuals)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -93,3 +93,10 @@ glm-5.2（dev-story workflow）
 - src/App.tsx（既有顶栏「规则查询」入口）
 - src/index.css（改：暗色 token + 触控尺寸 + 全组件样式）
 - tests/rules/rules-query.test.ts（新）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Patch] P10 顶栏「规则查询」是另一套硬编码列表，非 RulesQuery 浮层（两套实现）[src/App.tsx]
+- [x] [Review][Patch] P15 缺竖屏「请横屏」提示（UX-OQ-7）
+- [x] [Review][Defer] 组件库（手写 CSS 非 shadcn）— D-31 美学后置允许，dismiss

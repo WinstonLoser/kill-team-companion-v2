@@ -1,6 +1,6 @@
 # Story 1.15: 可审计 UI 与状态反馈 (audit-ui-feedback)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -101,3 +101,9 @@ glm-5.2（dev-story workflow）
 - src/ui/match/{PipelineDrawer,LogPanel,UnitPanel}.tsx（新）
 - src/state/matchStore.ts（currentLog/rollbackStep/stepBackCurrent/log/logFilter）
 - src/engine/log.ts（既有 ResolutionLog rollbackTo/stepBack/replay 复用）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Decision] D3 单步回滚只回滚日志、不同步棋盘（AC1/§7.2）；onReplay 空、onRollbackToHere 恒为 undoLastShot
+- [x] [Review][Decision] D4 effect 到期 push + 单位卡 effect 列表未实现（AC3/AC4 全缺）

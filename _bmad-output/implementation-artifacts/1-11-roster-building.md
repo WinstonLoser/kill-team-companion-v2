@@ -1,6 +1,6 @@
 # Story 1.11: 建队流程 (roster-building)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -105,3 +105,10 @@ glm-5.2（dev-story workflow）
 
 ### Change Log
 - 2026-07-01：Story 1.11 由轻量演示补到完整规格（T1–T8）。数据驱动建队 + 双方建队 + 纯逻辑合法性判定（8 单测）。113/113 测试绿，build 绿。
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Patch] P13 建队违规未链到违规特工（LegalityPanel 仅文字，无 onClick 跳转）[src/ui/roster/LegalityPanel.tsx]
+- [x] [Review][Patch] P14 入队默认勾全部 weaponRefs 可立即违 equipmentLimits [src/ui/roster/OperativePicker.tsx]
+- [x] [Review][Defer] W1 legalityOf 用 getState() 渲染（工作但脆弱）— 低，已知

@@ -1,6 +1,6 @@
 # Story 1.16: 目标点 / VP / 胜负 UI (objectives-vp-victory)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -94,3 +94,11 @@ glm-5.2（dev-story workflow）
 - src/ui/match/{Board,ResultPage}.tsx（新/改：目标点菱形+控制圈+染色）
 - src/state/matchStore.ts（vp/scoreAndEndTP/winner/phase=ended）
 - src/ui/match/StatusStrip.tsx（新：VP 常驻）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Patch] P11 TP 结束无 VP push 文案（只写日志）[src/state/matchStore.ts:scoreAndEndTP]
+- [x] [Review][Patch] P12 目标点 hover tooltip 未渲染（handler 接线但无元素）[src/ui/match/Board.tsx]
+- [x] [Review][Patch] P7 controlOf 闭包捕获渲染 tokens 而非 store 当下 [src/ui/match/PlayView.tsx]
+- [x] [Review][Defer] W2 再开一局 reload 丢 roster（D-20 设计如此）
