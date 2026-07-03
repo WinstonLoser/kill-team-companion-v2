@@ -72,6 +72,17 @@ export function effectiveActionAp(action: ActionType, baseAp: number, activeEffe
   return Math.max(1, baseAp + mod) // AP 至少 1
 }
 
+/**
+ * 5-2：激活期有效移动距离（消费 STAT_OVERRIDE{stat:'move'} as delta）。
+ * base move + Σ(STAT_OVERRIDE{stat:'move'} value)，如 mark_slaanesh +1。
+ */
+export function effectiveMove(baseMove: number, activeEffects: Effect[]): number {
+  const bonus = activeEffects
+    .filter((e) => e.modifier.kind === 'STAT_OVERRIDE' && (e.modifier.payload as { stat?: string }).stat === 'move')
+    .reduce((s, e) => s + (e.modifier.payload as { value: number }).value, 0)
+  return Math.max(0, baseMove + bonus)
+}
+
 /** 行动合法性（FR-12）。纯函数。 */
 export function canDoAction(
   state: TurnState,

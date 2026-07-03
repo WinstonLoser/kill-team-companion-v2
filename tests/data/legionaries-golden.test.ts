@@ -133,11 +133,11 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
 // 按 Story 2.1「不新增引擎谓词、缺口留 2.2」约定，作数据层 golden（effect 四问字段齐全）。
 // （mark_khorne 近战严重 + mark_unaligned 无休 已接引擎流水线，见上 real golden。）
 describe('golden（数据层，引擎层缺口留 Story 2.2 AQ-3）', () => {
-  it('3. 色孽印记：移动 +1 descriptor（CUSTOM_HOOK @ 激活期；移动需引擎 movement 层）', () => {
+  it('3. 色孽印记：移动 +1（STAT_OVERRIDE{stat:"move"} @ 激活期，effectiveMove 消费）', () => {
     const e = effect('mark_slaanesh')
-    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
-    expect(e.trigger.point).toBe('ON_ACTIVATION_START')
-    expect((e.modifier.payload as { hookId: string }).hookId).toBe('mark-slaanesh-move')
+    expect(e.modifier.kind).toBe('STAT_OVERRIDE')
+    expect((e.modifier.payload as { stat: string }).stat).toBe('move')
+    expect((e.modifier.payload as { value: number }).value).toBe(1)
   })
 
   it('9. 混沌护身符：吸魂代伤 descriptor（CUSTOM_HOOK @ 防御升级；需自伤+升级组合）', () => {

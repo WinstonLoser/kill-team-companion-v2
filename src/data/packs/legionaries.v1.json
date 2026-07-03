@@ -138,7 +138,7 @@
       "source": "markOfChaos:SLAANESH",
       "trigger": { "point": "ON_ACTIVATION_START" },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mark-slaanesh-move", "prompt": "移动 +1（色孽印记，属性 modifier；引擎移动结算留 Story 2.2 AQ-3）" } },
+      "modifier": { "kind": "STAT_OVERRIDE", "payload": { "stat": "move", "value": 1 } },
       "stacking": { "policy": "UNIQUE_PER_SOURCE" },
       "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "印记-色孽" }
     },
