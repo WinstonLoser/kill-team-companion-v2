@@ -59,7 +59,6 @@ describe('golden：死亡天使机制经引擎结算', () => {
       modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold: 3, roll: 'ignore-once' } },
       stacking: { policy: 'CAP_PER_ATTACK_DIE' },
     }
-    const baseline = shoot([], [4, 5, 2, 3, 1, 1, 1])
     const withIron = shoot([ironHalo], [4, 5, 2, 3, 1, 1, 1])
     expect(withIron.woundsDealt).toBe(8)
   })

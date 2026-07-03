@@ -1,5 +1,17 @@
 import type { FactionPack } from '../../rules'
 
+// 武器规则英文→中文映射
+const WEAPON_RULE_ZH: Record<string, string> = {
+  PISTOL: '手枪', TORRENT: '洪流', PIERCING1: '穿刺1', PIERCING: '穿刺',
+  CONCEAL: '集中', OVERHEAT: '过热', LETHAL5: '致命5+', HEAVY: '重型',
+  BLAST1: '爆炸1"', BLAST2: '爆炸2"', DEVASTATING: '严重', DEVASTATING3: '毁灭3',
+  SILENT: '安静', BRUTAL: '残暴', STUN: '震荡', CONCUSSIVE: '眩晕',
+  RAPID_FIRE: '撕裂', TOXIN: '毒素', VIRULENT: '剧毒', RELENTLESS: '无休',
+  SEEKING_LIGHT: '追踪轻型', BALANCED: '平衡', CRITICAL_HIT: '关键命中',
+  SUSTAINED: '持续', ASSAULT: '突击', TWIN_LINKED: '双联',
+}
+function ruleZh(rule: string): string { return WEAPON_RULE_ZH[rule] ?? rule }
+
 // T3：选特工 + 装备配置视图。
 // 按角色分组排列：队长 → 唯一特工 → 复选特工。
 // [+][-] 按钮；maxPerTypeExcept 内的特工可多选，其余每类限 1。
@@ -17,7 +29,6 @@ export function OperativePicker({
   const except = new Set(pack.buildConstraints?.maxPerTypeExcept ?? [])
   const leaders = new Set(pack.buildConstraints?.leaderFrom ?? [])
   const maxPerType = (opId: string) => except.has(opId) ? 6 : 1
-  const weaponName = (id: string) => pack.weapons.find((w) => w.weaponId === id)?.name ?? id
 
   // 按角色分组：队长 → 唯一 → 复选
   const leaderOps = pack.operatives.filter((o) => leaders.has(o.operativeId))
@@ -41,10 +52,20 @@ export function OperativePicker({
     onChange({ operativeIds: nextIds, loadout: nextLoadout })
   }
 
-  function toggleWeapon(opKey: string, weaponId: string) {
+  function toggleWeapon(opKey: string, weaponId: string, kind: 'RANGED' | 'MELEE') {
     const cur = loadout[opKey] ?? []
-    const next = cur.includes(weaponId) ? cur.filter((w) => w !== weaponId) : [...cur, weaponId]
-    onChange({ operativeIds, loadout: { ...loadout, [opKey]: next } })
+    const weapon = pack.weapons.find((w) => w.weaponId === weaponId)
+    if (!weapon) return
+    // 远程武器单选（radio 语义）：选新远程 → 替换旧远程；近战同理
+    if (cur.includes(weaponId)) {
+      onChange({ operativeIds, loadout: { ...loadout, [opKey]: cur.filter((w) => w !== weaponId) } })
+    } else {
+      const filtered = cur.filter((wid) => {
+        const w = pack.weapons.find((x) => x.weaponId === wid)
+        return w?.kind !== kind
+      })
+      onChange({ operativeIds, loadout: { ...loadout, [opKey]: [...filtered, weaponId] } })
+    }
   }
 
   const expanded = operativeIds.map((opId, i) => {
@@ -97,21 +118,40 @@ export function OperativePicker({
           <ul className="list">
             {expanded.map(({ opId, key, instance }) => {
               const op = pack.operatives.find((o) => o.operativeId === opId)!
+              const selected = loadout[key] ?? []
+              const ranged = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)!).filter((w) => w?.kind === 'RANGED')
+              const melee = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)!).filter((w) => w?.kind === 'MELEE')
+              const fmtStats = (w: typeof pack.weapons[0]) => {
+                const p = w.profile
+                return `${p.attacks}攻 ${p.hit}+ ${p.normalDamage}/${p.criticalDamage}伤${p.range != null ? ` ${p.range}"` : ''}${p.weaponRules.length ? ` ${p.weaponRules.map(ruleZh).join('/')}` : ''}`
+              }
               return (
                 <li key={key} className="loadout-item">
-                  <span>{op.name}{instance > 0 ? ` #${instance + 1}` : ''}</span>
-                  <div className="loadout-weapons">
-                    {op.weaponRefs.map((wId) => (
-                      <label key={wId} className="cover weapon-pick">
-                        <input
-                          type="checkbox"
-                          checked={(loadout[key] ?? []).includes(wId)}
-                          onChange={() => toggleWeapon(key, wId)}
-                        />
-                        {weaponName(wId)}
-                      </label>
-                    ))}
-                  </div>
+                  <span className="loadout-name">{op.name}{instance > 0 ? ` #${instance + 1}` : ''}</span>
+                  {ranged.length > 0 && (
+                    <div className="loadout-group">
+                      <span className="loadout-cat">远程（选 1）</span>
+                      {ranged.map((w) => (
+                        <label key={w.weaponId} className={`weapon-pick ${selected.includes(w.weaponId) ? 'on' : ''}`}>
+                          <input type="radio" name={`${key}-RANGED`} checked={selected.includes(w.weaponId)} onChange={() => toggleWeapon(key, w.weaponId, 'RANGED')} />
+                          <span className="weapon-name">{w.name}</span>
+                          <span className="weapon-stats">{fmtStats(w)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {melee.length > 0 && (
+                    <div className="loadout-group">
+                      <span className="loadout-cat">近战（选 1）</span>
+                      {melee.map((w) => (
+                        <label key={w.weaponId} className={`weapon-pick ${selected.includes(w.weaponId) ? 'on' : ''}`}>
+                          <input type="radio" name={`${key}-MELEE`} checked={selected.includes(w.weaponId)} onChange={() => toggleWeapon(key, w.weaponId, 'MELEE')} />
+                          <span className="weapon-name">{w.name}</span>
+                          <span className="weapon-stats">{fmtStats(w)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </li>
               )
             })}
