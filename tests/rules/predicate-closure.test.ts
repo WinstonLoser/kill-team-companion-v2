@@ -60,7 +60,8 @@ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
         const predOps = new Set(PREDICATE_OPS as readonly string[])
         const collect = (cond: { op?: string; all?: unknown[]; any?: unknown[] }): string[] => {
           const out: string[] = []
-          if (cond.op) out.push(cond.op)
+          // all/any 是组合器，不是原子 op —— 跳过，只收集叶子 op
+          if (cond.op && cond.op !== 'all' && cond.op !== 'any') out.push(cond.op)
           for (const sub of cond.all ?? []) out.push(...collect(sub as never))
           for (const sub of cond.any ?? []) out.push(...collect(sub as never))
           return out

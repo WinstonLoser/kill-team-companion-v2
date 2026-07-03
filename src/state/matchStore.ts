@@ -9,6 +9,7 @@ import { ElectronicDiceSource, ManualDiceSource, hashSeed } from '../dice'
 import { loadPack, type FactionPack, type Effect } from '../rules'
 import type { PredicateContext } from '../rules/predicates'
 import { useRosterStore } from './rosterStore'
+import { resolveActivationEffects } from './activationResolver'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 import legionariesPack from '../data/packs/legionaries.v1.json'
 import plaguePack from '../data/packs/plague_marines.v1.json'
@@ -366,8 +367,47 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set((s) => ({ log: [{ id: nextLogId(), kind, text }, ...s.log].slice(0, 80) })),
   setLogFilter: (logFilter) => set({ logFilter }),
   // P5：activate 只 dispatch，由 reducer 自包含 upsert ready:true（不再手填 operatives）。
-  activate: (uid, side) =>
-    set((s) => ({ turn: turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: side }) })),
+  activate: (uid, side) => {
+    set((s) => ({ turn: turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: side }) }))
+    // 5-6 mucus_exit：激活期 effect resolver（排毒口 D3=3 挂 POISON / D3 伤）
+    const s = get()
+    const activator = s.tokens.find((t) => t.uid === uid)
+    if (!activator) return
+    // 找持激活期 wargear effect 的对手方特工
+    const holders = s.tokens
+      .filter((t) => t.alive && t.placed && t.side !== side)
+      .map((t) => {
+        const effects = factionRuleEffectsFor(t.opId).concat(
+          PACKS.flatMap((p) => p.effects).filter((e) => e.source.startsWith('wargear:') && e.trigger.point === 'ON_ACTIVATION_START'),
+        )
+        return { uid: t.uid, pos: t.pos, side: t.side, effects }
+      })
+      .filter((h) => h.effects.length > 0)
+    if (holders.length === 0) return
+    const aResult = resolveActivationEffects({
+      activatorUid: uid,
+      activatorPos: activator.pos,
+      activatorMarkers: activator.markers,
+      holders,
+      turningPoint: s.turn.turningPoint,
+    })
+    // 应用结果到 tokens
+    if (aResult.markersGranted.length || aResult.damageDealt.length) {
+      set((st) => ({
+        tokens: st.tokens.map((t) => {
+          const marks = aResult.markersGranted.filter((m) => m.targetUid === t.uid)
+          const dmgs = aResult.damageDealt.filter((d) => d.targetUid === t.uid)
+          if (marks.length === 0 && dmgs.length === 0) return t
+          const newMarkers = marks.length ? [...t.markers, ...marks.map((m) => m.marker)] : t.markers
+          const newWounds = dmgs.length ? Math.max(0, t.wounds - dmgs.reduce((s2, d) => s2 + d.amount, 0)) : t.wounds
+          return { ...t, markers: newMarkers, wounds: newWounds, alive: newWounds > 0 }
+        }),
+        log: aResult.trace.length
+          ? [{ id: nextLogId(), kind: 'system' as LogKind, text: `激活效果：${aResult.trace.map((tr) => tr.detail).join('; ')}` }, ...st.log].slice(0, 80)
+          : st.log,
+      }))
+    }
+  },
   endActivation: (uid) =>
     set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }) })),
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====

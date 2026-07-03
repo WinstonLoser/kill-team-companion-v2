@@ -48,7 +48,7 @@ describe('谓词库 evalPredicate（Story 3.2 AQ-3）', () => {
   it('PREDICATE_OPS 封闭集（11 项）', () => {
     expect(PREDICATE_OPS).toContain('dieFaceEquals')
     expect(PREDICATE_OPS).toContain('notSameFaction')
-    expect(PREDICATE_OPS.length).toBe(11)
+    expect(PREDICATE_OPS.length).toBe(12)
   })
 
   it('rangeBucket 缺省距离 → false（P2：不静默满足 BEYOND_*）', () => {

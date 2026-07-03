@@ -49,6 +49,8 @@ function evalAtom(op: Op, args: (string | number)[], ctx: PredicateContext): boo
       return ctx.targetKeywords !== undefined && args.some((k) => ctx.targetKeywords!.includes(String(k)))
     case 'targetHasMarker':
       return ctx.targetMarkers !== undefined && args.some((m) => ctx.targetMarkers!.includes(String(m)))
+    case 'targetHasNoMarker':
+      return ctx.targetMarkers === undefined || args.every((m) => !ctx.targetMarkers!.includes(String(m)))
     case 'operativeHasMarker':
       return ctx.operativeMarkers !== undefined && args.some((m) => ctx.operativeMarkers!.includes(String(m)))
     case 'operativeIsInjured':
@@ -85,6 +87,7 @@ export const PREDICATE_OPS = [
   'attackerHasKeyword',
   'targetHasKeyword',
   'targetHasMarker',
+  'targetHasNoMarker',
   'operativeHasMarker',
   'operativeIsInjured',
   'dealtAnyDamageThisPipeline',
