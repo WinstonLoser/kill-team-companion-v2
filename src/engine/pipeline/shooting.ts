@@ -183,7 +183,10 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
     const pierce = pierceT.applied
     const defenceDiceCount = Math.max(0, 3 - sum(pierce))
     const defDice = ctx.dice.roll(defenceDiceCount)
-    const saveThresh = clampHits(ctx.defender.save) // P18：save 钳到 2..6
+    // 5-1: STAT_OVERRIDE{stat:'save'} from effects → override save threshold
+    const overrides = allEffects(ctx).filter((e) => e.modifier.kind === 'STAT_OVERRIDE' && (e.modifier.payload as { stat?: string }).stat === 'save')
+    const effectiveSave = overrides.length ? Math.min(...overrides.map((e) => (e.modifier.payload as { value: number }).value)) : ctx.defender.save
+    const saveThresh = clampHits(effectiveSave) // P18：save 钳到 2..6
     let defNormal = 0
     let defCritical = 0
     for (const d of defDice) {

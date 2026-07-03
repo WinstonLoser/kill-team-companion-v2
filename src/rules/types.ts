@@ -59,6 +59,8 @@ export type Modifier =
   | { kind: 'HEAL_OPERATIVE'; payload: { amount: number; target: 'SELF' | 'DEFENDER' | 'ATTACKER'; condition?: string } }
   | { kind: 'APL_PLUS'; payload: { amount: number; duration: 'ACTIVATION' | 'TURNING_POINT' | 'BATTLE' } }
   | { kind: 'CUSTOM_HOOK'; payload: { hookId: string; prompt: string } }
+  | { kind: 'STAT_OVERRIDE'; payload: { stat: 'save' | 'move' | 'apl'; value: number } }
+  | { kind: 'ACTION_AP_MOD'; payload: { action: string; delta: number } }
 
 export type ModifierKind = Modifier['kind']
 
@@ -68,6 +70,7 @@ export const MODIFIER_KINDS = [
   'REROLL', 'AUTO_SUCCESS', 'ATTACH_WEAPON_RULE', 'PIERCE', 'COVER_SAVE',
   'DAMAGE_MITIGATION', 'IGNORE_DAMAGE', 'IMMUNITY', 'EXTRA_DAMAGE_ON_HIT',
   'GRANT_MARKER', 'HEAL_OPERATIVE', 'APL_PLUS', 'CUSTOM_HOOK',
+  'STAT_OVERRIDE', 'ACTION_AP_MOD',
 ] as const satisfies readonly ModifierKind[]
 
 // ===== Effect 描述符（四问：trigger.point / pipelineStep / modifier.kind / stacking.policy） =====

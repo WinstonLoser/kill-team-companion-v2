@@ -271,7 +271,7 @@
       "source": "wargear:wardingArmour",
       "trigger": { "point": "ON_ACTIVATION_START" },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "warding-save-2", "prompt": "豁免 2+ 持续到下战略就绪（属性覆写引擎结算留 Story 2.2 AQ-3）" } },
+      "modifier": { "kind": "STAT_OVERRIDE", "payload": { "stat": "save", "value": 2 } },
       "stacking": { "policy": "UNIQUE_PER_SOURCE" },
       "rulesRef": { "doc": "merged_kt_legionaries_zh.md", "section": "装备-守护护甲" }
     },

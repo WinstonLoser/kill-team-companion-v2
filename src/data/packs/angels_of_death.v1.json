@@ -110,7 +110,7 @@
       "source": "chapterTactic:mobile",
       "trigger": { "point": "ON_ACTIVATION_START" },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "fall-back-ap-discount", "prompt": "后撤 AP-1（机动）" } },
+      "modifier": { "kind": "ACTION_AP_MOD", "payload": { "action": "FALL_BACK", "delta": -1 } },
       "stacking": { "policy": "UNIQUE_PER_SOURCE" },
       "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-机动" }
     },

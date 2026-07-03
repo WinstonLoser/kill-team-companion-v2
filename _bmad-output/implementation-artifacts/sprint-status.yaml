@@ -84,7 +84,7 @@ development_status:
 
   # Epic 5: 引擎架构层强化（架构层 effect 落地）
   epic-5: in-progress
-  5-1-stat-override-activation-ap: ready-for-dev
+  5-1-stat-override-activation-ap: in-progress
   5-2-movement-resolver: ready-for-dev
   5-3-stratagem-state-tracking: ready-for-dev
   5-4-predicate-cost-layer: ready-for-dev

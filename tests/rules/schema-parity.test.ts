@@ -11,7 +11,7 @@ describe('schema 与 TS 类型同源', () => {
   it('modifier.kind 一致（含 HEAL_OPERATIVE，21 种）', () => {
     const kinds = defs.modifierKind?.enum ?? []
     expect([...kinds].sort()).toEqual([...MODIFIER_KINDS].sort())
-    expect(kinds).toHaveLength(21)
+    expect(kinds).toHaveLength(23)
   })
 
   it('trigger.point 一致', () => {

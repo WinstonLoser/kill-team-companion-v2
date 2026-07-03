@@ -97,7 +97,7 @@
     },
     "modifierKind": {
       "type": "string",
-      "enum": ["HIT_PLUS","HIT_MINUS","DAMAGE_PLUS","DAMAGE_MINUS","UPGRADE_SUCCESS","DOWNGRADE_SUCCESS","COUNT_PLUS","COUNT_MINUS","REROLL","AUTO_SUCCESS","ATTACH_WEAPON_RULE","PIERCE","COVER_SAVE","DAMAGE_MITIGATION","IGNORE_DAMAGE","IMMUNITY","EXTRA_DAMAGE_ON_HIT","GRANT_MARKER","HEAL_OPERATIVE","APL_PLUS","CUSTOM_HOOK"]
+      "enum": ["HIT_PLUS","HIT_MINUS","DAMAGE_PLUS","DAMAGE_MINUS","UPGRADE_SUCCESS","DOWNGRADE_SUCCESS","COUNT_PLUS","COUNT_MINUS","REROLL","AUTO_SUCCESS","ATTACH_WEAPON_RULE","PIERCE","COVER_SAVE","DAMAGE_MITIGATION","IGNORE_DAMAGE","IMMUNITY","EXTRA_DAMAGE_ON_HIT","GRANT_MARKER","HEAL_OPERATIVE","APL_PLUS","CUSTOM_HOOK","STAT_OVERRIDE","ACTION_AP_MOD"]
     },
     "effect": {
       "type": "object",
@@ -367,6 +367,22 @@
           "properties": {
             "kind": { "const": "CUSTOM_HOOK" },
             "payload": { "type": "object", "required": ["hookId", "prompt"], "properties": { "hookId": { "type": "string" }, "prompt": { "type": "string" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "STAT_OVERRIDE" },
+            "payload": { "type": "object", "required": ["stat", "value"], "properties": { "stat": { "type": "string", "enum": ["save", "move", "apl"] }, "value": { "type": "number" } } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "payload"],
+          "properties": {
+            "kind": { "const": "ACTION_AP_MOD" },
+            "payload": { "type": "object", "required": ["action", "delta"], "properties": { "action": { "type": "string" }, "delta": { "type": "number" } } }
           }
         }
       ]

@@ -61,6 +61,17 @@ export function effectiveApl(baseApl: number, activeEffects: Effect[]): number {
   return baseApl + bonus
 }
 
+/**
+ * 5-1：激活期有效行动 AP（消费 ACTION_AP_MOD kind）。
+ * base AP + Σ(匹配 action 的 ACTION_AP_MOD delta)；如 chapterTactic_mobile 后撤 -1 AP。
+ */
+export function effectiveActionAp(action: ActionType, baseAp: number, activeEffects: Effect[]): number {
+  const mod = activeEffects
+    .filter((e) => e.modifier.kind === 'ACTION_AP_MOD' && (e.modifier.payload as { action?: string }).action === action)
+    .reduce((s, e) => s + (e.modifier.payload as { delta: number }).delta, 0)
+  return Math.max(1, baseAp + mod) // AP 至少 1
+}
+
 /** 行动合法性（FR-12）。纯函数。 */
 export function canDoAction(
   state: TurnState,
