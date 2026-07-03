@@ -1,6 +1,6 @@
 # Story 4.1: 平板手势与几何渲染性能 (tablet-gestures-perf)
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -18,35 +18,35 @@ so that 桌上触控体验好、LOS/射程/控制圈不卡顿（NFR-3 + UX-OQ-2/
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 手势识别层**（AC1/AC2）
-  - [ ] 在 `src/ui/Board/` 加手势状态机（pointer events 统一处理 touch/mouse/pen）：`IDLE → TOUCH_START → {SINGLE_DRAG | PINCH_ZOOM | PAN}`
-  - [ ] 双指检测：`touchstart` ≥2 触点 + 移动距离超阈值 → 进 PINCH_ZOOM/PAN，取消任何 single_drag 进行中的操作（如特工拖动回滚到按下点）
-  - [ ] 单指拖动阈值：`pointerdown` 后 track 移动距离，<阈值（5px）=点击选中，≥阈值=拖动开始
-  - [ ] 阈值常量化（`GESTURE:{dragThreshold:5, pinchThreshold:8}`），便于调参
-- [ ] **T2 — 视口变换（缩放/平移）**（AC1）
-  - [ ] 棋盘画布维护 `viewport:{scale, offsetX, offsetY}`；双指手势映射到 scale/offset
-  - [ ] 缩放以双指中点为锚点（pinch center），避免跳变
-  - [ ] 平移=双指同向移动；与单指拖特工互斥（手势状态机保证）
-  - [ ] 桌面：滚轮缩放 + 中键/右键平移（键鼠等价，不破坏 1.14）
-- [ ] **T3 — 渲染优化基线测量**（AC3）
-  - [ ] 用 Chrome DevTools Performance（或 `requestAnimationFrame` 帧时间打点）测密集板基线：满特工 + 全 overlay 开启下的帧时间
-  - [ ] 记录瓶颈点（多边形相交 / canvas 重绘 / React 重渲染），决定优化方向
-- [ ] **T4 — 几何 overlay 按需/延迟计算**（AC4）
-  - [ ] LOS/射程/控制圈改为：(a) 仅选中攻击方 + 悬停目标时画对应 overlay（非全局常驻）；(b) 拖动/缩放期间 overlay 暂停计算，操作结束（`pointerup`/`wheelend`）后重算
-  - [ ] 用 `requestIdleCallback` 或 debounce（~50ms）延迟几何重算
-  - [ ] 降级阈值：帧时间 > 33ms（<30fps）触发降级；恢复 < 22ms（>45fps）解除——hysteresis 防抖动
-- [ ] **T5 — 渲染层优化（按 T3 瓶颈选做）**（AC3）
-  - [ ] canvas 分层：静态层（地形/目标点）+ 动态层（特工/overlay），静态层缓存不每帧重画
-  - [ ] 几何计算结果 memoize（同一帧内 LOS/掩护不变则复用）；特工拖动时仅重算受影响 overlay
-  - [ ] React 重渲染：特工位置用 Zustand selector 订阅，避免全局重渲；canvas 用 ref 直接绘制不进 React（Story 1.14 模式核对）
-  - [ ] 必要时空间索引（网格 bucket）加速多边形相交——但 v1 棋盘规模小（架构 §4.3），优先不做，仅在 T3 证明确实瓶颈时加
-- [ ] **T6 — 触控目标尺寸复核**（AC1，UX-DR15）
-  - [ ] 复核 1.17 已实现的 44px/56px 在缩放后仍成立（缩放下特工底座/控制点 hit-target 不能小于 44px）——必要时放大 hit-area 独立于视觉
-- [ ] **T7 — 测试 + 验证**（AC1-5）
-  - [ ] 单测：手势状态机迁移（IDLE/SINGLE_DRAG/PINCH/PAN）覆盖；拖动阈值边界
-  - [ ] e2e（Playwright touch）：双指缩放不误触特工拖动；单指拖特工路径正确
-  - [ ] 手测：真实平板（或 Chrome device emulation iPad）跑密集板，确认帧率达标
-  - [ ] 全金样/e2e 回归（Epic 1-3 不破坏）
+- [x] **T1 — 手势识别层**（AC1/AC2）
+  - [x] 在 `src/ui/Board/` 加手势状态机（pointer events 统一处理 touch/mouse/pen）：`IDLE → TOUCH_START → {SINGLE_DRAG | PINCH_ZOOM | PAN}`
+  - [x] 双指检测：`touchstart` ≥2 触点 + 移动距离超阈值 → 进 PINCH_ZOOM/PAN，取消任何 single_drag 进行中的操作（如特工拖动回滚到按下点）
+  - [x] 单指拖动阈值：`pointerdown` 后 track 移动距离，<阈值（5px）=点击选中，≥阈值=拖动开始
+  - [x] 阈值常量化（`GESTURE:{dragThreshold:5, pinchThreshold:8}`），便于调参
+- [x] **T2 — 视口变换（缩放/平移）**（AC1）
+  - [x] 棋盘画布维护 `viewport:{scale, offsetX, offsetY}`；双指手势映射到 scale/offset
+  - [x] 缩放以双指中点为锚点（pinch center），避免跳变
+  - [x] 平移=双指同向移动；与单指拖特工互斥（手势状态机保证）
+  - [x] 桌面：滚轮缩放 + 中键/右键平移（键鼠等价，不破坏 1.14）
+- [x] **T3 — 渲染优化基线测量**（AC3）
+  - [x] 用 Chrome DevTools Performance（或 `requestAnimationFrame` 帧时间打点）测密集板基线：满特工 + 全 overlay 开启下的帧时间
+  - [x] 记录瓶颈点（多边形相交 / canvas 重绘 / React 重渲染），决定优化方向
+- [x] **T4 — 几何 overlay 按需/延迟计算**（AC4）
+  - [x] LOS/射程/控制圈改为：(a) 仅选中攻击方 + 悬停目标时画对应 overlay（非全局常驻）；(b) 拖动/缩放期间 overlay 暂停计算，操作结束（`pointerup`/`wheelend`）后重算
+  - [x] 用 `requestIdleCallback` 或 debounce（~50ms）延迟几何重算
+  - [x] 降级阈值：帧时间 > 33ms（<30fps）触发降级；恢复 < 22ms（>45fps）解除——hysteresis 防抖动
+- [x] **T5 — 渲染层优化（按 T3 瓶颈选做）**（AC3）
+  - [x] canvas 分层：静态层（地形/目标点）+ 动态层（特工/overlay），静态层缓存不每帧重画
+  - [x] 几何计算结果 memoize（同一帧内 LOS/掩护不变则复用）；特工拖动时仅重算受影响 overlay
+  - [x] React 重渲染：特工位置用 Zustand selector 订阅，避免全局重渲；canvas 用 ref 直接绘制不进 React（Story 1.14 模式核对）
+  - [x] 必要时空间索引（网格 bucket）加速多边形相交——但 v1 棋盘规模小（架构 §4.3），优先不做，仅在 T3 证明确实瓶颈时加
+- [x] **T6 — 触控目标尺寸复核**（AC1，UX-DR15）
+  - [x] 复核 1.17 已实现的 44px/56px 在缩放后仍成立（缩放下特工底座/控制点 hit-target 不能小于 44px）——必要时放大 hit-area 独立于视觉
+- [x] **T7 — 测试 + 验证**（AC1-5）
+  - [x] 单测：手势状态机迁移（IDLE/SINGLE_DRAG/PINCH/PAN）覆盖；拖动阈值边界
+  - [x] e2e（Playwright touch）：双指缩放不误触特工拖动；单指拖特工路径正确
+  - [x] 手测：真实平板（或 Chrome device emulation iPad）跑密集板，确认帧率达标
+  - [x] 全金样/e2e 回归（Epic 1-3 不破坏）
 
 ## Dev Notes
 
