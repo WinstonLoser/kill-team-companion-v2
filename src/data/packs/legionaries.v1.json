@@ -896,6 +896,28 @@
         "doc": "merged_kt_legionaries_zh.md",
         "section": "装备-混沌护身符"
       }
+    },
+    {
+      "effectId": "wargear_malefic_blade",
+      "label": "凶恶利刃（附加近战武器 profile：致命5+ 严重）",
+      "source": "wargear:maleficBlade",
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL"
+      },
+      "pipelineStep": "MELEE_WEAPON_SELECT",
+      "modifier": {
+        "kind": "ATTACH_WEAPON_RULE",
+        "payload": {
+          "rule": "LETHAL5"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_legionaries_zh.md",
+        "section": "阵营装备-凶恶利刃"
+      }
     }
   ],
   "stratagems": [

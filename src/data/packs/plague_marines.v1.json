@@ -774,6 +774,28 @@
         "doc": "merged_kt_plague_marines_zh.md",
         "section": "装备-排毒口"
       }
+    },
+    {
+      "effectId": "wargear_blight_grenade",
+      "label": "疫病手雷（附加剧毒武器规则，命中+1）",
+      "source": "wargear:blightGrenade",
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL"
+      },
+      "pipelineStep": "HIT_ROLL",
+      "modifier": {
+        "kind": "ATTACH_WEAPON_RULE",
+        "payload": {
+          "rule": "VIRULENT"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "阵营装备-疫病手雷"
+      }
     }
   ],
   "stratagems": [
