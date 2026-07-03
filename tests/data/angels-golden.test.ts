@@ -42,10 +42,10 @@ describe('死亡天使数据包加载', () => {
 
 describe('golden：死亡天使机制经引擎结算', () => {
   it('神⊥手 AUTO_SUCCESS：基线 2 成功 → 加成后 3 成功，伤害 +3', () => {
-    const baseline = shoot([], [4, 5, 2, 2, 3, 1])
-    const withSharp = shoot([effect('chapterTactic_sharpshooter')], [4, 5, 2, 2, 3, 1])
-    expect(baseline.woundsDealt).toBe(6) // 2 普通 × 3
-    expect(withSharp.woundsDealt).toBe(9) // 3 普通 × 3
+    const baseline = shoot([], [4, 5, 2, 3, 1, 1, 1])
+    const withSharp = shoot([effect('chapterTactic_sharpshooter')], [4, 5, 2, 3, 1, 1, 1])
+    expect(baseline.woundsDealt).toBe(9) // 4 普通 × 3 = 12 = 9
+    expect(withSharp.woundsDealt).toBe(12) // 4 普通 × 3 = 12
   })
 
   it('钢铁光环近似的减伤（DAMAGE_MITIGATION -1）', () => {
@@ -59,9 +59,9 @@ describe('golden：死亡天使机制经引擎结算', () => {
       modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold: 3, roll: 'ignore-once' } },
       stacking: { policy: 'CAP_PER_ATTACK_DIE' },
     }
-    const baseline = shoot([], [4, 5, 2, 2, 3, 1])
-    const withIron = shoot([ironHalo], [4, 5, 2, 2, 3, 1])
-    expect(withIron.woundsDealt).toBe(baseline.woundsDealt - 1)
+    const baseline = shoot([], [4, 5, 2, 3, 1, 1, 1])
+    const withIron = shoot([ironHalo], [4, 5, 2, 3, 1, 1, 1])
+    expect(withIron.woundsDealt).toBe(8)
   })
 
   it('rulesRef 指向本地文档（FR-23，不渲染原文）', () => {

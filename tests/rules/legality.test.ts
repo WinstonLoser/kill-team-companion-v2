@@ -23,8 +23,8 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('全绿：1 特工 + 战团战术满 2 选', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
-      loadout: { angels_tactical: ['angels_bolt_rifle'] },
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
+      loadout: { angels_intercessor_warrior: ['angels_bolt_rifle'] },
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
     expect(r.legal).toBe(true)
@@ -60,7 +60,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('子阵营未选满：战团战术只选 1（应 2）', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless'],
     })
@@ -72,7 +72,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('子阵营超选：战团战术选 3（应 2）', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
       loadout: {},
       subFactionSelection: [
         'chapterTactic_relentless',
@@ -90,10 +90,10 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     // 构造两把 HEAVY 武器挂载（合成 loadout，不依赖真实包有无 HEAVY）
     const r = evaluateLegality({
       pack: sp,
-      operativeIds: ['angels_tactical', 'angels_sergeant'],
+      operativeIds: ['angels_intercessor_warrior', 'angels_intercessor_sergeant'],
       loadout: {
-        angels_tactical: ['angels_bolt_rifle', 'synth_heavy_a'],
-        angels_sergeant: ['synth_heavy_b'],
+        angels_intercessor_warrior: ['angels_bolt_rifle', 'synth_heavy_a'],
+        angels_intercessor_sergeant: ['synth_heavy_b'],
       },
       syntheticWeaponKeywords: {
         synth_heavy_a: ['HEAVY'],
@@ -112,8 +112,8 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     const sp = synthPackWithEquipmentLimit()
     const r = evaluateLegality({
       pack: sp,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
-      loadout: { angels_tactical: ['synth_heavy_a'] },
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
+      loadout: { angels_intercessor_warrior: ['synth_heavy_a'] },
       syntheticWeaponKeywords: { synth_heavy_a: ['HEAVY'] },
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
@@ -126,7 +126,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     delete (noSelector.faction as { subFactionSelector?: unknown }).subFactionSelector
     const r = evaluateLegality({
       pack: noSelector,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
       loadout: {},
       subFactionSelection: [],
     })
@@ -138,7 +138,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('AC3 队长规则：angels leaderFrom=[sergeant]，有队长 → ok', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_sergeant','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
+      operativeIds: ['angels_intercessor_sergeant','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior','angels_intercessor_warrior'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
@@ -151,14 +151,14 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
       ...pack,
       buildConstraints: {
         operatives: { min: 1 },
-        leaderFrom: ['angels_tactical'],
-        maxPerTypeExcept: ['angels_sergeant'],
+        leaderFrom: ['angels_intercessor_warrior'],
+        maxPerTypeExcept: ['angels_intercessor_sergeant'],
       },
     }
     // 缺队长 → leader warn
     const noLeader = evaluateLegality({
       pack: cPack,
-      operativeIds: ['angels_sergeant'],
+      operativeIds: ['angels_intercessor_sergeant'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
@@ -168,18 +168,18 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     // 有队长 + 每类限 1 合规
     const ok = evaluateLegality({
       pack: cPack,
-      operativeIds: ['angels_tactical', 'angels_sergeant', 'angels_sergeant'],
+      operativeIds: ['angels_intercessor_warrior', 'angels_intercessor_sergeant', 'angels_intercessor_sergeant'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
     expect(ok.checks.find((c) => c.key === 'leader')?.status).toBe('ok')
-    // angels_sergeant 在例外 → 重复允许；per-type ok
+    // angels_intercessor_sergeant 在例外 → 重复允许；per-type ok
     expect(ok.checks.find((c) => c.key === 'per-type')?.status).toBe('ok')
 
     // 非例外类重复 → per-type warn
     const dup = evaluateLegality({
       pack: cPack,
-      operativeIds: ['angels_tactical', 'angels_tactical'],
+      operativeIds: ['angels_intercessor_warrior', 'angels_intercessor_warrior'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })

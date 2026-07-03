@@ -15,7 +15,7 @@ beforeEach(() => {
     },
     tokens: [
       { uid: 'a1', side: 'a', opId: 'plg_champion', name: '瘟疫勇士', pos: { x: 2, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 15, maxWounds: 15, markers: [], alive: true, placed: true },
-      { uid: 'b1', side: 'b', opId: 'angels_tactical', name: '战术兵', pos: { x: 6, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true },
+      { uid: 'b1', side: 'b', opId: 'angels_intercessor_warrior', name: '战术兵', pos: { x: 6, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true },
     ],
   })
 })

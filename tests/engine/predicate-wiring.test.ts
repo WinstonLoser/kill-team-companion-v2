@@ -34,13 +34,13 @@ const mitig: Effect = {
 }
 
 describe('W3 谓词接线（enforcer CONDITIONAL × evalPredicate）', () => {
-  it('基线造伤 6（bolt_rifle 3 攻击骰 [4,5,2]=2 命中 ×3）', () => {
-    expect(shoot([]).woundsDealt).toBe(6)
+  it('基线造伤 9（bolt_rifle 4 攻击骰 [4,5,2,3]=3 命中 ×3）', () => {
+    expect(shoot([]).woundsDealt).toBe(9)
   })
 
   it('condition 真（target 有 POISON）→ 减伤生效', () => {
     const r = shoot([mitig], { targetMarkers: ['POISON'] })
-    expect(r.woundsDealt).toBe(5) // 6 − 1
+    expect(r.woundsDealt).toBe(8) // 9 − 1
     const mit = r.traces.find((t) => t.stepId === 'DAMAGE_TOTAL_MITIGATE')!
     expect(mit.appliedEffectIds).toContain('cond_mitig')
     expect(mit.rejectedEffectIds).toHaveLength(0)
@@ -48,7 +48,7 @@ describe('W3 谓词接线（enforcer CONDITIONAL × evalPredicate）', () => {
 
   it('condition 假（target 无 POISON）→ enforcer 拒绝，不减伤', () => {
     const r = shoot([mitig], { targetMarkers: [] })
-    expect(r.woundsDealt).toBe(6) // 被拒，不减
+    expect(r.woundsDealt).toBe(9) // 被拒，不减
     const mit = r.traces.find((t) => t.stepId === 'DAMAGE_TOTAL_MITIGATE')!
     expect(mit.appliedEffectIds).not.toContain('cond_mitig')
     expect(mit.rejectedEffectIds.some((x) => x.id === 'cond_mitig')).toBe(true)
@@ -57,7 +57,7 @@ describe('W3 谓词接线（enforcer CONDITIONAL × evalPredicate）', () => {
   it('未注入 predicate（向后兼容）→ CONDITIONAL 透传生效', () => {
     // 无 predicate：enforcer CONDITIONAL 走透传（m.condition 存在但 evalCondition 缺）→ 保留
     const r = shoot([mitig])
-    expect(r.woundsDealt).toBe(5) // 透传生效，减 1（6→5）
+    expect(r.woundsDealt).toBe(8) // 透传生效，减 1（9→8）
   })
 
   it('复合条件 all（target 有 POISON 且 notSameFaction）', () => {
@@ -70,8 +70,8 @@ describe('W3 谓词接线（enforcer CONDITIONAL × evalPredicate）', () => {
       },
     }
     // 同阵营 → notSameFaction 假 → 拒（不减，6）
-    expect(shoot([eff], { targetMarkers: ['POISON'], attackerFaction: 'x', targetFaction: 'x' }).woundsDealt).toBe(6)
+    expect(shoot([eff], { targetMarkers: ['POISON'], attackerFaction: 'x', targetFaction: 'x' }).woundsDealt).toBe(9)
     // 异阵营 + 有 POISON → 真 → 减（5）
-    expect(shoot([eff], { targetMarkers: ['POISON'], attackerFaction: 'x', targetFaction: 'y' }).woundsDealt).toBe(5)
+    expect(shoot([eff], { targetMarkers: ['POISON'], attackerFaction: 'x', targetFaction: 'y' }).woundsDealt).toBe(8)
   })
 })

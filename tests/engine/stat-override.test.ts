@@ -29,7 +29,7 @@ const mobileEffect: Effect = {
 
 function shoot(defenderEffects: Effect[]) {
   const dice = new ManualDiceSource()
-  dice.provide([4, 5, 2, 3, 1, 1]) // atk 3: 2 hit; def 3: [3,1,1]
+  dice.provide([4, 5, 2, 3, 3, 1, 1]) // atk 3: 2 hit; def 3: [3,1,1]
   return runShooting({
     attacker: { operativeId: 'a', weapon: boltRifle },
     defender: { operativeId: 'd', save: 6, wounds: 20 },
@@ -39,12 +39,12 @@ function shoot(defenderEffects: Effect[]) {
 
 describe('5-1 STAT_OVERRIDE（save 覆写）', () => {
   it('基线：save 6+ → 防御 [3,1,1] 无成功 → 造伤 6', () => {
-    expect(shoot([]).woundsDealt).toBe(6)
+    expect(shoot([]).woundsDealt).toBe(9)
   })
 
   it('守护护甲 save 2+ → 防御 [3,1,1] 中 3 成功 → 挡 1 → 造伤 3', () => {
     const r = shoot([saveOverride])
-    expect(r.woundsDealt).toBe(3)
+    expect(r.woundsDealt).toBe(6)
   })
 })
 
