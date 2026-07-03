@@ -1,8 +1,7 @@
 import type { FactionPack } from '../../rules'
 
 // T3：选特工 + 装备配置视图。
-// [+][-] 按钮允许多选同类（KT 火队允许同类型多名）。
-// UI 只消费 state（AR-9）：所有变更通过 onChange 回调上抛，不在组件内自持引擎调用。
+// [+][-] 按钮允许多选同类（KT 火队允许）；maxPerTypeExcept 内的特工不限量，其余每类限 1。
 export function OperativePicker({
   pack,
   operativeIds,
@@ -14,6 +13,8 @@ export function OperativePicker({
   loadout: Record<string, string[]>
   onChange: (next: { operativeIds: string[]; loadout: Record<string, string[]> }) => void
 }) {
+  const except = new Set(pack.buildConstraints?.maxPerTypeExcept ?? [])
+  const maxPerType = (opId: string) => except.has(opId) ? 6 : 1
   const weaponName = (id: string) => pack.weapons.find((w) => w.weaponId === id)?.name ?? id
 
   // 统计每类特工在队中的数量
@@ -59,7 +60,7 @@ export function OperativePicker({
                 <strong>{o.name}</strong>
                 <span className="muted"> — 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}"</span>
                 <span className="op-count">×{count}</span>
-                <button className="op-btn" onClick={() => addOp(o.operativeId)} disabled={count >= 6}>＋</button>
+                <button className="op-btn" onClick={() => addOp(o.operativeId)} disabled={count >= maxPerType(o.operativeId)}>＋</button>
                 <button className="op-btn" onClick={() => removeOp(o.operativeId)} disabled={count === 0}>－</button>
               </div>
             </li>

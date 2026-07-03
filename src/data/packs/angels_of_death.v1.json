@@ -438,6 +438,13 @@
       "max": 6
     },
     "equipmentLimitScope": "weaponId",
-    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；死亡天使无重武器上限，equipmentLimits 空。"
+    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；死亡天使无重武器上限，equipmentLimits 空。",
+    "leaderFrom": [
+      "angels_sergeant"
+    ],
+    "maxPerTypeExcept": [
+      "angels_tactical",
+      "angels_tactical_b"
+    ]
   }
 }
