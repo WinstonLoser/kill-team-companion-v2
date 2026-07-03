@@ -81,3 +81,11 @@ development_status:
   4-2-routing-offline-sw: done
   4-3-visual-polish: done
   epic-4-retrospective: optional
+
+  # Epic 5: 引擎架构层强化（架构层 effect 落地）
+  epic-5: in-progress
+  5-1-stat-override-activation-ap: ready-for-dev
+  5-2-movement-resolver: ready-for-dev
+  5-3-stratagem-state-tracking: ready-for-dev
+  5-4-predicate-cost-layer: ready-for-dev
+  epic-5-retrospective: optional
