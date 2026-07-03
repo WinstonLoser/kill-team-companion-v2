@@ -232,12 +232,21 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
 
 const DEFENCE_UPGRADE: StepFn<ShootingState> = {
   stepId: 'DEFENCE_UPGRADE',
-  run: (state) => ({
-    state,
-    summary: `防御成功 普通${state.defNormal} 关键${state.defCritical}`,
-    applied: [],
-    rejected: [],
-  }),
+  run: (state, ctx) => {
+    // 5-3：防御方 UPGRADE_SUCCESS（如 capricious_fate 无常命运）从 allEffects 消费
+    let { defNormal, defCritical } = state
+    const upgrades = effectsAt(allEffects(ctx), 'AFTER_DEFENCE_ROLL').filter((e) => e.modifier.kind === 'UPGRADE_SUCCESS')
+    const applied: string[] = []
+    for (const e of upgrades) {
+      if (defNormal > 0) { defNormal--; defCritical++; applied.push(e.effectId) }
+    }
+    return {
+      state: { ...state, defNormal, defCritical },
+      summary: `防御成功 普通${defNormal} 关键${defCritical}${applied.length ? '（升级）' : ''}`,
+      applied,
+      rejected: [],
+    }
+  },
 }
 
 const PARRY_ALLOCATE: StepFn<ShootingState> = {
