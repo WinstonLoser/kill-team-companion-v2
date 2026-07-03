@@ -1,14 +1,33 @@
 /* 视觉基调兜底（D-31 后置美学，v1 用 token 兜底，后续 4.3 收口） */
 :root {
   color-scheme: dark;
+  /* 配色（4-3 AC4：深色中性底 + 双阵营冷暖分色 + 强调色仅注意态） */
   --bg: #14171c;
   --panel: #1c2027;
   --border: #2a2f38;
   --fg: #e6e9ef;
   --muted: #9aa3b2;
-  --accent: #4a9eff;      /* 强调色仅给「需立即关注态」 */
+  --accent: #4a9eff;
   --side-a: #c75d3a;      /* 阵营 A 暖 */
   --side-b: #3a7bc7;      /* 阵营 B 冷 */
+  --ok: #39d98a;
+  --warn: #d97739;
+  --danger: #ff6b6b;
+  /* 4-3 AC2：design token（间距/字号/圆角/阴影） */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --text-xs: 0.65rem;
+  --text-sm: 0.78rem;
+  --text-base: 0.85rem;
+  --text-md: 0.9rem;
+  --text-lg: 1.1rem;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 * { box-sizing: border-box; }
