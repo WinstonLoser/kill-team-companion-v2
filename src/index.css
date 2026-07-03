@@ -336,6 +336,23 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .strat-dot { font-size: var(--text-sm); }
 .strat-dot.on { color: var(--ok); }
 .strat-dot:not(.on) { color: var(--muted); }
+
+/* 阵营概览（建队） */
+.faction-overview { margin-top: var(--space-3); }
+.fo-toggle { width: 100%; min-height: 44px; text-align: left; font-size: var(--text-base); font-weight: 600; }
+.fo-body { margin-top: 0.5rem; }
+.fo-group { margin-bottom: var(--space-2); }
+.fo-group-title { display: block; font-size: var(--text-sm); color: var(--muted); margin-bottom: 0.2rem; padding-bottom: 0.15rem; border-bottom: 1px solid var(--border); }
+.fo-item { display: flex; align-items: baseline; gap: 0.3rem; padding: 0.15rem 0; flex-wrap: wrap; font-size: var(--text-sm); }
+.fo-item-name { font-weight: 600; min-width: 5rem; }
+.fo-tag { font-size: var(--text-xs); padding: 0 0.3rem; border-radius: var(--radius-sm); }
+.fo-tag.strat { background: rgba(74,158,255,0.15); color: var(--accent); }
+.fo-tag.eng { background: rgba(217,119,57,0.15); color: var(--warn); }
+.fo-tag.equip { background: rgba(57,217,138,0.15); color: var(--ok); }
+.fo-tag.ability { background: rgba(155,100,200,0.15); color: #b964ff; }
+.fo-tag.rule { background: rgba(155,155,175,0.15); color: var(--muted); }
+.fo-cp { font-size: var(--text-xs); color: var(--muted); font-family: ui-monospace, monospace; }
+.fo-desc { font-size: var(--text-xs); color: var(--muted); flex: 1; min-width: 10rem; }
 .push-banner { background: rgba(57,217,138,0.1); border: 1px solid #39d98a; color: #39d98a; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0.3rem 0; display: flex; justify-content: space-between; align-items: center; }
 .portrait-hint { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.5rem; }
 .legality li.actionable { cursor: pointer; }

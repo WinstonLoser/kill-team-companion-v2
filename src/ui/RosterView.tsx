@@ -6,6 +6,7 @@ import { FactionSelect, type FactionOption } from './roster/FactionSelect'
 import { OperativePicker } from './roster/OperativePicker'
 import { SubFactionSelect } from './roster/SubFactionSelect'
 import { LegalityPanel } from './roster/LegalityPanel'
+import { FactionOverview } from './roster/FactionOverview'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 import legionariesPack from '../data/packs/legionaries.v1.json'
 import plaguePack from '../data/packs/plague_marines.v1.json'
@@ -125,16 +126,9 @@ export function RosterView() {
               ) : (
                 <div className="subfaction-none">
                   <h3>阵营能力（常驻）</h3>
-                  <ul className="list">
-                    {pack.effects.filter((e) => e.source.startsWith('factionRule:')).map((e) => (
-                      <li key={e.effectId} className="muted">{e.label}</li>
-                    ))}
-                    {pack.effects.filter((e) => e.source.startsWith('ability:')).map((e) => (
-                      <li key={e.effectId} className="muted">{e.label}</li>
-                    ))}
-                  </ul>
                 </div>
               )}
+              <FactionOverview pack={pack} />
             </>
           )}
         </div>
