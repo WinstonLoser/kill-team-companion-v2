@@ -140,6 +140,10 @@ inputDocuments:
 平板手势冲突调优、实时几何渲染性能、hash 路由、Service Worker 离线、视觉基调收口（D-31 后置美学）。无新 FR，纯 NFR 加固。
 **FRs covered:** 无新 FR（NFR-3/8 + UX-OQ 实现）
 
+### Epic 5: 引擎架构层强化（架构层 effect 落地）
+Epic 2/3 阵营数据落地后，6 个 effect 仍为 CUSTOM_HOOK 描述符——它们要的不是数据/流水线 step，而是**新引擎子系统**（activation AP / movement / 计谋状态追踪 / stat 覆写 / predicate-cost）。这些层是跨阵营水平能力：建好后军团兵 + 瘟疫战士 + 后续阵营的等价 effect 一并解锁。源自 Epic 1 评审 deferred 项（W3）+ Epic 2 评审 Defer，经 Epic 3（亦数据向）仍未有着落，故独立成 epic。
+**FRs covered:** FR-2（两层属性模型扩 stat 覆写）、FR-7（叠加规则在 activation/movement 层延续）、FR-12（行动合法性接 activation effect）、FR-17（架构层 effect 留痕）；新增引擎子系统 FR 待 Story 5.x 细化。
+
 ## Epic 1: 核心引擎 + 死亡天使完整对局（垂直切片）
 
 玩家用死亡天使打完一整局（建队→选图→部署→激活/移动→射击+近战结算→目标点/VP/胜负），单屏共用+可审计，验证数据模型+引擎+几何+UI 端到端跑通。
@@ -436,3 +440,58 @@ So that 桌上易读。
 **Acceptance Criteria:**
 
 **Given** 全应用 **When** 套用 **Then** 配色通过色盲模拟、字号阶/间距 token 统一、强调色仅注意态 **And** 美学后置（D-31，可选 `ui-ux-pro-max`）。
+
+## Epic 5: 引擎架构层强化（架构层 effect 落地）
+
+Epic 2/3 数据包落地后，6 个 effect 仍为 `CUSTOM_HOOK` 描述符（军团兵：`chapterTactic_mobile` / `mark_slaanesh` / `strat_swift_speed` / `strat_capricious_fate` / `wargear_warding_armour` / `wargear_chaos_talisman`）。它们缺的不是数据或流水线 step，而是**新引擎子系统**：activation AP、movement resolver、计谋状态追踪、stat 覆写、predicate-cost。这些是跨阵营水平引擎能力——建好后军团兵/瘟疫战士/后续阵营的等价 effect 一并解锁。
+
+**前置**：Story 3.2 谓词库已落地（CONDITIONAL 可求值）；Epic 2 评审 W3 已建 `effectiveApl`（APL_PLUS 消费）/ `withAttachedRules`（ATTACH_WEAPON_RULE 消费）作底。
+
+### Story 5.1: stat 覆写 + activation AP（最小层先跑通）
+
+As a 引擎,
+I want 属性覆写层 + activation AP mod 落地,
+So that `wargear_warding_armour`（save 2+）与 `chapterTactic_mobile`（后撤 AP-1）不再是描述符。
+
+**Acceptance Criteria:**
+
+**Given** 覆写类 effect（新 `SAVE_OVERRIDE` kind 或 stat-override 通用机制）**When** DEFENCE_ROLL **Then** 豁免阈值用覆写值（守护护甲 2+），走两层模型留痕（FR-2）。
+**Given** activation AP effect **When** 构造 `ActionContext.apl` / `ACTION_AP` **Then** AP mod 应用（后撤 AP-1 实际多耗），`effectiveApl` 同模式扩到 AP。
+**Given** 两 effect golden **When** 跑 **Then** real（非 CUSTOM_HOOK），CUSTOM_HOOK 剩 4。
+
+### Story 5.2: movement resolver（移动距离模型）
+
+As a 引擎,
+I want 移动距离 + modifier 的引擎模型,
+So that `mark_slaanesh`（移动 +1）等移动 effect 生效（当前移动全在 UI 棋盘，无引擎模型）。
+
+**Acceptance Criteria:**
+
+**Given** 特工移动 **When** 经 `effectiveMove(baseMove, effects)` **Then** 移动力 = base + Σ 移动 modifier（色孽 +1），合法性按此判（FR-12）。
+**Given** 移动 effect **When** 挂 `ON_ACTIVATION_START`/movement step **Then** real（非 CUSTOM_HOOK）。
+**Given** UI 棋盘拖拽 **When** 走路径 **Then** 引擎校验总长 ≤ effectiveMove（UI 调引擎，AR-9）。
+
+### Story 5.3: 计谋状态追踪系统（active stratagem）
+
+As a 引擎,
+I want 已激活计谋的持续状态追踪 + effect 注入,
+So that `strat_swift_speed`（敌方命中-1）/ `strat_capricious_fate`（防御方升级）等持续型计谋在结算时生效。
+
+**Acceptance Criteria:**
+
+**Given** 计谋使用 **When** 记入 active stratagem 状态（带 duration/phase）**Then** 其 effect 注入后续结算的 effect 栈。
+**Given** 持续计谋 effect（命中-1 / 防御升级）**When** 结算 **Then** 实际改变命中/防御成功（非描述符），且到期/用尽后自动撤除。
+**Given** 两计谋 golden **When** 跑 **Then** real，CUSTOM_HOOK 剩 2。
+
+### Story 5.4: predicate-cost 层（自伤换升级）
+
+As a 引擎,
+I want 复用 Story 3.2 谓词库 + cost/替代层,
+So that `wargear_chaos_talisman`（自伤 D3 换一次升级）等复杂条件 effect 生效。
+
+**Acceptance Criteria:**
+
+**Given** 复杂条件 effect（带 cost + 谓词条件）**When** 谓词命中 **Then** 玩家可选择支付 cost（自伤 D3）执行替代效果（升级一次），留痕（FR-17）。
+**Given** `wargear_chaos_talisman` **When** 2+ 失败 + 关键词匹配 **Then** 触发自伤换升级，real（非 CUSTOM_HOOK）。
+**Given** CUSTOM_HOOK 全清零 **When** 盘点 **Then** 剩 0（或诚实标注真正需 UI/人工裁定的残留）。
+
