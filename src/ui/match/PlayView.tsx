@@ -9,6 +9,7 @@ import { PipelineDrawer } from './PipelineDrawer'
 import { LogPanel } from './LogPanel'
 import { InterceptorCard } from './InterceptorCard'
 import { ManualDiceEntry } from './ManualDiceEntry'
+import { StratagemPanel } from './StratagemPanel'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -251,6 +252,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             onUndo={undoPending}
           />
           <UnitPanel startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} />
+          <StratagemPanel />
         </div>
 
         <div className="play-right-col">
