@@ -315,12 +315,17 @@ const WOUNDS_APPLY_AND_AFTER: StepFn<ShootingState> = {
   run: (state, ctx) => {
     // P12：几何资格失败（targetValid=false）→ 不造伤（FR-14 先验拦截）
     const woundsDealt = state.targetValid ? state.damage : 0
-    const defenderIncapacitated = woundsDealt > 0 && woundsDealt >= ctx.defender.wounds // P7：0 伤不致残
-    const markers = effectsAt(ctx.effects, 'AT_PIPELINE_END').filter((e) => e.modifier.kind === 'GRANT_MARKER')
+    const defenderIncapacitated = woundsDealt > 0 && woundsDealt >= ctx.defender.wounds
+    const markers = effectsAt(allEffects(ctx), 'AT_PIPELINE_END').filter((e) => e.modifier.kind === 'GRANT_MARKER')
+    // 5-5：ON_INCAPACITATED GRANT_MARKER（virulent_blight 残废时挂 POISON）——仅残废时生效
+    const incapMarkers = defenderIncapacitated
+      ? effectsAt(allEffects(ctx), 'ON_INCAPACITATED').filter((e) => e.modifier.kind === 'GRANT_MARKER')
+      : []
+    const allMarkers = [...markers, ...incapMarkers]
     return {
       state: { ...state, woundsDealt, defenderIncapacitated },
-      summary: `扣耐伤 ${woundsDealt}${defenderIncapacitated ? ' →残废' : ''}${markers.length ? ` →打标识 ${markers.map((m) => m.effectId).join(',')}` : ''}`,
-      applied: markers.map((e) => e.effectId),
+      summary: `扣耐伤 ${woundsDealt}${defenderIncapacitated ? ' →残废' : ''}${allMarkers.length ? ` →打标识 ${allMarkers.map((m) => m.effectId).join(',')}` : ''}`,
+      applied: allMarkers.map((e) => e.effectId),
       rejected: [],
     }
   },

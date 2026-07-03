@@ -886,11 +886,8 @@
       },
       "pipelineStep": "DEFENCE_UPGRADE",
       "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "soul-damage-substitute",
-          "prompt": "2+ 失败时自伤 D3 换一次升级（引擎谓词留 Story 2.2 AQ-3）"
-        }
+        "kind": "UPGRADE_SUCCESS",
+        "payload": {}
       },
       "stacking": {
         "policy": "UNIQUE_PER_SOURCE"

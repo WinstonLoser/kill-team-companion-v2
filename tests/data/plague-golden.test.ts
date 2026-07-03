@@ -171,12 +171,21 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
     expect(noPoison.woundsDealt).toBe(6)
   })
 
-  it('10. 剧毒破灭（被残废时范围挂 POISON + 已有指示物受 1 伤；范围多目标 descriptor）', () => {
+  it('10. 剧毒破灭（ON_INCAPACITATED GRANT_MARKER：残废时挂 POISON）', () => {
     const e = effect('plg_virulent_blight')
     expect(e.trigger.point).toBe('ON_INCAPACITATED')
-    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
-    expect((e.modifier.payload as { hookId: string }).hookId).toBe('virulent-blight-aoe')
-    // 范围多目标 + ON_INCAPACITATED 需流水线支持，留引擎架构故事
+    expect(e.modifier.kind).toBe('GRANT_MARKER')
+    // real：WOUNDS_APPLY 残废时消费 ON_INCAPACITATED GRANT_MARKER
+    const dice = new ManualDiceSource()
+    dice.provide([6, 6, 6, 6, 1, 1, 1]) // 4 crit hits, 0 def → enough to incapacitate save-6 wounds-3
+    const r = runShooting({
+      attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
+      defender: { operativeId: 'd', save: 6, wounds: 3 },
+      effects: [effect('plg_virulent_blight')], dice, hasCover: false,
+    })
+    expect(r.defenderIncapacitated).toBe(true)
+    const wounds = r.traces.find((t) => t.stepId === 'WOUNDS_APPLY_AND_AFTER')!
+    expect(wounds.appliedEffectIds).toContain('plg_virulent_blight')
   })
 })
 

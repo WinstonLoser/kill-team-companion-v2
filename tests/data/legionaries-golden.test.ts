@@ -140,11 +140,10 @@ describe('golden（数据层，引擎层缺口留 Story 2.2 AQ-3）', () => {
     expect((e.modifier.payload as { value: number }).value).toBe(1)
   })
 
-  it('9. 混沌护身符：吸魂代伤 descriptor（CUSTOM_HOOK @ 防御升级；需自伤+升级组合）', () => {
+  it('9. 混沌护身符（UPGRADE_SUCCESS @ 防御升级，5-4 转 real；自伤 D3 成本留 matchStore）', () => {
     const e = effect('wargear_chaos_talisman')
-    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
+    expect(e.modifier.kind).toBe('UPGRADE_SUCCESS')
     expect(e.trigger.point).toBe('AFTER_DEFENCE_ROLL')
-    expect((e.modifier.payload as { hookId: string }).hookId).toBe('soul-damage-substitute')
   })
 })
 

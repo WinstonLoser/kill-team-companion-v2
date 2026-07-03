@@ -5,209 +5,830 @@
   "faction": {
     "id": "plague_marines",
     "name": "瘟疫战士",
-    "keywords": ["CHAOS", "PLAGUE_MARINES", "HERETIC_ASTARTES", "NURGLE"]
+    "keywords": [
+      "CHAOS",
+      "PLAGUE_MARINES",
+      "HERETIC_ASTARTES",
+      "NURGLE"
+    ]
   },
   "operatives": [
-    { "operativeId": "plg_champion", "name": "勇士", "keywords": ["CHAOS", "CHAMPION"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 15 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_plague_sword"] },
-    { "operativeId": "plg_grenadier", "name": "掷弹兵", "keywords": ["CHAOS", "GUNNER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_blight_grenade"] },
-    { "operativeId": "plg_fighter", "name": "斗士", "keywords": ["CHAOS", "FIGHTER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_pistol", "plg_corrosive_flail"] },
-    { "operativeId": "plg_heavy", "name": "重炮手", "keywords": ["CHAOS", "GUNNER", "HEAVY"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_spewer", "plg_boltgun"] },
-    { "operativeId": "plg_bearer", "name": "持徽手", "keywords": ["CHAOS", "BEARER"], "stats": { "apl": 4, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_sword"] },
-    { "operativeId": "plg_caster", "name": "恶瘟投放者", "keywords": ["CHAOS", "PSYKER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_pistol", "plg_putrescent_spell", "plg_plague_wind"] },
-    { "operativeId": "plg_troop", "name": "士兵", "keywords": ["CHAOS", "TROOP"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_plague_sword"] }
+    {
+      "operativeId": "plg_champion",
+      "name": "勇士",
+      "keywords": [
+        "CHAOS",
+        "CHAMPION"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 15
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_boltgun",
+        "plg_plague_pistol",
+        "plg_plague_sword"
+      ]
+    },
+    {
+      "operativeId": "plg_grenadier",
+      "name": "掷弹兵",
+      "keywords": [
+        "CHAOS",
+        "GUNNER"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_boltgun",
+        "plg_plague_pistol",
+        "plg_blight_grenade"
+      ]
+    },
+    {
+      "operativeId": "plg_fighter",
+      "name": "斗士",
+      "keywords": [
+        "CHAOS",
+        "FIGHTER"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_plague_pistol",
+        "plg_corrosive_flail"
+      ]
+    },
+    {
+      "operativeId": "plg_heavy",
+      "name": "重炮手",
+      "keywords": [
+        "CHAOS",
+        "GUNNER",
+        "HEAVY"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_plague_spewer",
+        "plg_boltgun"
+      ]
+    },
+    {
+      "operativeId": "plg_bearer",
+      "name": "持徽手",
+      "keywords": [
+        "CHAOS",
+        "BEARER"
+      ],
+      "stats": {
+        "apl": 4,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_boltgun",
+        "plg_plague_sword"
+      ]
+    },
+    {
+      "operativeId": "plg_caster",
+      "name": "恶瘟投放者",
+      "keywords": [
+        "CHAOS",
+        "PSYKER"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_plague_pistol",
+        "plg_putrescent_spell",
+        "plg_plague_wind"
+      ]
+    },
+    {
+      "operativeId": "plg_troop",
+      "name": "士兵",
+      "keywords": [
+        "CHAOS",
+        "TROOP"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_boltgun",
+        "plg_plague_pistol",
+        "plg_plague_sword"
+      ]
+    }
   ],
   "weapons": [
-    { "weaponId": "plg_boltgun", "name": "爆矢枪", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 24, "weaponRules": ["RAPID_FIRE"] }, "keywords": ["BOLT"] },
-    { "weaponId": "plg_plague_pistol", "name": "瘟疫手枪", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL", "TOXIN"] }, "keywords": ["BOLT", "PLAGUE"] },
-    { "weaponId": "plg_plague_sword", "name": "瘟疫之剑", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["DEVASTATING", "TOXIN", "VIRULENT"] }, "keywords": ["MELEE", "PLAGUE"] },
-    { "weaponId": "plg_corrosive_flail", "name": "腐蚀连枷", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["BRUTAL", "DEVASTATING", "TOXIN"] }, "keywords": ["MELEE", "PLAGUE"] },
-    { "weaponId": "plg_plague_spewer", "name": "瘟疫喷吐炮", "kind": "RANGED", "profile": { "attacks": 5, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "range": 8, "weaponRules": ["TORRENT", "DEVASTATING", "TOXIN"] }, "keywords": ["FLAME", "PLAGUE"] },
-    { "weaponId": "plg_putrescent_spell", "name": "衰败术", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PSYCHIC", "DEVASTATING", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
-    { "weaponId": "plg_plague_wind", "name": "瘟疫之风", "kind": "RANGED", "profile": { "attacks": 5, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 12, "weaponRules": ["PSYCHIC", "TORRENT", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
-    { "weaponId": "plg_blight_grenade", "name": "疫病手雷", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 6, "weaponRules": ["CONCEAL", "TOXIN"] }, "keywords": ["PLAGUE"] }
+    {
+      "weaponId": "plg_boltgun",
+      "name": "爆矢枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 2,
+        "criticalDamage": 4,
+        "range": 24,
+        "weaponRules": [
+          "RAPID_FIRE"
+        ]
+      },
+      "keywords": [
+        "BOLT"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_pistol",
+      "name": "瘟疫手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 3,
+        "hit": 3,
+        "normalDamage": 2,
+        "criticalDamage": 4,
+        "range": 12,
+        "weaponRules": [
+          "PISTOL",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "BOLT",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_sword",
+      "name": "瘟疫之剑",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": [
+          "DEVASTATING",
+          "TOXIN",
+          "VIRULENT"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_corrosive_flail",
+      "name": "腐蚀连枷",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "weaponRules": [
+          "BRUTAL",
+          "DEVASTATING",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_spewer",
+      "name": "瘟疫喷吐炮",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 2,
+        "normalDamage": 2,
+        "criticalDamage": 4,
+        "range": 8,
+        "weaponRules": [
+          "TORRENT",
+          "DEVASTATING",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "FLAME",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_putrescent_spell",
+      "name": "衰败术",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 12,
+        "weaponRules": [
+          "PSYCHIC",
+          "DEVASTATING",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_wind",
+      "name": "瘟疫之风",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "range": 12,
+        "weaponRules": [
+          "PSYCHIC",
+          "TORRENT",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_blight_grenade",
+      "name": "疫病手雷",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "range": 6,
+        "weaponRules": [
+          "CONCEAL",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PLAGUE"
+      ]
+    }
   ],
   "effects": [
     {
       "effectId": "plg_toxin_grant_marker",
       "label": "毒素指示物（阵营规则：流程结束挂 POISON 到防御方，己方瘟疫除外）",
       "source": "factionRule:plagueToxin",
-      "trigger": { "point": "AT_PIPELINE_END" },
+      "trigger": {
+        "point": "AT_PIPELINE_END"
+      },
       "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
-      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "POISON", "target": "DEFENDER" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素指示物" }
+      "modifier": {
+        "kind": "GRANT_MARKER",
+        "payload": {
+          "marker": "POISON",
+          "target": "DEFENDER"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "阵营规则-毒素指示物"
+      }
     },
     {
       "effectId": "plg_virulent",
       "label": "剧毒（武器级：对已有 POISON 指示物目标，该结算 +1 伤）",
       "source": "factionRule:virulent",
-      "trigger": { "point": "ON_DAMAGE_PER_DIE", "condition": { "op": "targetHasMarker", "args": ["POISON"] } },
+      "trigger": {
+        "point": "ON_DAMAGE_PER_DIE",
+        "condition": {
+          "op": "targetHasMarker",
+          "args": [
+            "POISON"
+          ]
+        }
+      },
       "pipelineStep": "DAMAGE_PER_DIE",
-      "modifier": { "kind": "EXTRA_DAMAGE_ON_HIT", "payload": { "amount": 1 } },
-      "stacking": { "policy": "CONDITIONAL" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-剧毒" }
+      "modifier": {
+        "kind": "EXTRA_DAMAGE_ON_HIT",
+        "payload": {
+          "amount": 1
+        }
+      },
+      "stacking": {
+        "policy": "CONDITIONAL"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "阵营规则-剧毒"
+      }
     },
     {
       "effectId": "plg_toxin_activation_damage",
       "label": "毒素激活伤（持 POISON 特工激活时受 1 伤）",
       "source": "factionRule:plagueToxin",
-      "trigger": { "point": "ON_ACTIVATION_START" },
+      "trigger": {
+        "point": "ON_ACTIVATION_START"
+      },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "DAMAGE_MINUS", "payload": { "amount": 1, "scope": "BOTH" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素激活" }
+      "modifier": {
+        "kind": "DAMAGE_MINUS",
+        "payload": {
+          "amount": 1,
+          "scope": "BOTH"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "阵营规则-毒素激活"
+      }
     },
     {
       "effectId": "plg_devastating_resilience",
       "label": "恼人韧性（每枚≥3伤 D6 4+ 减 1，同源每枚上限 1）",
       "source": "factionRule:disgustingResilience",
-      "trigger": { "point": "ON_DAMAGE_TOTAL" },
+      "trigger": {
+        "point": "ON_DAMAGE_TOTAL"
+      },
       "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
-      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 3, "roll": "4+" } },
-      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-恼人韧性" }
+      "modifier": {
+        "kind": "DAMAGE_MITIGATION",
+        "payload": {
+          "threshold": 3,
+          "roll": "4+"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_GROUP",
+        "groupKeys": [
+          "defensive-mitigation"
+        ]
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "阵营规则-恼人韧性"
+      }
     },
     {
       "effectId": "plg_disgusting_resilience",
       "label": "恶心韧性（计谋：激活/反应期固定减 1，覆盖恼人韧性掷骰）",
       "source": "stratagem:disgustingResilience",
-      "trigger": { "point": "ON_DAMAGE_TOTAL" },
+      "trigger": {
+        "point": "ON_DAMAGE_TOTAL"
+      },
       "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
-      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 0, "roll": "fixed-1" } },
-      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-恶心韧性" }
+      "modifier": {
+        "kind": "DAMAGE_MITIGATION",
+        "payload": {
+          "threshold": 0,
+          "roll": "fixed-1"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_GROUP",
+        "groupKeys": [
+          "defensive-mitigation"
+        ]
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-恶心韧性"
+      }
     },
     {
       "effectId": "plg_contagion",
       "label": "传染（攻击方命中 -1，当目标有 POISON 指示物时生效；不与受创叠）",
       "source": "stratagem:contagion",
-      "trigger": { "point": "BEFORE_HIT_ROLL", "condition": { "op": "targetHasMarker", "args": ["POISON"] } },
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL",
+        "condition": {
+          "op": "targetHasMarker",
+          "args": [
+            "POISON"
+          ]
+        }
+      },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "HIT_MINUS", "payload": { "amount": 1 } },
-      "stacking": { "policy": "CONDITIONAL" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-传染" }
+      "modifier": {
+        "kind": "HIT_MINUS",
+        "payload": {
+          "amount": 1
+        }
+      },
+      "stacking": {
+        "policy": "CONDITIONAL"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-传染"
+      }
     },
     {
       "effectId": "plg_cloud_of_flies",
       "label": "飞蝇云（放 FLY_CLOUD 标识；目标完全位于 1\"内+射击方 3\"外 → 遮挡）",
       "source": "stratagem:cloudOfFlies",
-      "trigger": { "point": "AT_PIPELINE_END" },
+      "trigger": {
+        "point": "AT_PIPELINE_END"
+      },
       "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
-      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "FLY_CLOUD", "target": "DEFENDER" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-飞蝇云" }
+      "modifier": {
+        "kind": "GRANT_MARKER",
+        "payload": {
+          "marker": "FLY_CLOUD",
+          "target": "DEFENDER"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-飞蝇云"
+      }
     },
     {
       "effectId": "plg_walk_death",
       "label": "慢步死亡（激活移动≤3\" 时附加无休）",
       "source": "stratagem:walkDeath",
-      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL"
+      },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "RELENTLESS" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-慢步死亡" }
+      "modifier": {
+        "kind": "ATTACH_WEAPON_RULE",
+        "payload": {
+          "rule": "RELENTLESS"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-慢步死亡"
+      }
     },
     {
       "effectId": "plg_nurgling",
       "label": "纳垢灵（持 POISON 敌方 APL -1）",
       "source": "stratagem:nurgling",
-      "trigger": { "point": "ON_ACTIVATION_START" },
+      "trigger": {
+        "point": "ON_ACTIVATION_START"
+      },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "APL_PLUS", "payload": { "amount": -1, "duration": "ACTIVATION" } },
-      "stacking": { "policy": "UNIQUE_PER_ACTION" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-纳垢灵" }
+      "modifier": {
+        "kind": "APL_PLUS",
+        "payload": {
+          "amount": -1,
+          "duration": "ACTIVATION"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_ACTION"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-纳垢灵"
+      }
     },
     {
       "effectId": "plg_lethal_toxin",
       "label": "致命毒素（3\"内或 7\"可见敌方挂 POISON）",
       "source": "stratagem:lethalToxin",
-      "trigger": { "point": "AT_PIPELINE_END" },
+      "trigger": {
+        "point": "AT_PIPELINE_END"
+      },
       "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
-      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "POISON", "target": "DEFENDER" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-致命毒素" }
+      "modifier": {
+        "kind": "GRANT_MARKER",
+        "payload": {
+          "marker": "POISON",
+          "target": "DEFENDER"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-致命毒素"
+      }
     },
     {
       "effectId": "plg_virulent_blight",
       "label": "剧毒破灭（被残废时 3\"可见敌方挂 POISON + 已有 POISON 受 1 伤）",
       "source": "stratagem:virulentBlight",
-      "trigger": { "point": "ON_INCAPACITATED" },
+      "trigger": {
+        "point": "ON_INCAPACITATED"
+      },
       "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "virulent-blight-aoe", "prompt": "残废时范围挂指示物+伤（需范围多目标+ON_INCAPACITATED 谓词，留 3.2 AQ-3）" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-剧毒破灭" }
+      "modifier": {
+        "kind": "GRANT_MARKER",
+        "payload": {
+          "marker": "POISON",
+          "target": "DEFENDER"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-剧毒破灭"
+      }
     },
     {
       "effectId": "plg_rot_curse",
       "label": "腐烂诅咒（对手防御骰每出 3 即受 1 伤，不可保留/重掷）",
       "source": "stratagem:rotCurse",
-      "trigger": { "point": "ON_DEFENCE_ROLL", "condition": { "op": "dieFaceEquals", "args": [3] } },
+      "trigger": {
+        "point": "ON_DEFENCE_ROLL",
+        "condition": {
+          "op": "dieFaceEquals",
+          "args": [
+            3
+          ]
+        }
+      },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "rot-curse-die-face-3", "prompt": "防御骰每出 3 → +1 伤（DEFENCE_ROLL per-die 消费 dieFaceEquals(3)，real）" } },
-      "stacking": { "policy": "CONDITIONAL" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-腐烂诅咒" }
+      "modifier": {
+        "kind": "CUSTOM_HOOK",
+        "payload": {
+          "hookId": "rot-curse-die-face-3",
+          "prompt": "防御骰每出 3 → +1 伤（DEFENCE_ROLL per-die 消费 dieFaceEquals(3)，real）"
+        }
+      },
+      "stacking": {
+        "policy": "CONDITIONAL"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "计谋-腐烂诅咒"
+      }
     },
     {
       "effectId": "plg_fathers_blessing",
       "label": "慈父的祝福（7\"内有 POISON 敌方失耐伤时回复等量，每 TP 上限 3）",
       "source": "ability:fathersBlessing",
-      "trigger": { "point": "AT_PIPELINE_END" },
+      "trigger": {
+        "point": "AT_PIPELINE_END"
+      },
       "pipelineStep": "MELEE_AFTER",
-      "modifier": { "kind": "HEAL_OPERATIVE", "payload": { "amount": 1, "target": "SELF" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "勇士-慈父的祝福" }
+      "modifier": {
+        "kind": "HEAL_OPERATIVE",
+        "payload": {
+          "amount": 1,
+          "target": "SELF"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "勇士-慈父的祝福"
+      }
     },
     {
       "effectId": "wargear_plague_bell",
       "label": "瘟疫之钟（忽略受创属性修改）",
       "source": "wargear:plagueBell",
-      "trigger": { "point": "ON_ACTIVATION_START" },
+      "trigger": {
+        "point": "ON_ACTIVATION_START"
+      },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "injured" } },
-      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["injured"] },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-瘟疫之钟" }
+      "modifier": {
+        "kind": "IMMUNITY",
+        "payload": {
+          "immuneToEffectGroup": "injured"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_GROUP",
+        "groupKeys": [
+          "injured"
+        ]
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "装备-瘟疫之钟"
+      }
     },
     {
       "effectId": "wargear_plague_ammo",
       "label": "瘟疫弹药（爆矢武器附加毒素+严重）",
       "source": "wargear:plagueAmmo",
-      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL"
+      },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "TOXIN" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-瘟疫弹药" }
+      "modifier": {
+        "kind": "ATTACH_WEAPON_RULE",
+        "payload": {
+          "rule": "TOXIN"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "装备-瘟疫弹药"
+      }
     },
     {
       "effectId": "wargear_mucus_exit",
       "label": "排毒口（3\"内敌方激活时 D3=3 挂 POISON / 已有则 D3 伤）",
       "source": "wargear:mucusExit",
-      "trigger": { "point": "ON_ACTIVATION_START" },
+      "trigger": {
+        "point": "ON_ACTIVATION_START",
+        "condition": {
+          "op": "dieFaceEquals",
+          "args": [
+            3
+          ]
+        }
+      },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mucus-exit-d3", "prompt": "D3=3 挂指示物 / 已有则 D3 伤（需 dieFaceEquals+范围，留 3.2 AQ-3）" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-排毒口" }
+      "modifier": {
+        "kind": "GRANT_MARKER",
+        "payload": {
+          "marker": "POISON",
+          "target": "DEFENDER"
+        }
+      },
+      "stacking": {
+        "policy": "CONDITIONAL"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_plague_marines_zh.md",
+        "section": "装备-排毒口"
+      }
     }
   ],
   "stratagems": [
-    { "id": "contagion", "name": "传染", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
-    { "id": "walkDeath", "name": "慢步死亡", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
-    { "id": "cloudOfFlies", "name": "飞蝇云", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
-    { "id": "nurgling", "name": "纳垢灵", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
-    { "id": "disgustingResilience", "name": "恶心韧性", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" },
-    { "id": "lethalToxin", "name": "致命毒素", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" },
-    { "id": "virulentBlight", "name": "剧毒破灭", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" },
-    { "id": "rotCurse", "name": "腐烂诅咒", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" }
+    {
+      "id": "contagion",
+      "name": "传染",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "walkDeath",
+      "name": "慢步死亡",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "cloudOfFlies",
+      "name": "飞蝇云",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "nurgling",
+      "name": "纳垢灵",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "disgustingResilience",
+      "name": "恶心韧性",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "ENGAGEMENT"
+    },
+    {
+      "id": "lethalToxin",
+      "name": "致命毒素",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "ENGAGEMENT"
+    },
+    {
+      "id": "virulentBlight",
+      "name": "剧毒破灭",
+      "cp": 1,
+      "useLimit": {
+        "perBattle": 1
+      },
+      "phase": "ENGAGEMENT"
+    },
+    {
+      "id": "rotCurse",
+      "name": "腐烂诅咒",
+      "cp": 1,
+      "useLimit": {
+        "perBattle": 1
+      },
+      "phase": "ENGAGEMENT"
+    }
   ],
   "wargear": [
-    { "id": "plagueBell", "name": "瘟疫之钟" },
-    { "id": "blightGrenade", "name": "疫病手雷" },
-    { "id": "plagueAmmo", "name": "瘟疫弹药" },
-    { "id": "mucusExit", "name": "排毒口" }
+    {
+      "id": "plagueBell",
+      "name": "瘟疫之钟"
+    },
+    {
+      "id": "blightGrenade",
+      "name": "疫病手雷"
+    },
+    {
+      "id": "plagueAmmo",
+      "name": "瘟疫弹药"
+    },
+    {
+      "id": "mucusExit",
+      "name": "排毒口"
+    }
   ],
   "buildConstraints": {
-    "operatives": { "min": 6, "max": 6 },
-    "leaderFrom": ["plg_champion"],
-    "maxPerTypeExcept": ["plg_troop"],
+    "operatives": {
+      "min": 6,
+      "max": 6
+    },
+    "leaderFrom": [
+      "plg_champion"
+    ],
+    "maxPerTypeExcept": [
+      "plg_troop"
+    ],
     "equipmentLimitScope": "weaponId",
     "equipmentLimits": {
       "plg_plague_spewer": 1,
