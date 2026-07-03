@@ -7,13 +7,17 @@ import { OperativePicker } from './roster/OperativePicker'
 import { SubFactionSelect } from './roster/SubFactionSelect'
 import { LegalityPanel } from './roster/LegalityPanel'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
+import legionariesPack from '../data/packs/legionaries.v1.json'
+import plaguePack from '../data/packs/plague_marines.v1.json'
 
-// T2 阵营注册表：阵营机制 = 数据。本 Epic 仅死亡天使数据可用（Story 1.3）。
+// 三阵营全部可用（Epic 1-3 完成）。
 const angelsLoaded: FactionPack = loadPack(angelsPack)
+const legionariesLoaded: FactionPack = loadPack(legionariesPack)
+const plagueLoaded: FactionPack = loadPack(plaguePack)
 const FACTIONS: FactionOption[] = [
   { id: 'angels_of_death', name: '死亡天使', available: true, pack: angelsLoaded },
-  { id: 'legionaries', name: '军团兵', available: false, epic: 'Epic 2' },
-  { id: 'plague_marines', name: '瘟疫战士', available: false, epic: 'Epic 3' },
+  { id: 'legionaries', name: '军团兵', available: true, pack: legionariesLoaded },
+  { id: 'plague_marines', name: '瘟疫战士', available: true, pack: plagueLoaded },
 ]
 
 function packFor(factionId: string | null): FactionPack | null {
