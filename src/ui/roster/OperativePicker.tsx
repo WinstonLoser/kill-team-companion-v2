@@ -73,6 +73,25 @@ export function OperativePicker({
     return { opId, key: `${opId}#${instance}`, instance, idx: i }
   })
 
+  function renderLeaderRow(o: typeof pack.operatives[0]) {
+    const selected = operativeIds.includes(o.operativeId)
+    return (
+      <li key={o.operativeId} className={`op-card ${selected ? 'in' : ''}`}>
+        <label className="op-row op-leader">
+          <input type="radio" name="leader-select" checked={selected} onChange={() => {
+            // 选新队长 → 移除旧队长 → 加新队长
+            const oldLeaders = operativeIds.filter((id) => leaders.has(id))
+            const next = operativeIds.filter((id) => !oldLeaders.includes(id))
+            next.push(o.operativeId)
+            onChange({ operativeIds: next, loadout: { ...loadout, [`${o.operativeId}#0`]: [] } })
+          }} />
+          <strong>{o.name}</strong>
+          <span className="muted"> — 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}"</span>
+        </label>
+      </li>
+    )
+  }
+
   function renderOpRow(o: typeof pack.operatives[0], tag?: string) {
     const count = countOf(o.operativeId)
     return (
@@ -95,8 +114,8 @@ export function OperativePicker({
 
       {leaderOps.length > 0 && (
         <>
-          <h4 className="op-group-title">队长（选 1 名）</h4>
-          <ul className="list">{leaderOps.map((o) => renderOpRow(o, '队长'))}</ul>
+          <h4 className="op-group-title">队长（多选 1，唯一）</h4>
+          <ul className="list">{leaderOps.map((o) => renderLeaderRow(o))}</ul>
         </>
       )}
       {uniqueOps.length > 0 && (
