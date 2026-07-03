@@ -45,6 +45,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const setInteracting = useMatchStore((s) => s.setInteracting)
   const interacting = useMatchStore((s) => s.interacting) // P2：响应式订阅
   const setViewport = useMatchStore((s) => s.setViewport)
+  const effectiveMoveOf = useMatchStore((s) => s.effectiveMoveOf)
+  const effectiveAplOf = useMatchStore((s) => s.effectiveAplOf)
   const lastPinchDist = useRef(0)
   const viewportRef = useRef<HTMLDivElement>(null)
 
@@ -151,7 +153,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       const t = tokens.find((x) => x.uid === dragging)
       if (t && dragOrigin) {
         const d = Math.hypot(t.pos.x - dragOrigin.x, t.pos.y - dragOrigin.y)
-        if (d > 0.1) pushLog('turn', `${t.name} 移动 ${d.toFixed(1)}"`)
+        if (d > 0.1) {
+          const maxMove = effectiveMoveOf(t.uid)
+          const over = d > maxMove
+          pushLog('turn', `${t.name} 移动 ${d.toFixed(1)}"${over ? `（⚠ 超 ${maxMove}" 移动上限）` : `（上限 ${maxMove}"）`}`)
+        }
       }
       setDragging(null)
       setHoverInch(null)
@@ -233,7 +239,13 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             selectedSide={active?.side ?? null}
             activated={activated}
             hasLastShot={Boolean(lastShot)}
-            onActivate={() => { if (active) { activate(active.uid, active.side); pushLog('turn', `${active.name} 激活`) } }}
+            onActivate={() => {
+              if (active) {
+                activate(active.uid, active.side)
+                const apl = effectiveAplOf(active.uid)
+                pushLog('turn', `${active.name} 激活（APL ${apl}）`)
+              }
+            }}
             onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null) } }}
             onEndTP={() => scoreAndEndTP()}
             onUndo={undoPending}

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Point, TerrainFeature, OperativePlacement, Board as BoardT } from '../geometry'
 import { losFinding, engagementFinding, validateTarget, coverFinding, obscuredFinding } from '../geometry'
 import type { ObjectiveMarker, MapPack } from '../data/maps'
-import { createInitialTurnState, turnReducer, type TurnState } from './turnStateMachine'
+import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effectiveMove, canDoAction, type ActionType } from './turnStateMachine'
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
 import { ElectronicDiceSource, ManualDiceSource, hashSeed } from '../dice'
@@ -212,6 +212,12 @@ interface MatchState {
   setLogFilter: (f: LogKind | 'all') => void
   activate: (uid: string, side: Side) => void
   endActivation: (uid: string) => void
+  /** 查特工有效 APL（base + effects）。 */
+  effectiveAplOf: (uid: string) => number
+  /** 查特工有效移动距离（base + effects）。 */
+  effectiveMoveOf: (uid: string) => number
+  /** 检查行动合法性（AP/约束），返回 {ok, reason}。 */
+  checkAction: (uid: string, action: ActionType) => { ok: boolean; reason?: string }
   /** AR-9 intent：一击结算。UI 只 dispatch 此（+ confirmCasualties），不直接调引擎。 */
   resolveAttack: (input: { attackerUid: string; targetUid: string; kind: 'SHOOT' | 'MELEE'; manualNats?: number[] }) => { ok: boolean; missing?: string[] }
   /** 唯一强制确认：应用伤亡（单一数据源=store），清 lastShot/currentLog。 */
@@ -442,6 +448,46 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
   endActivation: (uid) =>
     set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }) })),
+  effectiveAplOf: (uid) => {
+    const s = get()
+    const t = s.tokens.find((x) => x.uid === uid)
+    if (!t) return 0
+    const pack = packOfOp(t.opId)
+    const op = pack.operatives.find((o) => o.operativeId === t.opId)
+    const baseApl = op?.stats.apl ?? 3
+    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    return effectiveApl(baseApl, effects)
+  },
+  effectiveMoveOf: (uid) => {
+    const s = get()
+    const t = s.tokens.find((x) => x.uid === uid)
+    if (!t) return 0
+    const pack = packOfOp(t.opId)
+    const op = pack.operatives.find((o) => o.operativeId === t.opId)
+    const baseMove = op?.stats.move ?? 6
+    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    return effectiveMove(baseMove, effects)
+  },
+  checkAction: (uid, action) => {
+    const s = get()
+    const op = s.turn.operatives[uid]
+    if (!op || !op.ready) return { ok: false, reason: '特工未就绪' }
+    const t = s.tokens.find((x) => x.uid === uid)
+    if (!t) return { ok: false, reason: '特工不存在' }
+    const pack = packOfOp(t.opId)
+    const opData = pack.operatives.find((o) => o.operativeId === t.opId)
+    const baseApl = opData?.stats.apl ?? 3
+    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    const apl = effectiveApl(baseApl, effects)
+    // effectiveActionAp 已在 canDoAction 内消费（ACTION_AP_MOD delta → ACTION_AP 调整）
+    const isAstartes = pack.faction.keywords.includes('ASTARTES')
+    return canDoAction(s.turn, uid, action, {
+      apl,
+      isAstartes,
+      inEngagementRange: false,
+      enemyInEngagement: false,
+    })
+  },
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====
   resolveAttack: ({ attackerUid, targetUid, kind, manualNats }) => {
     const s = get()
