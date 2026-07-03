@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useMatchStore, type MatchToken } from '../../state/matchStore'
 import type { Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
@@ -43,7 +43,23 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const viewport = useMatchStore((s) => s.viewport)
   const zoomAt = useMatchStore((s) => s.zoomAt)
   const setInteracting = useMatchStore((s) => s.setInteracting)
+  const interacting = useMatchStore((s) => s.interacting) // P2：响应式订阅
+  const setViewport = useMatchStore((s) => s.setViewport)
   const lastPinchDist = useRef(0)
+  const viewportRef = useRef<HTMLDivElement>(null)
+
+  // P1：React onWheel 是 passive → preventDefault 失效。用 useEffect + addEventListener {passive:false}。
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const r = el.getBoundingClientRect()
+      zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [zoomAt])
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -69,7 +85,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   })
 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
-  const showViz = active && activated && active.side === turn.activePlayer && !useMatchStore.getState().interacting
+  const showViz = active && activated && active.side === turn.activePlayer && !interacting
   const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
   const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
   const controlRing = viz.controlRing
@@ -162,10 +178,13 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
       <div className="play-main">
         <div className="play-board-col">
+          <button className="reset-view-btn" onClick={() => setViewport({ scale: 1, offsetX: 0, offsetY: 0 })} title="重置视口缩放/平移">⟳ 重置视图</button>
           <div
+            ref={viewportRef}
             className="board-viewport"
-            onWheel={(e) => { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top) }}
-            onTouchStart={(e) => { if (e.touches.length >= 2) setInteracting(true) }}
+            onTouchStart={(e) => {
+              if (e.touches.length >= 2) { setInteracting(true); setDragging(null) /* P4：双指取消 token 拖 */ }
+            }}
             onTouchMove={(e) => {
               if (e.touches.length >= 2) {
                 e.preventDefault()
@@ -178,7 +197,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 lastPinchDist.current = dist
               }
             }}
-            onTouchEnd={() => { lastPinchDist.current = 0; setInteracting(false) }}
+            onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
+            onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
           >
           <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
           <Board

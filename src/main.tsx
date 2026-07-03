@@ -12,8 +12,8 @@ createRoot(root).render(
   </StrictMode>,
 )
 
-// Story 4.2：注册 Service Worker（stale-while-revalidate，首次加载后离线可用）
-if ('serviceWorker' in navigator) {
+// Story 4.2：注册 Service Worker（stale-while-revalidate，首次加载后离线可用）。仅 production 注册（避免 dev HMR 缓存干扰）。
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {})
   })

@@ -1,0 +1,227 @@
+diff --git a/public/sw.js b/public/sw.js
+new file mode 100644
+index 0000000..05e79ac
+--- /dev/null
++++ b/public/sw.js
+@@ -0,0 +1,28 @@
++// Kill Team 战棋助手 Service Worker（Story 4.2）
++// Stale-while-revalidate：缓存优先（离线可用），后台更新缓存。app-shell 缓存保证首次加载后断网可用。
++const CACHE = 'kt-companion-v2';
++
++self.addEventListener('install', () => self.skipWaiting());
++self.addEventListener('activate', (e) => {
++  e.waitUntil(
++    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))),
++  );
++  self.clients.claim();
++});
++self.addEventListener('fetch', (e) => {
++  if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) return;
++  e.respondWith(
++    caches.match(e.request).then((cached) => {
++      const fetchPromise = fetch(e.request)
++        .then((response) => {
++          if (response.ok) {
++            const clone = response.clone();
++            caches.open(CACHE).then((cache) => cache.put(e.request, clone));
++          }
++          return response;
++        })
++        .catch(() => cached);
++      return cached || fetchPromise;
++    }),
++  );
++});
+diff --git a/src/index.css b/src/index.css
+index c93cfab..7f94ce8 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -1,14 +1,33 @@
+ /* 视觉基调兜底（D-31 后置美学，v1 用 token 兜底，后续 4.3 收口） */
+ :root {
+   color-scheme: dark;
++  /* 配色（4-3 AC4：深色中性底 + 双阵营冷暖分色 + 强调色仅注意态） */
+   --bg: #14171c;
+   --panel: #1c2027;
+   --border: #2a2f38;
+   --fg: #e6e9ef;
+   --muted: #9aa3b2;
+-  --accent: #4a9eff;      /* 强调色仅给「需立即关注态」 */
++  --accent: #4a9eff;
+   --side-a: #c75d3a;      /* 阵营 A 暖 */
+   --side-b: #3a7bc7;      /* 阵营 B 冷 */
++  --ok: #39d98a;
++  --warn: #d97739;
++  --danger: #ff6b6b;
++  /* 4-3 AC2：design token（间距/字号/圆角/阴影） */
++  --space-1: 0.25rem;
++  --space-2: 0.5rem;
++  --space-3: 0.75rem;
++  --space-4: 1rem;
++  --space-5: 1.5rem;
++  --text-xs: 0.65rem;
++  --text-sm: 0.78rem;
++  --text-base: 0.85rem;
++  --text-md: 0.9rem;
++  --text-lg: 1.1rem;
++  --radius-sm: 4px;
++  --radius-md: 6px;
++  --radius-lg: 8px;
++  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+ }
+ 
+ * { box-sizing: border-box; }
+@@ -285,6 +304,7 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
+ }
+ .play-right-col { display: flex; flex-direction: column; gap: 0.4rem; }
+ .play-board-col, .play-mid-col { min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
++.board-viewport { overflow: hidden; position: relative; border-radius: 8px; touch-action: none; }
+ .push-banner { background: rgba(57,217,138,0.1); border: 1px solid #39d98a; color: #39d98a; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0.3rem 0; display: flex; justify-content: space-between; align-items: center; }
+ .portrait-hint { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.5rem; }
+ .legality li.actionable { cursor: pointer; }
+diff --git a/src/main.tsx b/src/main.tsx
+index 7463b36..aaafcc7 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -11,3 +11,10 @@ createRoot(root).render(
+     <App />
+   </StrictMode>,
+ )
++
++// Story 4.2：注册 Service Worker（stale-while-revalidate，首次加载后离线可用）
++if ('serviceWorker' in navigator) {
++  window.addEventListener('load', () => {
++    navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => {})
++  })
++}
+diff --git a/src/state/matchStore.ts b/src/state/matchStore.ts
+index f0e81c0..0f06526 100644
+--- a/src/state/matchStore.ts
++++ b/src/state/matchStore.ts
+@@ -127,6 +127,10 @@ interface MatchState {
+   lastShot: LastShot | null
+   currentLog: ResolutionLog | null
+   shotSeq: number
++  /** 4-1 视口变换（缩放/平移）。 */
++  viewport: { scale: number; offsetX: number; offsetY: number }
++  /** 4-1 用户正在交互（拖特工/缩放/平移）→ overlay 延迟计算。 */
++  interacting: boolean
+   diceSource: DiceSourceKind
+   /** D-24 咨询式翻转：key=`${aUid}>${tUid}>${kind}` → 玩家终裁 finalValue。 */
+   overrides: Record<string, boolean>
+@@ -162,6 +166,14 @@ interface MatchState {
+   stepBackCurrent: () => void // 单步回退
+   nextShotSeq: () => number
+   setDiceSource: (d: DiceSourceKind) => void
++  /** 4-1：设视口（scale/offset）。 */
++  setViewport: (vp: { scale: number; offsetX: number; offsetY: number }) => void
++  /** 4-1：以屏幕点 (cx,cy) 为锚缩放 delta 倍。 */
++  zoomAt: (delta: number, cx: number, cy: number) => void
++  /** 4-1：平移 dx,dy 像素。 */
++  panBy: (dx: number, dy: number) => void
++  /** 4-1：交互态（拖/缩/平移期间 overlay 延迟）。 */
++  setInteracting: (v: boolean) => void
+   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
+   setOverride: (key: string, value: boolean) => void
+   clearOverride: (key: string) => void
+@@ -227,6 +239,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
+   lastShot: null,
+   currentLog: null,
+   shotSeq: 0,
++  viewport: { scale: 1, offsetX: 0, offsetY: 0 },
++  interacting: false,
+   diceSource: 'electronic',
+   overrides: {},
+   activeEffects: {},
+@@ -318,6 +332,17 @@ export const useMatchStore = create<MatchState>((set, get) => ({
+     return n
+   },
+   setDiceSource: (diceSource) => set({ diceSource }),
++  setViewport: (viewport) => set({ viewport }),
++  zoomAt: (delta, cx, cy) => set((s) => {
++    const { scale, offsetX, offsetY } = s.viewport
++    const newScale = Math.max(0.5, Math.min(3, scale * delta))
++    // 以屏幕点 (cx,cy) 为锚：世界坐标不变 → 新 offset 保持该点稳定
++    const worldX = (cx - offsetX) / scale
++    const worldY = (cy - offsetY) / scale
++    return { viewport: { scale: newScale, offsetX: cx - worldX * newScale, offsetY: cy - worldY * newScale } }
++  }),
++  panBy: (dx, dy) => set((s) => ({ viewport: { ...s.viewport, offsetX: s.viewport.offsetX + dx, offsetY: s.viewport.offsetY + dy } })),
++  setInteracting: (interacting) => set({ interacting }),
+   setOverride: (key, value) => set((s) => ({ overrides: { ...s.overrides, [key]: value } })),
+   clearOverride: (key) =>
+     set((s) => {
+@@ -616,6 +641,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
+       lastShot: null,
+       currentLog: null,
+       shotSeq: 0,
++  viewport: { scale: 1, offsetX: 0, offsetY: 0 },
++  interacting: false,
+       overrides: {},
+       activeEffects: {},
+       snapshots: [],
+diff --git a/src/ui/match/PlayView.tsx b/src/ui/match/PlayView.tsx
+index 0ba9b16..e45de63 100644
+--- a/src/ui/match/PlayView.tsx
++++ b/src/ui/match/PlayView.tsx
+@@ -1,4 +1,4 @@
+-import { useState } from 'react'
++import { useState, useRef } from 'react'
+ import { useMatchStore, type MatchToken } from '../../state/matchStore'
+ import type { Point } from '../../geometry'
+ import { Board, type LosLine, type ObjControl } from './Board'
+@@ -40,6 +40,10 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void
+   const controlOf = useMatchStore((s) => s.controlOf)
+   const pushMsg = useMatchStore((s) => s.pushMsg)
+   const setPushMsg = useMatchStore((s) => s.setPushMsg)
++  const viewport = useMatchStore((s) => s.viewport)
++  const zoomAt = useMatchStore((s) => s.zoomAt)
++  const setInteracting = useMatchStore((s) => s.setInteracting)
++  const lastPinchDist = useRef(0)
+   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
+   const diceSource = useMatchStore((s) => s.diceSource)
+   const setIntercept = useMatchStore((s) => s.setIntercept)
+@@ -65,7 +69,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void
+   })
+ 
+   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
+-  const showViz = active && activated && active.side === turn.activePlayer
++  const showViz = active && activated && active.side === turn.activePlayer && !useMatchStore.getState().interacting
+   const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
+   const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
+   const controlRing = viz.controlRing
+@@ -158,6 +162,25 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void
+ 
+       <div className="play-main">
+         <div className="play-board-col">
++          <div
++            className="board-viewport"
++            onWheel={(e) => { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top) }}
++            onTouchStart={(e) => { if (e.touches.length >= 2) setInteracting(true) }}
++            onTouchMove={(e) => {
++              if (e.touches.length >= 2) {
++                e.preventDefault()
++                const t1 = e.touches[0]!, t2 = e.touches[1]!
++                const r = e.currentTarget.getBoundingClientRect()
++                const cx = ((t1.clientX + t2.clientX) / 2) - r.left
++                const cy = ((t1.clientY + t2.clientY) / 2) - r.top
++                const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
++                if (lastPinchDist.current > 0) zoomAt(dist / lastPinchDist.current, cx, cy)
++                lastPinchDist.current = dist
++              }
++            }}
++            onTouchEnd={() => { lastPinchDist.current = 0; setInteracting(false) }}
++          >
++          <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
+           <Board
+             mapPack={mapPack}
+             terrain={mapPack.terrain}
+@@ -177,6 +200,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void
+             onTokenDoubleClick={(t) => rotateToken(t.uid)}
+             onTokenClick={onClickToken}
+           />
++          </div>
++          </div>
+           {hoverInch && <div className="inch-readout">{hoverInch}</div>}
+           <p className="muted">拖己方特工移动（实时英寸数）· 双击旋转 45° · 点敌方一击结算（绿=可见 红=阻挡 虚=模糊）</p>
+         </div>

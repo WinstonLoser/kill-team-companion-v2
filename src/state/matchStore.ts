@@ -336,7 +336,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   zoomAt: (delta, cx, cy) => set((s) => {
     const { scale, offsetX, offsetY } = s.viewport
     const newScale = Math.max(0.5, Math.min(3, scale * delta))
-    // 以屏幕点 (cx,cy) 为锚：世界坐标不变 → 新 offset 保持该点稳定
+    // P5：scale 未变（clamp 边界）→ 不改 offset，避免漂移
+    if (newScale === scale) return {}
     const worldX = (cx - offsetX) / scale
     const worldY = (cy - offsetY) / scale
     return { viewport: { scale: newScale, offsetX: cx - worldX * newScale, offsetY: cy - worldY * newScale } }

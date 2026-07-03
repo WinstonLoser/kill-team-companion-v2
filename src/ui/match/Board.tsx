@@ -57,7 +57,12 @@ export function Board({
 
   function evtPoint(e: { clientX: number; clientY: number; currentTarget: HTMLDivElement }): Point {
     const r = e.currentTarget.getBoundingClientRect()
-    return { x: (e.clientX - r.left) / SCALE, y: (e.clientY - r.top) / SCALE }
+    // C1：viewport 缩放下 rect.width = W*SCALE*scale → 每英寸 = rect.width / W →
+    // boardX = (clientX - r.left) / (rect.width / W) = (clientX - r.left) * W / rect.width
+    // 等价于 (clientX - r.left) / (SCALE * viewportScale)，但无需传 viewportScale
+    const W = (mapPack?.bounds.w ?? 30) * SCALE
+    const H = (mapPack?.bounds.h ?? 20) * SCALE
+    return { x: (e.clientX - r.left) * (W / (r.width || W)) / SCALE, y: (e.clientY - r.top) * (H / (r.height || H)) / SCALE }
   }
 
   return (
