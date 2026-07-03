@@ -29,15 +29,36 @@ const RANGED = MATCH_PACK.weapons.find((w) => w.kind === 'RANGED')
 const MELEE = MATCH_PACK.weapons.find((w) => w.kind === 'MELEE')
 const DEFENDER_SAVE = 3
 const DEFENDER_WEAPON_FALLBACK = MELEE ?? RANGED // 近战防御方也需武器；缺则降级
-function tacticEffectsFor(side: Side): Effect[] {
-  if (side !== 'a') return []
-  return useRosterStore.getState().rosterA.subFactionSelection
-    .map((id) => MATCH_PACK.effects.find((e) => e.effectId === id))
-    .filter((e): e is Effect => Boolean(e))
-}
 /** 攻击方阵营「常驻」effect（source 以 factionRule: 开头）：瘟疫毒素挂指示物 + 剧毒 +1 等。 */
 function factionRuleEffectsFor(opId: string): Effect[] {
   return packOfOp(opId).effects.filter((e) => e.source.startsWith('factionRule:'))
+}
+
+/**
+ * 全量 effect 栈构建（补齐 matchStore 接线）：
+- factionRule: 阵营规则（常驻）
+- chapterTactic/markOfChaos: roster 选择（双方各选）
+- ability: 特工被动（常驻）
+- wargear: 装备（常驻，v1 全装）
+- stratagem: 仅 activeStratagams 列表内的
+ */
+function buildEffectStack(opId: string, _side: Side, activeStratagems: string[]): Effect[] {
+  const pack = packOfOp(opId)
+  const out: Effect[] = []
+  for (const e of pack.effects) {
+    const cat = e.source.split(':')[0]
+    if (cat === 'factionRule' || cat === 'ability' || cat === 'wargear') out.push(e)
+    else if (cat === 'chapterTactic' || cat === 'markOfChaos') {
+      // roster 双方都选了（B 镜像 A）→ 读 rosterA 选择
+      const roster = useRosterStore.getState().rosterA
+      const sel = cat === 'chapterTactic' ? roster.subFactionSelection : roster.subFactionSelection
+      if (sel.includes(e.effectId)) out.push(e)
+    }
+    else if (cat === 'stratagem') {
+      if (activeStratagems.includes(e.effectId)) out.push(e)
+    }
+  }
+  return out
 }
 /** 从 ResolutionLog 提取已生效的 GRANT_MARKER（流程结束挂的指示物，如 POISON）。 */
 function grantedMarkersOf(log: ResolutionLog | null): { marker: string; target: string }[] {
@@ -132,6 +153,8 @@ interface MatchState {
   viewport: { scale: number; offsetX: number; offsetY: number }
   /** 4-1 用户正在交互（拖特工/缩放/平移）→ overlay 延迟计算。 */
   interacting: boolean
+  /** 当前激活的计谋 effectId（按方）。 */
+  activeStratagems: { a: string[]; b: string[] }
   diceSource: DiceSourceKind
   /** D-24 咨询式翻转：key=`${aUid}>${tUid}>${kind}` → 玩家终裁 finalValue。 */
   overrides: Record<string, boolean>
@@ -175,6 +198,8 @@ interface MatchState {
   panBy: (dx: number, dy: number) => void
   /** 4-1：交互态（拖/缩/平移期间 overlay 延迟）。 */
   setInteracting: (v: boolean) => void
+  /** 切换计谋激活状态。 */
+  toggleStratagem: (side: Side, effectId: string) => void
   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
   setOverride: (key: string, value: boolean) => void
   clearOverride: (key: string) => void
@@ -242,6 +267,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   shotSeq: 0,
   viewport: { scale: 1, offsetX: 0, offsetY: 0 },
   interacting: false,
+  activeStratagems: { a: [], b: [] },
   diceSource: 'electronic',
   overrides: {},
   activeEffects: {},
@@ -345,6 +371,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   }),
   panBy: (dx, dy) => set((s) => ({ viewport: { ...s.viewport, offsetX: s.viewport.offsetX + dx, offsetY: s.viewport.offsetY + dy } })),
   setInteracting: (interacting) => set({ interacting }),
+  toggleStratagem: (side, effectId) =>
+    set((s) => {
+      const cur = s.activeStratagems[side]
+      const next = cur.includes(effectId) ? cur.filter((x) => x !== effectId) : [...cur, effectId]
+      return { activeStratagems: { ...s.activeStratagems, [side]: next } }
+    }),
   setOverride: (key, value) => set((s) => ({ overrides: { ...s.overrides, [key]: value } })),
   clearOverride: (key) =>
     set((s) => {
@@ -433,8 +465,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides })
     if (!elig.ok) return { ok: false, missing: elig.missing }
 
-    // 攻击方 effect 栈 = 战团战术(A) + 阵营常驻规则（瘟疫毒素挂指示物/剧毒等）
-    const effects = [...tacticEffectsFor(attacker.side), ...factionRuleEffectsFor(attacker.opId)]
+    // 攻击方 effect 栈 = 全量（factionRule + chapterTactic/markOfChaos + ability + wargear + activeStratagem）
+    const atkStrats = s.activeStratagems[attacker.side]
+    const effects = buildEffectStack(attacker.opId, attacker.side, atkStrats)
     const useWeapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE') ?? (kind === 'SHOOT' ? RANGED : MELEE)
     if (!useWeapon) return { ok: false, missing: [`阵营包缺 ${kind} 武器`] }
     // 谓词 ctx（W3 接线）：目标指示物 + 双方阵营 + 武器类 + 距离 → 剧毒(+1 vs POISON)等条件门控生效
@@ -456,7 +489,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon },
         defender: { operativeId: target.uid, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, defenderEffects: factionRuleEffectsFor(target.opId), dice, hasCover: cover, predicate,
+        effects, defenderEffects: buildEffectStack(target.opId, target.side, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
       }
       const r = runShooting(input)
       woundsDealt = r.woundsDealt
@@ -465,7 +498,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon, save: DEFENDER_SAVE, wounds: attacker.wounds },
         defender: { operativeId: target.uid, weapon: DEFENDER_WEAPON_FALLBACK ?? useWeapon, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, defenderEffects: factionRuleEffectsFor(target.opId), dice, predicate,
+        effects, defenderEffects: buildEffectStack(target.opId, target.side, s.activeStratagems[target.side]), dice, predicate,
       }
       const r = runMelee(input)
       woundsDealt = r.woundsToDefender
@@ -684,6 +717,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       shotSeq: 0,
   viewport: { scale: 1, offsetX: 0, offsetY: 0 },
   interacting: false,
+  activeStratagems: { a: [], b: [] },
       overrides: {},
       activeEffects: {},
       snapshots: [],
