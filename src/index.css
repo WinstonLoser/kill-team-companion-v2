@@ -132,8 +132,15 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 
 .op-card { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
 .op-card.in strong { color: var(--accent); }
+.op-row { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.op-count { font-weight: 700; color: var(--accent); min-width: 1.5rem; }
+.op-btn { min-width: 36px; min-height: 36px; padding: 0; font-size: 1rem; font-weight: 700; }
 .loadout { margin: 0.3rem 0 0.3rem 1.6rem; display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
-.weapon-pick { font-size: 0.78rem; }
+.loadout-section { margin-top: var(--space-3); }
+.loadout-section h4 { font-size: var(--text-sm); color: var(--muted); margin: 0 0 0.3rem; }
+.loadout-item { padding: 0.3rem 0; border-bottom: 1px solid var(--border); font-size: var(--text-sm); }
+.loadout-weapons { display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; margin-top: 0.2rem; }
+.weapon-pick { font-size: var(--text-xs); }
 .weapon-pick input { min-height: 0; min-width: 0; width: auto; }
 
 .legality { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }

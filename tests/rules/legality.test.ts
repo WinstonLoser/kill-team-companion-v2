@@ -23,7 +23,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('全绿：1 特工 + 战团战术满 2 选', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: { angels_tactical: ['angels_bolt_rifle'] },
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })
@@ -60,7 +60,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('子阵营未选满：战团战术只选 1（应 2）', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless'],
     })
@@ -72,7 +72,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('子阵营超选：战团战术选 3（应 2）', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: {},
       subFactionSelection: [
         'chapterTactic_relentless',
@@ -112,7 +112,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     const sp = synthPackWithEquipmentLimit()
     const r = evaluateLegality({
       pack: sp,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: { angels_tactical: ['synth_heavy_a'] },
       syntheticWeaponKeywords: { synth_heavy_a: ['HEAVY'] },
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
@@ -126,7 +126,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     delete (noSelector.faction as { subFactionSelector?: unknown }).subFactionSelector
     const r = evaluateLegality({
       pack: noSelector,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: {},
       subFactionSelection: [],
     })
@@ -138,7 +138,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('AC3 队长规则：leaderFrom 缺队长 → 违规', () => {
     const r = evaluateLegality({
       pack,
-      operativeIds: ['angels_tactical'],
+      operativeIds: ['angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical','angels_tactical'],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
     })

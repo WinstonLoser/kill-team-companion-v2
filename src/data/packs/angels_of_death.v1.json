@@ -5,7 +5,11 @@
   "faction": {
     "id": "angels_of_death",
     "name": "死亡天使",
-    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"],
+    "keywords": [
+      "IMPERIUM",
+      "ANGELS_OF_DEATH",
+      "ASTARTES"
+    ],
     "subFactionSelector": {
       "id": "chapterTactic",
       "label": "战团战术（8 选 2）",
@@ -26,18 +30,131 @@
     {
       "operativeId": "angels_tactical",
       "name": "战术兵",
-      "keywords": ["ASTARTES", "TACTICAL"],
-      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 13 },
-      "base": { "diameterMm": 32 },
-      "weaponRefs": ["angels_bolt_rifle", "angels_bolt_pistol", "angels_chainsword"]
+      "keywords": [
+        "ASTARTES",
+        "TACTICAL"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 13
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_rifle",
+        "angels_bolt_pistol",
+        "angels_chainsword"
+      ]
     },
     {
       "operativeId": "angels_sergeant",
       "name": "仲裁者",
-      "keywords": ["ASTARTES", "CHAMPION"],
-      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
-      "base": { "diameterMm": 32 },
-      "weaponRefs": ["angels_bolt_pistol", "angels_chainsword"]
+      "keywords": [
+        "ASTARTES",
+        "CHAMPION"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_pistol",
+        "angels_chainsword"
+      ]
+    },
+    {
+      "operativeId": "angels_sniper",
+      "name": "狙击手",
+      "keywords": [
+        "ASTARTES",
+        "SNIPER"
+      ],
+      "stats": {
+        "apl": 2,
+        "move": 6,
+        "save": 3,
+        "wounds": 13
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_rifle",
+        "angels_bolt_pistol",
+        "angels_chainsword"
+      ]
+    },
+    {
+      "operativeId": "angels_heavy",
+      "name": "重武器手",
+      "keywords": [
+        "ASTARTES",
+        "GUNNER"
+      ],
+      "stats": {
+        "apl": 2,
+        "move": 5,
+        "save": 3,
+        "wounds": 13
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_rifle",
+        "angels_bolt_pistol"
+      ]
+    },
+    {
+      "operativeId": "angels_assault",
+      "name": "突击兵",
+      "keywords": [
+        "ASTARTES",
+        "ASSAULT"
+      ],
+      "stats": {
+        "apl": 2,
+        "move": 6,
+        "save": 3,
+        "wounds": 13
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_pistol",
+        "angels_chainsword"
+      ]
+    },
+    {
+      "operativeId": "angels_tactical_b",
+      "name": "战术兵B",
+      "keywords": [
+        "ASTARTES",
+        "TACTICAL"
+      ],
+      "stats": {
+        "apl": 2,
+        "move": 6,
+        "save": 3,
+        "wounds": 13
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "angels_bolt_rifle",
+        "angels_bolt_pistol",
+        "angels_chainsword"
+      ]
     }
   ],
   "weapons": [
@@ -45,22 +162,50 @@
       "weaponId": "angels_bolt_rifle",
       "name": "爆矢步枪",
       "kind": "RANGED",
-      "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 24, "weaponRules": [] },
-      "keywords": ["BOLT"]
+      "profile": {
+        "attacks": 3,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 24,
+        "weaponRules": []
+      },
+      "keywords": [
+        "BOLT"
+      ]
     },
     {
       "weaponId": "angels_bolt_pistol",
       "name": "爆矢手枪",
       "kind": "RANGED",
-      "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL"] },
-      "keywords": ["BOLT"]
+      "profile": {
+        "attacks": 3,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 12,
+        "weaponRules": [
+          "PISTOL"
+        ]
+      },
+      "keywords": [
+        "BOLT"
+      ]
     },
     {
       "weaponId": "angels_chainsword",
       "name": "链剑",
       "kind": "MELEE",
-      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
-      "keywords": ["MELEE"]
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": []
+      },
+      "keywords": [
+        "MELEE"
+      ]
     }
   ],
   "effects": [
@@ -68,91 +213,203 @@
       "effectId": "chapterTactic_relentless",
       "label": "猛攻（近战撕裂）",
       "source": "chapterTactic:relentless",
-      "trigger": { "point": "AFTER_HIT_ROLL" },
+      "trigger": {
+        "point": "AFTER_HIT_ROLL"
+      },
       "pipelineStep": "MELEE_ALTERNATING_RESOLVE",
-      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-猛攻" }
+      "modifier": {
+        "kind": "UPGRADE_SUCCESS",
+        "payload": {}
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-猛攻"
+      }
     },
     {
       "effectId": "chapterTactic_duelist",
       "label": "决斗家（普通可挡关键）",
       "source": "chapterTactic:duelist",
-      "trigger": { "point": "ON_PARRY_ALLOCATION" },
+      "trigger": {
+        "point": "ON_PARRY_ALLOCATION"
+      },
       "pipelineStep": "MELEE_PARRY_RULES",
-      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "parry-restriction" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-决斗家" }
+      "modifier": {
+        "kind": "IMMUNITY",
+        "payload": {
+          "immuneToEffectGroup": "parry-restriction"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-决斗家"
+      }
     },
     {
       "effectId": "chapterTactic_resolute",
       "label": "坚决（免疫震荡）",
       "source": "chapterTactic:resolute",
-      "trigger": { "point": "ON_PARRY_ALLOCATION" },
+      "trigger": {
+        "point": "ON_PARRY_ALLOCATION"
+      },
       "pipelineStep": "PARRY_ALLOCATE",
-      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "stun" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-坚决" }
+      "modifier": {
+        "kind": "IMMUNITY",
+        "payload": {
+          "immuneToEffectGroup": "stun"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-坚决"
+      }
     },
     {
       "effectId": "chapterTactic_concealed",
       "label": "隐匿（多保留掩护豁免）",
       "source": "chapterTactic:concealed",
-      "trigger": { "point": "BEFORE_DEFENCE_ROLL" },
+      "trigger": {
+        "point": "BEFORE_DEFENCE_ROLL"
+      },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": { "kind": "COVER_SAVE", "payload": { "extraNormal": 1 } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE", "groupKeys": ["cover-save"] },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-隐匿" }
+      "modifier": {
+        "kind": "COVER_SAVE",
+        "payload": {
+          "extraNormal": 1
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE",
+        "groupKeys": [
+          "cover-save"
+        ]
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-隐匿"
+      }
     },
     {
       "effectId": "chapterTactic_mobile",
       "label": "机动（后撤少1AP）",
       "source": "chapterTactic:mobile",
-      "trigger": { "point": "ON_ACTIVATION_START" },
+      "trigger": {
+        "point": "ON_ACTIVATION_START"
+      },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": { "kind": "ACTION_AP_MOD", "payload": { "action": "FALL_BACK", "delta": -1 } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-机动" }
+      "modifier": {
+        "kind": "ACTION_AP_MOD",
+        "payload": {
+          "action": "FALL_BACK",
+          "delta": -1
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-机动"
+      }
     },
     {
       "effectId": "chapterTactic_stalwart",
       "label": "强健（防御5+=关键）",
       "source": "chapterTactic:stalwart",
-      "trigger": { "point": "AFTER_DEFENCE_ROLL" },
+      "trigger": {
+        "point": "AFTER_DEFENCE_ROLL"
+      },
       "pipelineStep": "DEFENCE_UPGRADE",
-      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-强健" }
+      "modifier": {
+        "kind": "UPGRADE_SUCCESS",
+        "payload": {}
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-强健"
+      }
     },
     {
       "effectId": "chapterTactic_sharpshooter",
       "label": "神⊥手（爆矢精准1）",
       "source": "chapterTactic:sharpshooter",
-      "trigger": { "point": "AFTER_HIT_ROLL" },
+      "trigger": {
+        "point": "AFTER_HIT_ROLL"
+      },
       "pipelineStep": "ATTACK_UPGRADE",
-      "modifier": { "kind": "AUTO_SUCCESS", "payload": { "count": 1, "grade": "NORMAL" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-神⊥手" }
+      "modifier": {
+        "kind": "AUTO_SUCCESS",
+        "payload": {
+          "count": 1,
+          "grade": "NORMAL"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-神⊥手"
+      }
     },
     {
       "effectId": "chapterTactic_siege",
       "label": "攻城战专家（集中，取消掩护豁免）",
       "source": "chapterTactic:siege",
-      "trigger": { "point": "BEFORE_DEFENCE_ROLL" },
+      "trigger": {
+        "point": "BEFORE_DEFENCE_ROLL"
+      },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "cover-save" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE", "groupKeys": ["cover-save-removal"] },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-攻城战专家" }
+      "modifier": {
+        "kind": "IMMUNITY",
+        "payload": {
+          "immuneToEffectGroup": "cover-save"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE",
+        "groupKeys": [
+          "cover-save-removal"
+        ]
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战团战术-攻城战专家"
+      }
     },
     {
       "effectId": "combatDoctrine_balanced",
       "label": "战斗条令·平衡",
       "source": "stratagem:combatDoctrine",
-      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "trigger": {
+        "point": "BEFORE_HIT_ROLL"
+      },
       "pipelineStep": "HIT_ROLL",
-      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "BALANCED" } },
-      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战斗条令" }
+      "modifier": {
+        "kind": "ATTACH_WEAPON_RULE",
+        "payload": {
+          "rule": "BALANCED"
+        }
+      },
+      "stacking": {
+        "policy": "UNIQUE_PER_SOURCE"
+      },
+      "rulesRef": {
+        "doc": "merged_kt_angels_of_death_zh.md",
+        "section": "战斗条令"
+      }
     }
   ],
   "stratagems": [
@@ -160,19 +417,26 @@
       "id": "ironHalo",
       "name": "钢铁光环（忽略一次普通伤害）",
       "cp": 1,
-      "useLimit": { "perBattle": 1 },
+      "useLimit": {
+        "perBattle": 1
+      },
       "phase": "ENGAGEMENT"
     },
     {
       "id": "combatDoctrine",
       "name": "战斗条令",
       "cp": 1,
-      "useLimit": { "perTurningPoint": 1 },
+      "useLimit": {
+        "perTurningPoint": 1
+      },
       "phase": "STRATEGY"
     }
   ],
   "buildConstraints": {
-    "operatives": { "min": 1 },
+    "operatives": {
+      "min": 6,
+      "max": 6
+    },
     "equipmentLimitScope": "weaponId",
     "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；死亡天使无重武器上限，equipmentLimits 空。"
   }
