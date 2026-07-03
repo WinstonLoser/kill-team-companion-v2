@@ -115,13 +115,25 @@ export function RosterView() {
                 loadout={entry.loadout}
                 onChange={(next) => patchRoster(editing, next)}
               />
-              {selector && (
+              {selector ? (
                 <SubFactionSelect
                   selector={selector}
                   pack={pack}
                   selection={entry.subFactionSelection}
                   onChange={(next) => patchRoster(editing, { subFactionSelection: next })}
                 />
+              ) : (
+                <div className="subfaction-none">
+                  <h3>阵营能力（常驻）</h3>
+                  <ul className="list">
+                    {pack.effects.filter((e) => e.source.startsWith('factionRule:')).map((e) => (
+                      <li key={e.effectId} className="muted">{e.label}</li>
+                    ))}
+                    {pack.effects.filter((e) => e.source.startsWith('ability:')).map((e) => (
+                      <li key={e.effectId} className="muted">{e.label}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </>
           )}
