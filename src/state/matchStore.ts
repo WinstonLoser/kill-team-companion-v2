@@ -127,6 +127,10 @@ interface MatchState {
   lastShot: LastShot | null
   currentLog: ResolutionLog | null
   shotSeq: number
+  /** 4-1 视口变换（缩放/平移）。 */
+  viewport: { scale: number; offsetX: number; offsetY: number }
+  /** 4-1 用户正在交互（拖特工/缩放/平移）→ overlay 延迟计算。 */
+  interacting: boolean
   diceSource: DiceSourceKind
   /** D-24 咨询式翻转：key=`${aUid}>${tUid}>${kind}` → 玩家终裁 finalValue。 */
   overrides: Record<string, boolean>
@@ -162,6 +166,14 @@ interface MatchState {
   stepBackCurrent: () => void // 单步回退
   nextShotSeq: () => number
   setDiceSource: (d: DiceSourceKind) => void
+  /** 4-1：设视口（scale/offset）。 */
+  setViewport: (vp: { scale: number; offsetX: number; offsetY: number }) => void
+  /** 4-1：以屏幕点 (cx,cy) 为锚缩放 delta 倍。 */
+  zoomAt: (delta: number, cx: number, cy: number) => void
+  /** 4-1：平移 dx,dy 像素。 */
+  panBy: (dx: number, dy: number) => void
+  /** 4-1：交互态（拖/缩/平移期间 overlay 延迟）。 */
+  setInteracting: (v: boolean) => void
   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
   setOverride: (key: string, value: boolean) => void
   clearOverride: (key: string) => void
@@ -227,6 +239,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   lastShot: null,
   currentLog: null,
   shotSeq: 0,
+  viewport: { scale: 1, offsetX: 0, offsetY: 0 },
+  interacting: false,
   diceSource: 'electronic',
   overrides: {},
   activeEffects: {},
@@ -318,6 +332,17 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     return n
   },
   setDiceSource: (diceSource) => set({ diceSource }),
+  setViewport: (viewport) => set({ viewport }),
+  zoomAt: (delta, cx, cy) => set((s) => {
+    const { scale, offsetX, offsetY } = s.viewport
+    const newScale = Math.max(0.5, Math.min(3, scale * delta))
+    // 以屏幕点 (cx,cy) 为锚：世界坐标不变 → 新 offset 保持该点稳定
+    const worldX = (cx - offsetX) / scale
+    const worldY = (cy - offsetY) / scale
+    return { viewport: { scale: newScale, offsetX: cx - worldX * newScale, offsetY: cy - worldY * newScale } }
+  }),
+  panBy: (dx, dy) => set((s) => ({ viewport: { ...s.viewport, offsetX: s.viewport.offsetX + dx, offsetY: s.viewport.offsetY + dy } })),
+  setInteracting: (interacting) => set({ interacting }),
   setOverride: (key, value) => set((s) => ({ overrides: { ...s.overrides, [key]: value } })),
   clearOverride: (key) =>
     set((s) => {
@@ -616,6 +641,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       lastShot: null,
       currentLog: null,
       shotSeq: 0,
+  viewport: { scale: 1, offsetX: 0, offsetY: 0 },
+  interacting: false,
       overrides: {},
       activeEffects: {},
       snapshots: [],

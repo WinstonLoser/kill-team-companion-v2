@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useMatchStore, type MatchToken } from '../../state/matchStore'
 import type { Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
@@ -40,6 +40,10 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const controlOf = useMatchStore((s) => s.controlOf)
   const pushMsg = useMatchStore((s) => s.pushMsg)
   const setPushMsg = useMatchStore((s) => s.setPushMsg)
+  const viewport = useMatchStore((s) => s.viewport)
+  const zoomAt = useMatchStore((s) => s.zoomAt)
+  const setInteracting = useMatchStore((s) => s.setInteracting)
+  const lastPinchDist = useRef(0)
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -65,7 +69,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   })
 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
-  const showViz = active && activated && active.side === turn.activePlayer
+  const showViz = active && activated && active.side === turn.activePlayer && !useMatchStore.getState().interacting
   const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
   const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
   const controlRing = viz.controlRing
@@ -158,6 +162,25 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
       <div className="play-main">
         <div className="play-board-col">
+          <div
+            className="board-viewport"
+            onWheel={(e) => { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top) }}
+            onTouchStart={(e) => { if (e.touches.length >= 2) setInteracting(true) }}
+            onTouchMove={(e) => {
+              if (e.touches.length >= 2) {
+                e.preventDefault()
+                const t1 = e.touches[0]!, t2 = e.touches[1]!
+                const r = e.currentTarget.getBoundingClientRect()
+                const cx = ((t1.clientX + t2.clientX) / 2) - r.left
+                const cy = ((t1.clientY + t2.clientY) / 2) - r.top
+                const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+                if (lastPinchDist.current > 0) zoomAt(dist / lastPinchDist.current, cx, cy)
+                lastPinchDist.current = dist
+              }
+            }}
+            onTouchEnd={() => { lastPinchDist.current = 0; setInteracting(false) }}
+          >
+          <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
           <Board
             mapPack={mapPack}
             terrain={mapPack.terrain}
@@ -177,6 +200,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             onTokenDoubleClick={(t) => rotateToken(t.uid)}
             onTokenClick={onClickToken}
           />
+          </div>
+          </div>
           {hoverInch && <div className="inch-readout">{hoverInch}</div>}
           <p className="muted">拖己方特工移动（实时英寸数）· 双击旋转 45° · 点敌方一击结算（绿=可见 红=阻挡 虚=模糊）</p>
         </div>

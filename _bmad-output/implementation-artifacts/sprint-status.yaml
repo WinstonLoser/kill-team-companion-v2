@@ -77,7 +77,7 @@ development_status:
 
   # Epic 4: 打磨与 NFR 加固（可选）
   epic-4: in-progress
-  4-1-tablet-gestures-perf: ready-for-dev
+  4-1-tablet-gestures-perf: in-progress
   4-2-routing-offline-sw: ready-for-dev
   4-3-visual-polish: ready-for-dev
   epic-4-retrospective: optional

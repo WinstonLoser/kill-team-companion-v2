@@ -1,6 +1,6 @@
 # Story 4.1: 平板手势与几何渲染性能 (tablet-gestures-perf)
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
