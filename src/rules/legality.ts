@@ -94,21 +94,32 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
     })
   }
 
-  // ===== 子阵营选择：选满 max 且选项合法（无选择器则跳过） =====
+  // ===== 子阵营选择 =====
   const selector = pack.faction.subFactionSelector
   if (selector) {
-    const validOptions = new Set(selector.options)
-    const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
-    let sfStatus: RosterLegalityStatus = 'ok'
-    let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
-    if (subFactionSelection.length !== selector.max) {
-      sfStatus = 'warn'
-      sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
-    } else if (invalid.length > 0) {
-      sfStatus = 'warn'
-      sfDetail = `无效选项：${invalid.join(', ')}`
+    if (selector.scope === 'perOperative') {
+      // 每特工各选（军团兵混沌印记）：不校验整队 subFactionSelection，默认印记兜底，在特工列表逐名选。
+      checks.push({
+        key: 'sub-faction',
+        label: selector.label.split('（')[0] ?? selector.label,
+        status: 'ok',
+        detail: `每特工各选（默认 ${selector.default ?? '—'}，见特工列表）`,
+      })
+    } else {
+      // 整队选 max 项（死亡天使战团战术）：选满 max 且选项合法
+      const validOptions = new Set(selector.options)
+      const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
+      let sfStatus: RosterLegalityStatus = 'ok'
+      let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
+      if (subFactionSelection.length !== selector.max) {
+        sfStatus = 'warn'
+        sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
+      } else if (invalid.length > 0) {
+        sfStatus = 'warn'
+        sfDetail = `无效选项：${invalid.join(', ')}`
+      }
+      checks.push({ key: 'sub-faction', label: '子阵营选择', status: sfStatus, detail: sfDetail })
     }
-    checks.push({ key: 'sub-faction', label: '子阵营选择', status: sfStatus, detail: sfDetail })
   }
 
   // ===== 装备限制：按 scope（weaponId|keyword）聚合计数，超限 → 违规 =====

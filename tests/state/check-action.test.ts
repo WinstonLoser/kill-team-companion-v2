@@ -19,7 +19,7 @@ beforeEach(() => {
       dropZones: { a: [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 6, y: 20 }, { x: 0, y: 20 }], b: [{ x: 24, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 20 }, { x: 24, y: 20 }] },
     },
     tokens: [
-      { uid: 'a1', side: 'a', opId: 'angels_tactical', name: 'A1', pos: { x: 2, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true },
+      { uid: 'a1', side: 'a', opId: 'angels_tactical', name: 'A1', pos: { x: 2, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true, order: 'CONCEAL' },
     ],
   })
 })

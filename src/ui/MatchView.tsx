@@ -42,6 +42,7 @@ function buildTokens(): MatchToken[] {
         markers: [],
         alive: true,
         placed: false,
+        order: 'CONCEAL', // 部署即隐匿（D-部署规则）
       })
     })
   })

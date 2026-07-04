@@ -3,7 +3,7 @@ import { loadPack, evaluateLegality, type FactionPack } from '../'
 import { useViewStore } from '../state/viewStore'
 import { useRosterStore, type Side } from '../state/rosterStore'
 import { FactionSelect, type FactionOption } from './roster/FactionSelect'
-import { OperativePicker } from './roster/OperativePicker'
+import { OperativePicker, computeDefaultRoster } from './roster/OperativePicker'
 import { SubFactionSelect } from './roster/SubFactionSelect'
 import { LegalityPanel } from './roster/LegalityPanel'
 import { FactionOverview } from './roster/FactionOverview'
@@ -98,12 +98,15 @@ export function RosterView() {
             sideLabel={sideLabel(editing)}
             onSelect={(f) => {
               if (!f.available || !f.pack) return
-              // 切阵营：清空特工/装备/子阵营（避免跨阵营脏数据）
+              // 切阵营：默认选首名队长 + 各类型一名（方便快速建队），清子阵营
+              const defaults = computeDefaultRoster(f.pack)
               patchRoster(editing, {
                 factionId: f.id,
-                operativeIds: [],
-                loadout: {},
+                operativeIds: defaults.operativeIds,
+                loadout: defaults.loadout,
                 subFactionSelection: [],
+                perOperativeMarks: defaults.perOperativeMarks,
+                wargearAssignment: {},
               })
             }}
           />

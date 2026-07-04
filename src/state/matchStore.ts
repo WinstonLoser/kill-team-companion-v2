@@ -94,6 +94,8 @@ export interface MatchToken {
   markers: string[] // 指示物（POISON/FLY_CLOUD 等；GRANT_MARKER 经 confirm 应用，谓词 targetHasMarker 读）
   alive: boolean
   placed: boolean
+  /** 命令（部署即隐匿 D-部署规则；激活时再选交战/隐匿）。 */
+  order: 'CONCEAL' | 'ENGAGE'
 }
 
 export type LogKind = 'turn' | 'shoot' | 'melee' | 'ploy' | 'score' | 'deploy' | 'system'
@@ -168,6 +170,12 @@ interface MatchState {
   intercept: { title: string; reasons: string[] } | null
   /** 6.1 战略阶段：先手权方 */
   initiative: 'a' | 'b' | null
+  /** 部署前先手权（随机掷骰定，驱动部署顺序；与每 TP 战略先手区分）。null=未掷 */
+  deployInitiative: 'a' | 'b' | null
+  /** 部署先手骰结果（展示用）。 */
+  deployDice: { a: number; b: number } | null
+  /** 部署先手骰重掷计数（每次点击 +1，使结果变化）。 */
+  deployRollNonce: number
   /** 6.1 战略阶段：双方是否已跳过（连续两次跳过 → 进交战） */
   strategyPasses: { a: boolean; b: boolean }
   /** 6.1 战略阶段：当前轮到谁使用计谋 */
@@ -208,6 +216,8 @@ interface MatchState {
   toggleStratagem: (side: Side, effectId: string) => void
   /** 6.1：进入战略阶段（部署后 → 战略） */
   enterStrategy: () => void
+  /** 部署前掷先手权（按钮触发，即时出结果；动画后续补）。 */
+  rollDeployInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
   /** 6.1：掷 D6 定先手权 */
   rollInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
   /** 6.1：战略阶段使用计谋（花 CP）或跳过 */
@@ -295,6 +305,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   winner: null,
   intercept: null,
   initiative: null,
+  deployInitiative: null,
+  deployDice: null,
+  deployRollNonce: 0,
   strategyPasses: { a: false, b: false },
   strategyTurn: null,
 
@@ -392,6 +405,22 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   }),
   panBy: (dx, dy) => set((s) => ({ viewport: { ...s.viewport, offsetX: s.viewport.offsetX + dx, offsetY: s.viewport.offsetY + dy } })),
   setInteracting: (interacting) => set({ interacting }),
+  // ===== 部署前先手权（按钮触发，即时出结果） =====
+  rollDeployInitiative: () => {
+    const nonce = get().deployRollNonce + 1
+    const dice = new ElectronicDiceSource(hashSeed('DEPLOY_INITIATIVE', 'D6', nonce))
+    const a = dice.roll(1)[0]!.nat
+    const b = dice.roll(1)[0]!.nat
+    const winner: 'a' | 'b' = a >= b ? 'a' : 'b' // 平局 A 方先手（简化）
+    set((s) => ({
+      deployInitiative: winner,
+      deployDice: { a, b },
+      deployRollNonce: nonce,
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `部署先手 D6：A=${a} B=${b} → ${winner.toUpperCase()} 方先部署` }, ...s.log].slice(0, 80),
+    }))
+    return { a, b, winner }
+  },
+
   // ===== 6.1 战略阶段 =====
   enterStrategy: () => {
     const s = get()
@@ -838,6 +867,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       winner: null,
       intercept: null,
   initiative: null,
+  deployInitiative: null,
+  deployDice: null,
+  deployRollNonce: 0,
   strategyPasses: { a: false, b: false },
   strategyTurn: null,
     }),

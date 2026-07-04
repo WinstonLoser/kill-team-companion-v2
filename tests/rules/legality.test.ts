@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { evaluateLegality } from '../../src/rules/legality'
 import type { FactionPack } from '../../src/rules'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
+import legionaries from '../../src/data/packs/legionaries.v1.json'
 import { loadPack } from '../../src/rules'
 
 const pack = loadPack(angels) as FactionPack
+const legPack = loadPack(legionaries) as FactionPack
 
 // 仅用于装备超限分支测试的合成约束包（不动 canonical 死亡天使包）
 function synthPackWithEquipmentLimit(): FactionPack {
@@ -133,6 +135,20 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     expect(r.checks.find((c) => c.key === 'sub-faction')).toBeUndefined()
     // 仍因 operatives/equipment ok 而合法
     expect(r.legal).toBe(true)
+  })
+
+  it('perOperative 选择器（军团兵混沌印记）：不校验整队 subFactionSelection → ok', () => {
+    // 军团兵印记是每特工各选（存 perOperativeMarks），整队 subFactionSelection 为空也不应违规
+    expect(legPack.faction.subFactionSelector?.scope).toBe('perOperative')
+    const r = evaluateLegality({
+      pack: legPack,
+      operativeIds: ['leg_champion'],
+      loadout: {},
+      subFactionSelection: [],
+    })
+    const sf = r.checks.find((c) => c.key === 'sub-faction')
+    expect(sf?.status).toBe('ok')
+    expect(sf?.detail).toContain('每特工')
   })
 
   it('AC3 队长规则：angels leaderFrom=[sergeant]，有队长 → ok', () => {

@@ -93,6 +93,8 @@ export interface SubFactionSelector {
   options: string[] // option ids（阵营机制 = 数据；死亡天使=战团战术 effectId，军团兵=印记 id）
   max: number // 可选项数上限（死亡天使 8 选 2 → max=2；军团兵印记 5 选 1 → max=1）
   default?: string
+  /** 选择器作用域：team=整队选 max 项（战团战术）；perOperative=每名特工各选（混沌印记，存 perOperativeMarks）。默认 team。 */
+  scope?: 'team' | 'perOperative'
 }
 
 export interface OperativeStats {

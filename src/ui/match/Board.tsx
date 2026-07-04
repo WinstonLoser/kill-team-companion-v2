@@ -215,6 +215,7 @@ export function Board({
                 />
               </svg>
               <span className="token-label">{t.side.toUpperCase()}</span>
+              {t.order && <span className={`token-order ${t.order === 'CONCEAL' ? 'conceal' : 'engage'}`} title={t.order === 'CONCEAL' ? '隐匿命令' : '交战命令'}>{t.order === 'CONCEAL' ? '隐' : '交'}</span>}
             </button>
           )
         })}

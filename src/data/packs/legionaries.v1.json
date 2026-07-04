@@ -21,7 +21,8 @@
         "mark_unaligned"
       ],
       "max": 1,
-      "default": "mark_unaligned"
+      "default": "mark_unaligned",
+      "scope": "perOperative"
     }
   },
   "operatives": [
