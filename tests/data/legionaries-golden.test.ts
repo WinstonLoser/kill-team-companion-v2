@@ -46,8 +46,8 @@ describe('军团兵数据包加载（AC1）', () => {
 })
 
 describe('golden：军团兵机制经引擎结算（AC4）', () => {
-  it('基线：4 普通成功 × 2 = 造伤 6', () => {
-    expect(shoot([]).woundsDealt).toBe(6)
+  it('基线：3 普通成功 × 3 = 造伤 9', () => {
+    expect(shoot([]).woundsDealt).toBe(9)
   })
 
   it('2. 纳垢恼人生命力减伤（同源每枚上限 1 → 减 1）', () => {
@@ -56,11 +56,11 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
     expect(withNurgle.woundsDealt).toBe(base.woundsDealt - 1)
   })
 
-  it('4. 奸奇远程严重（UPGRADE_SUCCESS：1 普通→关键，造伤 6→8）', () => {
+  it('4. 奸奇远程严重（UPGRADE_SUCCESS：1 普通→关键，造伤 9→10）', () => {
     const base = shoot([])
     const withTzeentch = shoot([effect('mark_tzeentch')])
-    // 3 普通成功 → 升级 1 关键：2×2 + 1×4 = 8
-    expect(withTzeentch.woundsDealt).toBe(base.woundsDealt + 2)
+    // 3 普通成功 → 升级 1 关键：2×3 + 1×4 = 10
+    expect(withTzeentch.woundsDealt).toBe(base.woundsDealt + 1)
     expect(withTzeentch.remaining.criticalSuccess).toBe(1)
   })
 
@@ -75,7 +75,7 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
     expect(mitStep.rejectedEffectIds.length).toBe(1)
   })
 
-  it('8. 血祭血神出击额外伤害（EXTRA_DAMAGE_ON_HIT +1 → 造伤 7）', () => {
+  it('8. 血祭血神出击额外伤害（EXTRA_DAMAGE_ON_HIT +1 → 造伤 10）', () => {
     const base = shoot([])
     const withStrat = shoot([effect('strat_blood_for_blood_god')])
     expect(withStrat.woundsDealt).toBe(base.woundsDealt + 1)
@@ -87,16 +87,16 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
       dice.provide([3, 3, 3, 3, 3, 1, 1, 1, 1, 1]) // 攻方 5 普通（hit3+），防方 0
       return runMelee({
         attacker: { operativeId: 'a', weapon: weapon('leg_daemon_blade'), save: 3, wounds: 14 },
-        defender: { operativeId: 'd', weapon: weapon('leg_chainsword_axe'), save: 6, wounds: 20 },
+        defender: { operativeId: 'd', weapon: weapon('leg_corrupted_chainsword'), save: 6, wounds: 20 },
         effects: e, dice,
       })
     }
     const base = seq([])
     const withKhrone = seq([effect('mark_khorne')])
-    // 恶魔之刃 normalDamage4/criticalDamage5：5 普通=20；升级 1 → 4 普通+1 关键 = 21
+    // 恶魔之刃 normalDamage4/criticalDamage7：5 普通=20；升级 1 → 4 普通+1 关键 = 21
     expect(base.woundsToDefender).toBe(20)
-    expect(withKhrone.woundsToDefender).toBe(21)
-    expect(withKhrone.woundsToDefender).toBe(base.woundsToDefender + 1)
+    expect(withKhrone.woundsToDefender).toBe(23)
+    expect(withKhrone.woundsToDefender).toBe(base.woundsToDefender + 3)
   })
 
   it('5. 无分无休（REROLL ALL @ HIT_ROLL：重掷后造伤上升）', () => {
@@ -109,8 +109,8 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
       effects: [effect('mark_unaligned')],
       dice, hasCover: false,
     })
-    // 重掷后 1 关键 + 3 普通 → 3×2 + 1×4 = 10（基线 6）
-    expect(r.woundsDealt).toBe(10)
+    // 重掷后 1 关键 + 3 普通 → 3×3 + 1×4 = 13（基线 6）
+    expect(r.woundsDealt).toBe(13)
     expect(r.remaining.criticalSuccess).toBe(1)
   })
 
@@ -120,7 +120,7 @@ describe('golden：军团兵机制经引擎结算（AC4）', () => {
     dice.provide([6, 6, 6, 6, 6, 1, 1, 1, 1, 1])
     const r = runMelee({
       attacker: { operativeId: 'chosen', weapon: weapon('leg_daemon_blade'), save: 3, wounds: 14 },
-      defender: { operativeId: 'd', weapon: weapon('leg_chainsword_axe'), save: 6, wounds: 20 },
+      defender: { operativeId: 'd', weapon: weapon('leg_corrupted_chainsword'), save: 6, wounds: 20 },
       effects: [effect('leg_soulfeast')],
       dice,
     })
@@ -151,8 +151,8 @@ describe('AC3 buildConstraints（结构性）', () => {
   it('特工 min/max=6 + 重型/特殊武器限 1', () => {
     const c = pack.buildConstraints!
     expect(c.operatives?.min).toBe(6)
-    expect(c.equipmentLimits?.leg_reaper_cannon).toBe(1)
-    expect(c.equipmentLimits?.leg_heavy_bolter).toBe(1)
+    expect(c.equipmentLimits?.leg_reaper_c).toBe(1)
+    expect(c.equipmentLimits?.leg_plasma_gun_std).toBe(1)
     expect(c.equipmentLimits?.leg_daemon_blade).toBe(1)
   })
 })

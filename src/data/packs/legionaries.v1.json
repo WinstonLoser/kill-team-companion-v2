@@ -27,233 +27,379 @@
   "operatives": [
     {
       "operativeId": "leg_champion",
-      "name": "野心勇士",
+      "name": "军团野心勇士",
       "keywords": [
         "CHAOS",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "CHAMPION"
       ],
       "stats": {
         "apl": 3,
         "move": 6,
         "save": 3,
-        "wounds": 14
+        "wounds": 15
       },
       "base": {
         "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_plasma_pistol",
+        "leg_plasma_pistol_std",
         "leg_plasma_pistol_overload",
-        "leg_bolt_pistol",
+        "leg_corrupted_bolt_pistol",
         "leg_power_fist",
-        "leg_chainsword_axe",
-        "leg_malefic_blade"
+        "leg_power_maul",
+        "leg_power_weapon",
+        "leg_corrupted_chainsword"
       ]
     },
     {
       "operativeId": "leg_chosen",
-      "name": "神选者",
+      "name": "军团神选者",
       "keywords": [
         "CHAOS",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "CHAMPION"
       ],
       "stats": {
         "apl": 3,
         "move": 6,
         "save": 3,
-        "wounds": 14
+        "wounds": 15
       },
       "base": {
         "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_power_maul",
+        "leg_plasma_pistol_std",
+        "leg_plasma_pistol_overload",
+        "leg_corrupted_bolt_pistol",
         "leg_daemon_blade"
       ]
     },
     {
       "operativeId": "leg_chosen_acolyte",
-      "name": "受选者",
+      "name": "军团受选者",
       "keywords": [
         "CHAOS",
-        "PSYKER"
+        "LEGION",
+        "HERETIC_ASTARTES"
       ],
       "stats": {
         "apl": 3,
-        "move": 5,
+        "move": 6,
         "save": 3,
-        "wounds": 13
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
         "leg_bolt_pistol",
-        "leg_power_maul"
+        "leg_demon_claw"
       ]
     },
     {
       "operativeId": "leg_balefire_acolyte",
-      "name": "邪火使徒",
+      "name": "军团邪火使徒",
       "keywords": [
         "CHAOS",
-        "PSYKER",
-        "GUNNER"
+        "LEGION",
+        "HERETIC_ASTARTES",
+        "PSYKER"
       ],
       "stats": {
-        "apl": 2,
-        "move": 5,
-        "save": 4,
-        "wounds": 13
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_warpflamer",
-        "leg_soulstrike_weapon"
+        "leg_bolt_pistol",
+        "leg_infernal_blast",
+        "leg_soul_siphon",
+        "leg_wicked_dagger"
       ]
     },
     {
       "operativeId": "leg_butcher",
-      "name": "屠夫",
+      "name": "军团屠夫",
       "keywords": [
         "CHAOS",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "BERSERKER"
       ],
       "stats": {
-        "apl": 2,
+        "apl": 3,
         "move": 6,
-        "save": 4,
-        "wounds": 13
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_chainsword_axe"
+        "leg_bolt_pistol",
+        "leg_twohanded_chainsword"
       ]
     },
     {
       "operativeId": "leg_gunner",
-      "name": "炮手",
+      "name": "军团炮手",
       "keywords": [
         "CHAOS",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "GUNNER"
       ],
       "stats": {
-        "apl": 2,
-        "move": 5,
-        "save": 4,
-        "wounds": 13
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_reaper_cannon",
-        "leg_heavy_bolter"
+        "leg_bolt_pistol",
+        "leg_flamer",
+        "leg_meltagun",
+        "leg_plasma_gun_std",
+        "leg_plasma_gun_overload",
+        "leg_fists"
       ]
     },
     {
       "operativeId": "leg_heavy_gunner",
-      "name": "重炮手",
+      "name": "军团重炮手",
       "keywords": [
         "CHAOS",
-        "GUNNER",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "HEAVY"
       ],
       "stats": {
-        "apl": 2,
-        "move": 5,
-        "save": 4,
-        "wounds": 13
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_heavy_bolter",
-        "leg_reaper_cannon"
+        "leg_bolt_pistol",
+        "leg_heavy_bolter_c",
+        "leg_heavy_bolter_s",
+        "leg_missile_frag",
+        "leg_missile_kraken",
+        "leg_reaper_c",
+        "leg_reaper_s",
+        "leg_fists"
       ]
     },
     {
       "operativeId": "leg_icon_bearer",
-      "name": "持徽手",
+      "name": "军团持徽手",
       "keywords": [
         "CHAOS",
+        "LEGION",
+        "HERETIC_ASTARTES",
         "BEARER"
       ],
       "stats": {
-        "apl": 4,
-        "move": 5,
-        "save": 4,
-        "wounds": 13
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
         "leg_bolt_pistol",
-        "leg_chainsword_axe"
+        "leg_boltgun",
+        "leg_chainsword",
+        "leg_fists"
       ]
     },
     {
       "operativeId": "leg_talon",
-      "name": "赦罪之爪",
+      "name": "军团赦罪之爪",
       "keywords": [
         "CHAOS",
-        "BEAST"
+        "LEGION",
+        "HERETIC_ASTARTES"
       ],
       "stats": {
-        "apl": 2,
-        "move": 7,
-        "save": 5,
-        "wounds": 11
+        "apl": 3,
+        "move": 6,
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
-        "leg_talon_claws"
+        "leg_bolt_pistol_talon",
+        "leg_flaying_knife"
       ]
     },
     {
       "operativeId": "leg_legionary",
-      "name": "战士",
+      "name": "军团战士",
       "keywords": [
         "CHAOS",
-        "TROOP"
+        "LEGION",
+        "HERETIC_ASTARTES"
       ],
       "stats": {
-        "apl": 2,
+        "apl": 3,
         "move": 6,
-        "save": 4,
-        "wounds": 13
+        "save": 3,
+        "wounds": 14
       },
       "base": {
-        "diameterMm": 28.5
+        "diameterMm": 32
       },
       "weaponRefs": [
         "leg_bolt_pistol",
-        "leg_chainsword_axe"
+        "leg_boltgun",
+        "leg_chainsword",
+        "leg_fists"
       ]
     }
   ],
   "weapons": [
     {
-      "weaponId": "leg_plasma_pistol",
-      "name": "等离子手枪",
+      "weaponId": "leg_bolt_pistol",
+      "name": "爆矢手枪",
       "kind": "RANGED",
       "profile": {
-        "attacks": 3,
+        "attacks": 4,
         "hit": 3,
         "normalDamage": 3,
         "criticalDamage": 4,
-        "range": 12,
+        "range": 8,
+        "weaponRules": []
+      },
+      "keywords": [
+        "BOLT",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "leg_bolt_pistol_talon",
+      "name": "爆矢手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 8,
         "weaponRules": [
-          "PISTOL"
+          "RAPID_FIRE"
+        ]
+      },
+      "keywords": [
+        "BOLT",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "leg_corrupted_bolt_pistol",
+      "name": "腐化爆矢手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "range": 8,
+        "weaponRules": [
+          "RAPID_FIRE"
+        ]
+      },
+      "keywords": [
+        "BOLT",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "leg_boltgun",
+      "name": "爆矢枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 24,
+        "weaponRules": []
+      },
+      "keywords": [
+        "BOLT"
+      ]
+    },
+    {
+      "weaponId": "leg_plasma_pistol_std",
+      "name": "等离子手枪(标准)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "range": 8,
+        "weaponRules": [
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "PLASMA",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "leg_plasma_pistol_overload",
+      "name": "等离子手枪(过载)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "range": 8,
+        "weaponRules": [
+          "OVERHEAT",
+          "LETHAL5",
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "PLASMA",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "leg_plasma_gun_std",
+      "name": "等离子枪(标准)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 6,
+        "range": 24,
+        "weaponRules": [
+          "PIERCING1"
         ]
       },
       "keywords": [
@@ -261,18 +407,150 @@
       ]
     },
     {
-      "weaponId": "leg_bolt_pistol",
-      "name": "腐化爆矢手枪",
+      "weaponId": "leg_plasma_gun_overload",
+      "name": "等离子枪(过载)",
       "kind": "RANGED",
       "profile": {
         "attacks": 4,
         "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 12,
+        "normalDamage": 5,
+        "criticalDamage": 6,
+        "range": 24,
         "weaponRules": [
-          "PISTOL",
-          "RAPID_FIRE"
+          "OVERHEAT",
+          "LETHAL5",
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "PLASMA"
+      ]
+    },
+    {
+      "weaponId": "leg_flamer",
+      "name": "火焰喷射器",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 2,
+        "normalDamage": 3,
+        "criticalDamage": 3,
+        "range": 8,
+        "weaponRules": [
+          "CONCEAL",
+          "TORRENT"
+        ]
+      },
+      "keywords": [
+        "FLAME"
+      ]
+    },
+    {
+      "weaponId": "leg_meltagun",
+      "name": "热熔枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 6,
+        "criticalDamage": 3,
+        "range": 6,
+        "weaponRules": [
+          "DEVASTATING4",
+          "PIERCING2"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "leg_heavy_bolter_c",
+      "name": "重型爆矢枪(集中)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "range": 24,
+        "weaponRules": [
+          "HEAVY",
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "BOLT",
+        "HEAVY"
+      ]
+    },
+    {
+      "weaponId": "leg_heavy_bolter_s",
+      "name": "重型爆矢枪(扫射)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "range": 24,
+        "weaponRules": [
+          "HEAVY",
+          "PIERCING1",
+          "TORRENT"
+        ]
+      },
+      "keywords": [
+        "BOLT",
+        "HEAVY"
+      ]
+    },
+    {
+      "weaponId": "leg_missile_frag",
+      "name": "导弹发射器(破片)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "range": 24,
+        "weaponRules": [
+          "BLAST2",
+          "HEAVY"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "leg_missile_kraken",
+      "name": "导弹发射器(穿甲)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 5,
+        "criticalDamage": 7,
+        "range": 24,
+        "weaponRules": [
+          "HEAVY",
+          "PIERCING1"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "leg_reaper_c",
+      "name": "收割者机炮(集中)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 24,
+        "weaponRules": [
+          "RELENTLESS",
+          "HEAVY",
+          "HIT"
         ]
       },
       "keywords": [
@@ -280,50 +558,151 @@
       ]
     },
     {
+      "weaponId": "leg_reaper_s",
+      "name": "收割者机炮(扫射)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 24,
+        "weaponRules": [
+          "RELENTLESS",
+          "HEAVY",
+          "HIT",
+          "TORRENT"
+        ]
+      },
+      "keywords": [
+        "BOLT"
+      ]
+    },
+    {
+      "weaponId": "leg_infernal_blast",
+      "name": "火焰冲击",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 12,
+        "weaponRules": [
+          "BLAST2",
+          "DEVASTATING1",
+          "CONCEAL",
+          "PSYCHIC"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "FLAME"
+      ]
+    },
+    {
+      "weaponId": "leg_soul_siphon",
+      "name": "灵魂虹吸",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 3,
+        "weaponRules": [
+          "CONCEAL",
+          "PSYCHIC"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "MELEE"
+      ]
+    },
+    {
+      "weaponId": "leg_wicked_dagger",
+      "name": "邪恶匕首",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": [
+          "RAPID_FIRE",
+          "PSYCHIC"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "MELEE"
+      ]
+    },
+    {
       "weaponId": "leg_power_fist",
       "name": "动力拳套",
       "kind": "MELEE",
       "profile": {
-        "attacks": 4,
-        "hit": 4,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "weaponRules": [
-          "BRUTAL"
-        ]
-      },
-      "keywords": [
-        "MELEE"
-      ]
-    },
-    {
-      "weaponId": "leg_chainsword_axe",
-      "name": "链锯斧",
-      "kind": "MELEE",
-      "profile": {
         "attacks": 5,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
+        "hit": 4,
+        "normalDamage": 5,
+        "criticalDamage": 7,
         "weaponRules": [
           "BRUTAL"
         ]
       },
       "keywords": [
-        "MELEE"
+        "MELEE",
+        "POWER"
       ]
     },
     {
       "weaponId": "leg_power_maul",
-      "name": "动力槌",
+      "name": "动力椴",
       "kind": "MELEE",
       "profile": {
         "attacks": 5,
         "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
+        "normalDamage": 4,
+        "criticalDamage": 6,
         "weaponRules": [
           "STUN"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "POWER"
+      ]
+    },
+    {
+      "weaponId": "leg_power_weapon",
+      "name": "动力武器",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 6,
+        "weaponRules": [
+          "LETHAL5"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "POWER"
+      ]
+    },
+    {
+      "weaponId": "leg_corrupted_chainsword",
+      "name": "腐化链锯剑",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "weaponRules": [
+          "RAPID_FIRE"
         ]
       },
       "keywords": [
@@ -338,146 +717,96 @@
         "attacks": 5,
         "hit": 3,
         "normalDamage": 4,
-        "criticalDamage": 5,
+        "criticalDamage": 7,
         "weaponRules": [
-          "DEVASTATING"
-        ]
-      },
-      "keywords": [
-        "MELEE",
-        "DAEMON"
-      ]
-    },
-    {
-      "weaponId": "leg_reaper_cannon",
-      "name": "收割者机炮",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "RELENTLESS",
-          "HEAVY"
-        ]
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "leg_heavy_bolter",
-      "name": "重型爆矢枪",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "PIERCING1",
-          "HEAVY"
-        ]
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "leg_warpflamer",
-      "name": "邪火喷射",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 5,
-        "hit": 2,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 8,
-        "weaponRules": [
-          "TORRENT"
-        ]
-      },
-      "keywords": [
-        "FLAME"
-      ]
-    },
-    {
-      "weaponId": "leg_soulstrike_weapon",
-      "name": "吸魂武器",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 3,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 12,
-        "weaponRules": [
-          "SOULSTRIKE"
-        ]
-      },
-      "keywords": [
-        "PSYCHIC"
-      ]
-    },
-    {
-      "weaponId": "leg_talon_claws",
-      "name": "赦罪之爪",
-      "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "weaponRules": [
-          "RELENTLESS",
-          "DEVASTATING"
-        ]
-      },
-      "keywords": [
-        "MELEE",
-        "BEAST"
-      ]
-    },
-    {
-      "weaponId": "leg_plasma_pistol_overload",
-      "name": "等离子手枪（过载）",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 3,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "range": 12,
-        "weaponRules": [
-          "OVERHEAT",
-          "LETHAL5",
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "PLASMA"
-      ]
-    },
-    {
-      "weaponId": "leg_malefic_blade",
-      "name": "凶恶利刃",
-      "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "weaponRules": [
-          "DEVASTATING",
           "LETHAL5"
         ]
       },
       "keywords": [
         "MELEE",
         "DAEMON"
+      ]
+    },
+    {
+      "weaponId": "leg_demon_claw",
+      "name": "恶魔之爪",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "weaponRules": [
+          "RAPID_FIRE"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "DAEMON"
+      ]
+    },
+    {
+      "weaponId": "leg_twohanded_chainsword",
+      "name": "双手链锯斧",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 4,
+        "normalDamage": 5,
+        "criticalDamage": 7,
+        "weaponRules": [
+          "BRUTAL"
+        ]
+      },
+      "keywords": [
+        "MELEE"
+      ]
+    },
+    {
+      "weaponId": "leg_chainsword",
+      "name": "链锯剑",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "weaponRules": []
+      },
+      "keywords": [
+        "MELEE"
+      ]
+    },
+    {
+      "weaponId": "leg_fists",
+      "name": "双拳",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": []
+      },
+      "keywords": [
+        "MELEE"
+      ]
+    },
+    {
+      "weaponId": "leg_flaying_knife",
+      "name": "剥皮刀",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "weaponRules": [
+          "LETHAL5"
+        ]
+      },
+      "keywords": [
+        "MELEE"
       ]
     }
   ],
@@ -1026,12 +1355,13 @@
     ],
     "equipmentLimitScope": "weaponId",
     "equipmentLimits": {
-      "leg_reaper_cannon": 1,
-      "leg_heavy_bolter": 1,
-      "leg_plasma_pistol": 1,
-      "leg_plasma_pistol_overload": 1,
-      "leg_daemon_blade": 1,
-      "leg_malefic_blade": 1
+      "leg_reaper_c": 1,
+      "leg_reaper_s": 1,
+      "leg_missile_frag": 1,
+      "leg_missile_kraken": 1,
+      "leg_plasma_gun_std": 1,
+      "leg_plasma_gun_overload": 1,
+      "leg_daemon_blade": 1
     },
     "notes": "军团兵 v1：1 名野心勇士或神选者（队长，leaderFrom）+ 5 名其他；除战士外每类特工限 1（maxPerTypeExcept）；印记 per-operative 5 选 1（subFactionSelector.max=1）；无点数（D-30）。邪火使徒禁恐虐印记由建队校验（数据层 groupPolicy，引擎谓词留 Story 2.2）。"
   }

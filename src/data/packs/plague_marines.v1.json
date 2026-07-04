@@ -15,9 +15,12 @@
   "operatives": [
     {
       "operativeId": "plg_champion",
-      "name": "勇士",
+      "name": "瘟疫战士勇士",
       "keywords": [
         "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE",
         "CHAMPION"
       ],
       "stats": {
@@ -30,16 +33,66 @@
         "diameterMm": 32
       },
       "weaponRefs": [
-        "plg_boltgun",
-        "plg_plague_pistol",
+        "plg_plasma_pistol_std",
+        "plg_plasma_pistol_overload",
         "plg_plague_sword"
       ]
     },
     {
       "operativeId": "plg_grenadier",
-      "name": "掷弹兵",
+      "name": "瘟疫战士掷弹兵",
       "keywords": [
         "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE",
+        "GRENADIER"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_boltgun",
+        "plg_fists"
+      ]
+    },
+    {
+      "operativeId": "plg_fighter",
+      "name": "瘟疫战士斗士",
+      "keywords": [
+        "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE"
+      ],
+      "stats": {
+        "apl": 3,
+        "move": 5,
+        "save": 3,
+        "wounds": 14
+      },
+      "base": {
+        "diameterMm": 32
+      },
+      "weaponRefs": [
+        "plg_bolt_pistol",
+        "plg_corrosive_flail"
+      ]
+    },
+    {
+      "operativeId": "plg_heavy",
+      "name": "瘟疫战士重炮手",
+      "keywords": [
+        "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE",
         "GUNNER"
       ],
       "stats": {
@@ -52,63 +105,23 @@
         "diameterMm": 32
       },
       "weaponRefs": [
-        "plg_boltgun",
-        "plg_plague_pistol",
-        "plg_blight_grenade"
-      ]
-    },
-    {
-      "operativeId": "plg_fighter",
-      "name": "斗士",
-      "keywords": [
-        "CHAOS",
-        "FIGHTER"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 5,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "weaponRefs": [
-        "plg_plague_pistol",
-        "plg_corrosive_flail"
-      ]
-    },
-    {
-      "operativeId": "plg_heavy",
-      "name": "重炮手",
-      "keywords": [
-        "CHAOS",
-        "GUNNER",
-        "HEAVY"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 5,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "weaponRefs": [
         "plg_plague_spewer",
-        "plg_boltgun"
+        "plg_bolt_pistol",
+        "plg_fists"
       ]
     },
     {
       "operativeId": "plg_bearer",
-      "name": "持徽手",
+      "name": "瘟疫战士持徽手",
       "keywords": [
         "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE",
         "BEARER"
       ],
       "stats": {
-        "apl": 4,
+        "apl": 3,
         "move": 5,
         "save": 3,
         "wounds": 14
@@ -117,8 +130,8 @@
         "diameterMm": 32
       },
       "weaponRefs": [
-        "plg_boltgun",
-        "plg_plague_sword"
+        "plg_bolt_pistol",
+        "plg_plague_knife"
       ]
     },
     {
@@ -126,6 +139,9 @@
       "name": "恶瘟投放者",
       "keywords": [
         "CHAOS",
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE",
         "PSYKER"
       ],
       "stats": {
@@ -138,17 +154,19 @@
         "diameterMm": 32
       },
       "weaponRefs": [
-        "plg_plague_pistol",
         "plg_putrescent_spell",
-        "plg_plague_wind"
+        "plg_plague_wind",
+        "plg_corrupted_staff"
       ]
     },
     {
       "operativeId": "plg_troop",
-      "name": "士兵",
+      "name": "瘟疫战士士兵",
       "keywords": [
         "CHAOS",
-        "TROOP"
+        "PLAGUE_MARINES",
+        "HERETIC_ASTARTES",
+        "NURGLE"
       ],
       "stats": {
         "apl": 3,
@@ -161,12 +179,29 @@
       },
       "weaponRefs": [
         "plg_boltgun",
-        "plg_plague_pistol",
-        "plg_plague_sword"
+        "plg_bolt_pistol",
+        "plg_plague_knife"
       ]
     }
   ],
   "weapons": [
+    {
+      "weaponId": "plg_bolt_pistol",
+      "name": "爆矢手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "range": 8,
+        "weaponRules": []
+      },
+      "keywords": [
+        "BOLT",
+        "PISTOL"
+      ]
+    },
     {
       "weaponId": "plg_boltgun",
       "name": "爆矢枪",
@@ -174,11 +209,11 @@
       "profile": {
         "attacks": 4,
         "hit": 3,
-        "normalDamage": 2,
+        "normalDamage": 3,
         "criticalDamage": 4,
         "range": 24,
         "weaponRules": [
-          "RAPID_FIRE"
+          "VIRULENT"
         ]
       },
       "keywords": [
@@ -186,22 +221,131 @@
       ]
     },
     {
-      "weaponId": "plg_plague_pistol",
-      "name": "瘟疫手枪",
+      "weaponId": "plg_plasma_pistol_std",
+      "name": "等离子手枪(标准)",
       "kind": "RANGED",
       "profile": {
-        "attacks": 3,
+        "attacks": 4,
         "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 12,
+        "normalDamage": 3,
+        "criticalDamage": 5,
+        "range": 8,
         "weaponRules": [
-          "PISTOL",
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "PLASMA",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "plg_plasma_pistol_overload",
+      "name": "等离子手枪(过载)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "range": 8,
+        "weaponRules": [
+          "OVERHEAT",
+          "LETHAL5",
+          "PIERCING1"
+        ]
+      },
+      "keywords": [
+        "PLASMA",
+        "PISTOL"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_spewer",
+      "name": "瘟疫喷吐炮",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 2,
+        "normalDamage": 3,
+        "criticalDamage": 3,
+        "range": 7,
+        "weaponRules": [
+          "CONCEAL",
+          "DEVASTATING",
+          "TORRENT",
           "TOXIN"
         ]
       },
       "keywords": [
-        "BOLT",
+        "FLAME",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_putrescent_spell",
+      "name": "衰败术",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 7,
+        "range": 7,
+        "weaponRules": [
+          "PSYCHIC",
+          "CONCEAL",
+          "DEVASTATING",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_wind",
+      "name": "瘟疫之风",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 6,
+        "hit": 3,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "range": 7,
+        "weaponRules": [
+          "PSYCHIC",
+          "CONCEAL",
+          "DEVASTATING",
+          "TORRENT",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_corrupted_staff",
+      "name": "腐化法杖",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": [
+          "PSYCHIC",
+          "DEVASTATING",
+          "STUN",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "PSYCHIC",
+        "MELEE",
         "PLAGUE"
       ]
     },
@@ -212,8 +356,8 @@
       "profile": {
         "attacks": 5,
         "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
+        "normalDamage": 4,
+        "criticalDamage": 5,
         "weaponRules": [
           "DEVASTATING",
           "TOXIN",
@@ -232,10 +376,30 @@
       "profile": {
         "attacks": 5,
         "hit": 3,
-        "normalDamage": 3,
+        "normalDamage": 4,
         "criticalDamage": 5,
         "weaponRules": [
           "BRUTAL",
+          "DEVASTATING",
+          "STUN",
+          "TOXIN"
+        ]
+      },
+      "keywords": [
+        "MELEE",
+        "PLAGUE"
+      ]
+    },
+    {
+      "weaponId": "plg_plague_knife",
+      "name": "瘟疫匕首",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": [
           "DEVASTATING",
           "TOXIN"
         ]
@@ -246,85 +410,18 @@
       ]
     },
     {
-      "weaponId": "plg_plague_spewer",
-      "name": "瘟疫喷吐炮",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 5,
-        "hit": 2,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 8,
-        "weaponRules": [
-          "TORRENT",
-          "DEVASTATING",
-          "TOXIN"
-        ]
-      },
-      "keywords": [
-        "FLAME",
-        "PLAGUE"
-      ]
-    },
-    {
-      "weaponId": "plg_putrescent_spell",
-      "name": "衰败术",
-      "kind": "RANGED",
+      "weaponId": "plg_fists",
+      "name": "双拳",
+      "kind": "MELEE",
       "profile": {
         "attacks": 4,
         "hit": 3,
         "normalDamage": 3,
         "criticalDamage": 4,
-        "range": 12,
-        "weaponRules": [
-          "PSYCHIC",
-          "DEVASTATING",
-          "TOXIN"
-        ]
+        "weaponRules": []
       },
       "keywords": [
-        "PSYCHIC",
-        "PLAGUE"
-      ]
-    },
-    {
-      "weaponId": "plg_plague_wind",
-      "name": "瘟疫之风",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 3,
-        "range": 12,
-        "weaponRules": [
-          "PSYCHIC",
-          "TORRENT",
-          "TOXIN"
-        ]
-      },
-      "keywords": [
-        "PSYCHIC",
-        "PLAGUE"
-      ]
-    },
-    {
-      "weaponId": "plg_blight_grenade",
-      "name": "疫病手雷",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 3,
-        "range": 6,
-        "weaponRules": [
-          "CONCEAL",
-          "TOXIN"
-        ]
-      },
-      "keywords": [
-        "PLAGUE"
+        "MELEE"
       ]
     }
   ],
@@ -907,7 +1004,8 @@
       "plg_blight_grenade": 1,
       "plg_corrosive_flail": 1,
       "plg_putrescent_spell": 1,
-      "plg_plague_wind": 1
+      "plg_plague_wind": 1,
+      "plg_corrupted_staff": 1
     },
     "notes": "瘟疫战士 v1：1 名勇士（队长，leaderFrom）+ 5 名其他；除士兵外每类限 1（maxPerTypeExcept）；无 subFactionSelector（全员纳垢背景，非 per-operative 印记）；无点数（D-30）。"
   }

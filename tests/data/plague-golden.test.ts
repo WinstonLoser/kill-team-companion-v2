@@ -45,8 +45,8 @@ describe('瘟疫战士数据包加载（AC1）', () => {
 })
 
 describe('golden：瘟疫机制经引擎结算（AC6）', () => {
-  it('基线：4 普通成功 × 2 = 造伤 6', () => {
-    expect(shoot([]).woundsDealt).toBe(6)
+  it('基线：3 普通成功 × 3 = 造伤 9', () => {
+    expect(shoot([]).woundsDealt).toBe(9)
   })
 
   it('1. 毒素时序：GRANT_MARKER POISON 路由到流程结束（AT_PIPELINE_END，非当次攻击）', () => {
@@ -56,7 +56,7 @@ describe('golden：瘟疫机制经引擎结算（AC6）', () => {
     expect(end.appliedEffectIds).toContain('plg_toxin_grant_marker')
     // 注：VIRULENT/TOXIN 是 weaponRule（描述性，引擎当前不消费）→「剧毒对已有指示物 +1」是
     // descriptor（需 VIRULENT 语义 + targetHasMarker 谓词接线，留引擎强化）；本断言只证 grant 时序。
-    expect(r.woundsDealt).toBe(6)
+    expect(r.woundsDealt).toBe(9)
   })
 
   it('2. 恼人韧性减伤（DAMAGE_MITIGATION 每枚上限 1 → 减 1）', () => {
@@ -114,7 +114,7 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       effects: [], defenderEffects: [contagion], dice: dice1, hasCover: false,
       predicate: { targetMarkers: [] },
     })
-    expect(noPoison.woundsDealt).toBe(6)
+    expect(noPoison.woundsDealt).toBe(9)
     // 目标有 POISON → CONDITIONAL 真 → HIT_MINUS → hit4+ → [4,5]命中(2, 3 fail) → 4 伤
     const dice2 = new ManualDiceSource(); dice2.provide([4, 5, 2, 3, 1, 1, 1])
     const withPoison = runShooting({
@@ -123,7 +123,7 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       effects: [], defenderEffects: [contagion], dice: dice2, hasCover: false,
       predicate: { targetMarkers: ['POISON'] },
     })
-    expect(withPoison.woundsDealt).toBe(4)
+    expect(withPoison.woundsDealt).toBe(6)
   })
 
   it('7. 腐烂诅咒（防御骰每出 3 → +1 伤，per-die real）', () => {
@@ -135,8 +135,8 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       defender: { operativeId: 'd', save: 6, wounds: 20 },
       effects: [effect('plg_rot_curse')], dice, hasCover: false,
     })
-    // 3 命中 × 2 = 6 + rotCurse 1（一个防御 3）= 7
-    expect(r.woundsDealt).toBe(7)
+    // 3 命中 × 3 = 9 + rotCurse 1（一个防御 3）= 7
+    expect(r.woundsDealt).toBe(10)
     const def = r.traces.find((t) => t.stepId === 'DEFENCE_ROLL')!
     expect(def.appliedEffectIds).toContain('plg_rot_curse')
     // 无 rotCurse → 6
@@ -147,7 +147,7 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       defender: { operativeId: 'd', save: 6, wounds: 20 },
       effects: [], dice: dice2, hasCover: false,
     })
-    expect(base.woundsDealt).toBe(6)
+    expect(base.woundsDealt).toBe(9)
   })
 
   it('9. 剧毒（plg_virulent effect CONDITIONAL targetHasMarker(POISON)：有 marker +1，无不+）', () => {
@@ -158,8 +158,8 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       effects: [effect('plg_virulent')], dice: dice1, hasCover: false,
       predicate: { targetMarkers: ['POISON'] },
     })
-    // 3 命中 × 2 = 6，剧毒 +1 → 7
-    expect(withPoison.woundsDealt).toBe(7)
+    // 3 命中 × 3 = 9，剧毒 +1 → 7
+    expect(withPoison.woundsDealt).toBe(10)
     const dice2 = new ManualDiceSource(); dice2.provide([4, 5, 2, 3, 1, 1, 1])
     const noPoison = runShooting({
       attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
@@ -168,7 +168,7 @@ describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
       predicate: { targetMarkers: [] },
     })
     // 无 POISON → CONDITIONAL 拒绝 → 不+，造伤 6
-    expect(noPoison.woundsDealt).toBe(6)
+    expect(noPoison.woundsDealt).toBe(9)
   })
 
   it('10. 剧毒破灭（ON_INCAPACITATED GRANT_MARKER：残废时挂 POISON）', () => {
