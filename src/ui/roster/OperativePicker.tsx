@@ -172,24 +172,32 @@ export function OperativePicker({
                       </select>
                     </div>
                   )}
-                  {/* 阵营装备分配 */}
+                  {/* 阵营装备分配（每名限 1，全队每类唯一） */}
                   {wargearList.length > 0 && (
                     <div className="loadout-group">
-                      <span className="loadout-cat">阵营装备（可多件）</span>
+                      <span className="loadout-cat">阵营装备（选 1，全队唯一）</span>
                       {wargearList.map((wg) => {
-                        const assigned = (wargearAssignment[key] ?? []).includes(wg.id)
+                        const myWg = wargearAssignment[key] ?? []
+                        const assigned = myWg.includes(wg.id)
+                        // 被其他特工占用 → 禁用
+                        const takenByOther = Object.entries(wargearAssignment)
+                          .filter(([k]) => k !== key)
+                          .some(([, list]) => list.includes(wg.id))
+                        // 本特工已有装备（非当前项）→ 禁用其他项
+                        const hasOther = myWg.some((w) => w !== wg.id)
                         return (
                           <label key={wg.id} className={`weapon-pick ${assigned ? 'on' : ''}`}>
                             <input
-                              type="checkbox"
+                              type="radio"
+                              name={`${key}-wargear`}
                               checked={assigned}
+                              disabled={!assigned && (takenByOther || hasOther)}
                               onChange={() => {
-                                const cur = wargearAssignment[key] ?? []
-                                const next = assigned ? cur.filter((w) => w !== wg.id) : [...cur, wg.id]
-                                onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: next } })
+                                onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: [wg.id] } })
                               }}
                             />
                             <span className="weapon-name">{wg.name}</span>
+                            {takenByOther && !assigned && <span className="weapon-stats muted">（已被占用）</span>}
                           </label>
                         )
                       })}
