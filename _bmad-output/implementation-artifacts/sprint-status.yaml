@@ -91,3 +91,11 @@ development_status:
   epic-5-retrospective: optional
   5-5-aoe-incapacitation-pipeline: ready-for-dev
   5-6-activation-dieface-layer: ready-for-dev
+
+  # Epic 6: 对局流程补全
+  epic-6: in-progress
+  6-1-strategy-phase: ready-for-dev
+  6-2-command-selection: ready-for-dev
+  6-3-reaction-system: ready-for-dev
+  6-4-command-reroll: ready-for-dev
+  epic-6-retrospective: optional
