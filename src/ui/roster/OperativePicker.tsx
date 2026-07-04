@@ -28,7 +28,9 @@ export function OperativePicker({
 }) {
   const except = new Set(pack.buildConstraints?.maxPerTypeExcept ?? [])
   const leaders = new Set(pack.buildConstraints?.leaderFrom ?? [])
+  const maxTotal = pack.buildConstraints?.operatives?.max ?? 99
   const maxPerType = (opId: string) => except.has(opId) ? 6 : 1
+  const atCapacity = operativeIds.length >= maxTotal
 
   // 按角色分组：队长 → 唯一 → 复选
   const leaderOps = pack.operatives.filter((o) => leaders.has(o.operativeId))
@@ -101,7 +103,7 @@ export function OperativePicker({
           <strong>{o.name}</strong>
           <span className="muted"> — 豁免{o.stats.save}+ 耐伤{o.stats.wounds} 移动{o.stats.move}"</span>
           <span className="op-count">×{count}</span>
-          <button className="op-btn" onClick={() => addOp(o.operativeId)} disabled={count >= maxPerType(o.operativeId)}>＋</button>
+          <button className="op-btn" onClick={() => addOp(o.operativeId)} disabled={count >= maxPerType(o.operativeId) || atCapacity}>＋</button>
           <button className="op-btn" onClick={() => removeOp(o.operativeId)} disabled={count === 0}>－</button>
         </div>
       </li>
@@ -110,7 +112,7 @@ export function OperativePicker({
 
   return (
     <div className="operative-picker">
-      <h3>选特工 + 装备配置（{operativeIds.length} 名）</h3>
+      <h3>选特工 + 装备配置（{operativeIds.length}/{maxTotal} 名）{atCapacity && <span className="op-full"> 已满</span>}</h3>
 
       {leaderOps.length > 0 && (
         <>
