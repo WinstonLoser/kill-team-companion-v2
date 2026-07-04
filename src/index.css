@@ -340,6 +340,25 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 
 /* 阵营概览（建队） */
 .faction-overview { margin-top: var(--space-3); }
+
+/* 战略阶段（6.1） */
+.strategy-phase { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
+.strategy-phase h2 { text-align: center; font-size: var(--text-lg); }
+.sp-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; display: flex; flex-direction: column; gap: var(--space-2); align-items: center; }
+.sp-result { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: center; }
+.sp-dice { font-size: 2rem; font-weight: 700; padding: 0.3rem 0.8rem; border-radius: var(--radius-md); }
+.sp-dice.win { background: rgba(57,217,138,0.15); color: var(--ok); }
+.sp-status { display: flex; gap: var(--space-3); justify-content: center; flex-wrap: wrap; background: var(--panel); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); }
+.sp-status strong.a { color: var(--side-a); }
+.sp-status strong.b { color: var(--side-b); }
+.sp-sides { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.sp-side { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); }
+.sp-side.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.sp-side.a.active { border-color: var(--side-a); box-shadow: 0 0 0 2px var(--side-a); }
+.sp-side.b.active { border-color: var(--side-b); box-shadow: 0 0 0 2px var(--side-b); }
+.sp-side h4 { margin: 0 0 0.2rem; }
+.sp-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+.sp-actions button { flex: 1; }
 .fo-toggle { width: 100%; min-height: 44px; text-align: left; font-size: var(--text-base); font-weight: 600; }
 .fo-body { margin-top: 0.5rem; }
 .fo-group { margin-bottom: var(--space-2); }

@@ -77,7 +77,7 @@ function grantedMarkersOf(log: ResolutionLog | null): { marker: string; target: 
   return out
 }
 
-export type Phase = 'map-select' | 'deploy' | 'play' | 'ended'
+export type Phase = 'map-select' | 'deploy' | 'strategy' | 'play' | 'ended'
 export type Side = 'a' | 'b'
 export type DiceSourceKind = 'electronic' | 'manual'
 
@@ -166,6 +166,12 @@ interface MatchState {
   replayLog: ResolutionLog | null
   winner: string | null
   intercept: { title: string; reasons: string[] } | null
+  /** 6.1 战略阶段：先手权方 */
+  initiative: 'a' | 'b' | null
+  /** 6.1 战略阶段：双方是否已跳过（连续两次跳过 → 进交战） */
+  strategyPasses: { a: boolean; b: boolean }
+  /** 6.1 战略阶段：当前轮到谁使用计谋 */
+  strategyTurn: 'a' | 'b' | null
 
   // actions
   setPhase: (p: Phase) => void
@@ -200,6 +206,12 @@ interface MatchState {
   setInteracting: (v: boolean) => void
   /** 切换计谋激活状态。 */
   toggleStratagem: (side: Side, effectId: string) => void
+  /** 6.1：进入战略阶段（部署后 → 战略） */
+  enterStrategy: () => void
+  /** 6.1：掷 D6 定先手权 */
+  rollInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
+  /** 6.1：战略阶段使用计谋（花 CP）或跳过 */
+  strategyAct: (side: Side, action: 'ploy' | 'pass') => void
   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
   setOverride: (key: string, value: boolean) => void
   clearOverride: (key: string) => void
@@ -282,6 +294,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   pushMsg: null,
   winner: null,
   intercept: null,
+  initiative: null,
+  strategyPasses: { a: false, b: false },
+  strategyTurn: null,
 
   setPhase: (phase) => set({ phase }),
   loadMap: (m) =>
@@ -377,6 +392,57 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   }),
   panBy: (dx, dy) => set((s) => ({ viewport: { ...s.viewport, offsetX: s.viewport.offsetX + dx, offsetY: s.viewport.offsetY + dy } })),
   setInteracting: (interacting) => set({ interacting }),
+  // ===== 6.1 战略阶段 =====
+  enterStrategy: () => {
+    const s = get()
+    // 全员就绪
+    const turn = turnReducer(s.turn, { type: 'START_BATTLE' })
+    set({ phase: 'strategy', turn, initiative: null, strategyPasses: { a: false, b: false }, strategyTurn: null })
+    s.pushLog('system', `转折点 ${turn.turningPoint} 战略阶段开始 — 掷 D6 定先手权`)
+  },
+  rollInitiative: () => {
+    const dice = new ElectronicDiceSource(hashSeed('INITIATIVE', 'D6', get().turn.turningPoint))
+    const a = dice.roll(1)[0]!.nat
+    const b = dice.roll(1)[0]!.nat
+    const winner = a >= b ? 'a' as const : 'b' as const // 平局 A 方选（简化）
+    // CP 发放：首 TP 各 +1（START_BATTLE 已给 3/3）；后续先手+1 非先手+2
+    const s = get()
+    const tp = s.turn.turningPoint
+    let cpA = s.turn.cp.a, cpB = s.turn.cp.b
+    if (tp === 1) { cpA += 1; cpB += 1 }
+    else { if (winner === 'a') { cpA += 1; cpB += 2 } else { cpA += 2; cpB += 1 } }
+    set((st) => ({
+      initiative: winner,
+      strategyTurn: winner,
+      strategyPasses: { a: false, b: false },
+      turn: { ...st.turn, cp: { a: cpA, b: cpB }, activePlayer: winner },
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `先手 D6：A=${a} B=${b} → ${winner.toUpperCase()} 方先手；CP A:${cpA} B:${cpB}` }, ...st.log].slice(0, 80),
+    }))
+    return { a, b, winner }
+  },
+  strategyAct: (side, action) => {
+    const s = get()
+    if (action === 'ploy') {
+      // 花 1CP
+      const cp = { ...s.turn.cp, [side]: Math.max(0, s.turn.cp[side] - 1) }
+      const next = side === 'a' ? 'b' : 'a'
+      set({ turn: { ...s.turn, cp }, strategyTurn: next, strategyPasses: { a: false, b: false } })
+      s.pushLog('ploy', `${side.toUpperCase()} 方使用战略计谋（−1CP）`)
+    } else {
+      // 跳过
+      const passes = { ...s.strategyPasses, [side]: true }
+      const next = side === 'a' ? 'b' : 'a'
+      const bothPassed = passes.a && passes.b
+      if (bothPassed) {
+        // 连续两次跳过 → 进入交战阶段
+        set({ phase: 'play', strategyPasses: passes, strategyTurn: null, turn: { ...s.turn, phase: 'ENGAGEMENT' } })
+        s.pushLog('system', `战略阶段结束 → 进入交战阶段（${s.initiative?.toUpperCase()} 方先激活）`)
+      } else {
+        set({ strategyPasses: passes, strategyTurn: next })
+        s.pushLog('system', `${side.toUpperCase()} 方跳过战略计谋`)
+      }
+    }
+  },
   toggleStratagem: (side, effectId) =>
     set((s) => {
       const cur = s.activeStratagems[side]
@@ -771,6 +837,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       pushMsg: null,
       winner: null,
       intercept: null,
+  initiative: null,
+  strategyPasses: { a: false, b: false },
+  strategyTurn: null,
     }),
 }))
 

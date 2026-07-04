@@ -8,6 +8,7 @@ import { MapSelect } from './match/MapSelect'
 import { TerrainEditor } from './match/TerrainEditor'
 import { DeployPhase } from './match/DeployPhase'
 import { PlayView } from './match/PlayView'
+import { StrategyPhase } from './match/StrategyPhase'
 import { ResultPage } from './match/ResultPage'
 import { RulesQuery, useRulesQuery } from './match/RulesQuery'
 import openMap from '../data/packs/maps/open.v1.json'
@@ -53,7 +54,6 @@ export function MatchView() {
   const loadMap = useMatchStore((s) => s.loadMap)
   const startBlank = useMatchStore((s) => s.startBlank)
   const commitBlankMap = useMatchStore((s) => s.commitBlankMap)
-  const setPhase = useMatchStore((s) => s.setPhase)
   const initTokens = useMatchStore((s) => s.initTokens)
 
   const [blankBounds] = useState({ w: 30, h: 20 })
@@ -74,8 +74,7 @@ export function MatchView() {
     initTokens(buildTokens())
   }
   function beginPlay() {
-    useMatchStore.setState((s) => ({ turn: { ...s.turn, activePlayer: 'a' as const } }))
-    setPhase('play')
+    useMatchStore.getState().enterStrategy()
   }
 
   if (phase === 'ended') {
@@ -103,6 +102,9 @@ export function MatchView() {
   }
   if (phase === 'deploy') {
     return <DeployPhase onBeginPlay={beginPlay} />
+  }
+  if (phase === 'strategy') {
+    return <StrategyPhase />
   }
   // play
   return (
