@@ -53,6 +53,7 @@ body {
 }
 .topbar h1 { font-size: 1rem; margin: 0; color: var(--muted); }
 .topbar nav { display: flex; gap: 0.5rem; }
+.reset-btn { margin-left: auto; min-height: 36px; font-size: var(--text-sm); color: var(--warn); border-color: var(--warn); }
 
 button {
   background: transparent;

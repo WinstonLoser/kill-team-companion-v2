@@ -118,14 +118,15 @@ export function RosterView() {
                 wargearAssignment={entry.wargearAssignment}
                 onChange={(next) => patchRoster(editing, next)}
               />
-              {selector ? (
+              {selector && selector.id === 'chapterTactic' ? (
                 <SubFactionSelect
                   selector={selector}
                   pack={pack}
                   selection={entry.subFactionSelection}
                   onChange={(next) => patchRoster(editing, { subFactionSelection: next })}
                 />
-              ) : (
+              ) : selector && selector.id === 'markOfChaos' ? null : null}
+              {(!selector || selector.id === 'markOfChaos') && (
                 <div className="subfaction-none">
                   <h3>阵营能力（常驻）</h3>
                 </div>

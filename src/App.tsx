@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useViewStore, type View } from './state/viewStore'
+import { useRosterStore } from './state/rosterStore'
+import { useMatchStore } from './state/matchStore'
 import { MatchView } from './ui/MatchView'
 import { RosterView } from './ui/RosterView'
 import { RulesSearch } from './ui/match/RulesQuery'
@@ -25,6 +27,19 @@ export function App() {
             </button>
           ))}
         </nav>
+        <button
+          className="reset-btn"
+          onClick={() => {
+            if (confirm('确定重置对局？建队和对局状态全部清空。')) {
+              useRosterStore.getState().reset()
+              useMatchStore.getState().reset()
+              setView('roster')
+            }
+          }}
+          title="重置：清空建队 + 对局，回到建队首页"
+        >
+          ⟳ 重置
+        </button>
       </header>
       <main className="content">
         {currentView === 'roster' && <RosterView />}
