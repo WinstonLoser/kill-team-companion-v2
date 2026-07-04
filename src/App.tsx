@@ -2,14 +2,26 @@ import { useState, useEffect } from 'react'
 import { useViewStore, type View } from './state/viewStore'
 import { useRosterStore } from './state/rosterStore'
 import { useMatchStore } from './state/matchStore'
+import { loadPack } from '.'
 import { MatchView } from './ui/MatchView'
 import { RosterView } from './ui/RosterView'
+import { TestLab } from './ui/test-lab/TestLab'
 import { RulesSearch } from './ui/match/RulesQuery'
+import angelsPack from './data/packs/angels_of_death.v1.json'
+import legionariesPack from './data/packs/legionaries.v1.json'
+import plaguePack from './data/packs/plague_marines.v1.json'
+
+const TESTLAB_PACKS = [
+  { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack) },
+  { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack) },
+  { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack) },
+]
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'roster', label: '建队' },
   { key: 'match', label: '对局' },
   { key: 'rules', label: '规则查询' },
+  { key: 'testLab', label: 'UI 实验室' },
 ]
 
 export function App() {
@@ -44,6 +56,7 @@ export function App() {
       <main className="content">
         {currentView === 'roster' && <RosterView />}
         {currentView === 'match' && <MatchView />}
+        {currentView === 'testLab' && <TestLab packs={TESTLAB_PACKS} />}
         {currentView === 'rules' && (
           <section>
             <h2>规则查询（引擎参数化要点，不显示 GW 原文 D-29）</h2>

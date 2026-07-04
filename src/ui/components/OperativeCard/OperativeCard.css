@@ -1,0 +1,135 @@
+/* 特工数据卡（移植自 feature/operative-data-card，自包含深色橙调主题）。 */
+
+.op-card-container {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 90, 0, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 90, 0, 0.05);
+  height: 100%;
+  overflow-y: auto;
+  font-family: 'Inter', 'Roboto', sans-serif;
+  position: relative;
+}
+
+.op-card-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+.op-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 90, 0, 0.2);
+  padding-bottom: 16px;
+}
+
+.op-header-left { display: flex; align-items: center; gap: 20px; }
+
+.op-avatar-placeholder {
+  width: 72px; height: 72px; flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 90, 0, 0.4);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 10px rgba(255, 90, 0, 0.1);
+}
+.avatar-icon { font-size: 2rem; opacity: 0.3; }
+
+.op-title-area { display: flex; flex-direction: column; gap: 8px; }
+
+.op-name {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(255, 90, 0, 0.4);
+}
+
+.op-keywords { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.keyword-tag {
+  background: rgba(255, 90, 0, 0.15);
+  border: 1px solid rgba(255, 90, 0, 0.4);
+  color: #ffaa77;
+  padding: 3px 7px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.op-stats-panel { display: flex; gap: 10px; flex-shrink: 0; }
+
+.stat-hex {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 54px; height: 62px;
+  background: linear-gradient(135deg, rgba(255, 90, 0, 0.2), rgba(200, 50, 0, 0.05));
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: 0 0 10px rgba(255, 90, 0, 0.2);
+}
+.stat-value { font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1; }
+.stat-label { font-size: 0.6rem; color: #ffaa77; font-weight: 600; margin-top: 2px; }
+
+.op-body { display: flex; flex-direction: column; gap: 20px; flex: 1; }
+.weapons-section { display: flex; flex-direction: column; gap: 14px; }
+
+.weapon-table-wrapper {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.weapon-table-header {
+  background: rgba(255, 90, 0, 0.15);
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffaa77;
+  letter-spacing: 1px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(255, 90, 0, 0.2);
+}
+.weapon-icon { font-size: 1.1rem; }
+
+.weapon-table { width: 100%; border-collapse: collapse; text-align: left; }
+.weapon-table th {
+  padding: 7px 12px; font-size: 0.7rem; color: #94a3b8;
+  text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.weapon-table td { padding: 9px 12px; font-size: 0.82rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.weapon-row:hover td { background: rgba(255, 90, 0, 0.05); }
+.weapon-row:last-child td { border-bottom: none; }
+.center { text-align: center; }
+.w-name { font-weight: 600; color: #e2e8f0; }
+.w-stat { font-weight: 700; color: #fff; }
+.w-rules { color: #ffaa77; font-style: italic; }
+
+.rules-section { display: flex; flex-direction: column; gap: 14px; }
+.rule-block { background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 14px 16px; }
+.rule-header {
+  margin: 0 0 10px 0; font-size: 0.85rem; color: #ffaa77;
+  letter-spacing: 1px; border-bottom: 1px solid rgba(255, 90, 0, 0.2); padding-bottom: 8px;
+}
+.rule-list { display: flex; flex-direction: column; gap: 10px; }
+.rule-item { display: flex; flex-direction: column; gap: 3px; }
+.rule-name { font-weight: 700; color: #fff; font-size: 0.82rem; }
+.rule-desc { font-size: 0.78rem; color: #cbd5e1; line-height: 1.5; }

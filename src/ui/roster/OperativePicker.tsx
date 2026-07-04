@@ -1,30 +1,16 @@
 import { Fragment } from 'react'
 import type { FactionPack } from '../../rules'
+import { fmtWeapon } from '../weaponDisplay'
 
-const WEAPON_RULE_ZH: Record<string, string> = {
-  PISTOL: '手枪', TORRENT: '洪流', PIERCING1: '穿刺1', PIERCING: '穿刺',
-  CONCEAL: '集中', OVERHEAT: '过热', LETHAL5: '致命5+', HEAVY: '重型',
-  BLAST1: '爆炸1"', BLAST2: '爆炸2"', DEVASTATING: '严重', DEVASTATING3: '毁灭3',
-  SILENT: '安静', BRUTAL: '残暴', STUN: '震荡', CONCUSSIVE: '眩晕',
-  RAPID_FIRE: '撕裂', TOXIN: '毒素', VIRULENT: '剧毒', RELENTLESS: '无休',
-  SEEKING_LIGHT: '追踪轻型', BALANCED: '平衡', HIT: '重击', PSYCHIC: '灵能',
-}
-function ruleZh(rule: string): string { return WEAPON_RULE_ZH[rule] ?? rule }
-
-function fmtWeapon(w: FactionPack['weapons'][0]): string {
-  const p = w.profile
-  return `${p.attacks}攻${p.hit}+ ${p.normalDamage}/${p.criticalDamage}${p.range != null ? ` ${p.range}"` : ''}${p.weaponRules.length ? ` ${p.weaponRules.map(ruleZh).join('/')}` : ''}`
-}
-
-/** 默认装备配置：首个远程 + 首个近战武器。 */
+/** 默认装备配置：每个 loadout 槽取首个 option 的武器。 */
 function defaultLoadoutFor(pack: FactionPack, opId: string): string[] {
   const op = pack.operatives.find((o) => o.operativeId === opId)
   if (!op) return []
   const out: string[] = []
-  const ranged = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)).find((w) => w?.kind === 'RANGED')
-  const melee = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)).find((w) => w?.kind === 'MELEE')
-  if (ranged) out.push(ranged.weaponId)
-  if (melee) out.push(melee.weaponId)
+  for (const slot of op.loadouts) {
+    const first = slot.options[0]
+    if (first) for (const wid of first) out.push(wid)
+  }
   return out
 }
 
@@ -127,11 +113,16 @@ export function OperativePicker({
     onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: wgId ? [wgId] : [] } })
   }
 
-  function setWeapon(key: string, weaponId: string, kind: 'RANGED' | 'MELEE') {
-    const cur = loadout[key] ?? []
-    const filtered = cur.filter((wid) => pack.weapons.find((w) => w.weaponId === wid)?.kind !== kind)
-    if (weaponId) filtered.push(weaponId)
-    onChange({ operativeIds, loadout: { ...loadout, [key]: filtered } })
+  /** 选某 loadout 槽的第 optionIndex 个选项：移除该槽旧武器，加入新选项武器。存储仍是扁平 weaponId[]。 */
+  function setSlot(opId: string, key: string, slotIndex: number, optionIndex: number) {
+    const op = pack.operatives.find((o) => o.operativeId === opId)
+    const slot = op?.loadouts[slotIndex]
+    if (!slot) return
+    const slotWeaponIds = new Set(slot.options.flat())
+    const kept = (loadout[key] ?? []).filter((wid) => !slotWeaponIds.has(wid))
+    const opt = slot.options[optionIndex]
+    if (opt) for (const wid of opt) kept.push(wid)
+    onChange({ operativeIds, loadout: { ...loadout, [key]: kept } })
   }
 
   function takenWargearIds(excludeKey: string): Set<string> {
@@ -198,10 +189,6 @@ export function OperativePicker({
                   const myLoadout = loadout[key] ?? []
                   const myWg = (wargearAssignment[key] ?? [])[0] ?? ''
                   const taken = takenWargearIds(key)
-                  const ranged = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)).filter((w) => w?.kind === 'RANGED')
-                  const melee = op.weaponRefs.map((wid) => pack.weapons.find((w) => w.weaponId === wid)).filter((w) => w?.kind === 'MELEE')
-                  const selRanged = myLoadout.find((wid) => pack.weapons.find((w) => w.weaponId === wid)?.kind === 'RANGED') ?? ''
-                  const selMelee = myLoadout.find((wid) => pack.weapons.find((w) => w.weaponId === wid)?.kind === 'MELEE') ?? ''
 
                   return (
                     <tr key={key} className="rt-instance-row">
@@ -235,18 +222,24 @@ export function OperativePicker({
                         </select>
                       </td>
                       <td className="rt-wp">
-                        {ranged.length > 0 && (
-                          <select value={selRanged} onChange={(e) => setWeapon(key, e.target.value, 'RANGED')}>
-                            <option value="">远程…</option>
-                            {ranged.map((w) => <option key={w!.weaponId} value={w!.weaponId}>{w!.name} ({fmtWeapon(w!)})</option>)}
-                          </select>
-                        )}
-                        {melee.length > 0 && (
-                          <select value={selMelee} onChange={(e) => setWeapon(key, e.target.value, 'MELEE')}>
-                            <option value="">近战…</option>
-                            {melee.map((w) => <option key={w!.weaponId} value={w!.weaponId}>{w!.name} ({fmtWeapon(w!)})</option>)}
-                          </select>
-                        )}
+                        {op.loadouts.map((slot, sIdx) => {
+                          if (slot.options.length === 0) return null
+                          const optLabel = (opt: string[]) =>
+                            opt.map((wid) => pack.weapons.find((w) => w.weaponId === wid))
+                              .filter(Boolean)
+                              .map((w) => `${w!.name} (${fmtWeapon(w!)})`)
+                              .join(' + ')
+                          if (slot.options.length === 1) {
+                            return <div key={sIdx} className="rt-slot-fixed"><span className="rt-slot-desc">{slot.description}：</span>{optLabel(slot.options[0]!)}</div>
+                          }
+                          const selectedOpt = slot.options.findIndex((opt) => opt.every((wid) => myLoadout.includes(wid)))
+                          return (
+                            <select key={sIdx} value={selectedOpt >= 0 ? String(selectedOpt) : ''} onChange={(e) => setSlot(op.operativeId, key, sIdx, parseInt(e.target.value, 10))}>
+                              <option value="">{slot.description}…</option>
+                              {slot.options.map((opt, oIdx) => <option key={oIdx} value={String(oIdx)}>{optLabel(opt)}</option>)}
+                            </select>
+                          )
+                        })}
                       </td>
                       <td className="rt-act">
                         {isLeader ? (

@@ -104,14 +104,20 @@ export interface OperativeStats {
   wounds: number
 }
 
+/** 装备选配槽：从 `options` 里选一个 option（每个 option 是一束 weaponId，多数单项 [id]）。 */
+export interface Loadout {
+  description: string // 槽位名（远程武器/近战武器/…）
+  options: string[][] // 互斥选项；每项 = 一束 weaponId
+}
+
 export interface Operative {
   operativeId: string
   name: string
   keywords: string[]
   stats: OperativeStats
   base: { diameterMm: number } // D-27：规则源不提供，GW 约定
-  weaponRefs: string[]
-  abilities?: string[]
+  loadouts: Loadout[] // 装备选配槽（替换原扁平 weaponRefs）
+  abilities?: string[] // 该特工拥有的 ability effectId 列表（数据卡展示用）
 }
 
 export type WeaponKind = 'RANGED' | 'MELEE'

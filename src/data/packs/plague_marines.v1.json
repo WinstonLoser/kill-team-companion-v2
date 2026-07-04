@@ -32,10 +32,29 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_plasma_pistol_std",
-        "plg_plasma_pistol_overload",
-        "plg_plague_sword"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_plasma_pistol_std"
+            ],
+            [
+              "plg_plasma_pistol_overload"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_plague_sword"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "plg_fathers_blessing"
       ]
     },
     {
@@ -57,9 +76,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_boltgun",
-        "plg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_boltgun"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -80,9 +113,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_bolt_pistol",
-        "plg_corrosive_flail"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_corrosive_flail"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -104,10 +151,26 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_plague_spewer",
-        "plg_bolt_pistol",
-        "plg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_plague_spewer"
+            ],
+            [
+              "plg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -129,9 +192,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_bolt_pistol",
-        "plg_plague_knife"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_plague_knife"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -153,10 +230,26 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_putrescent_spell",
-        "plg_plague_wind",
-        "plg_corrupted_staff"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_putrescent_spell"
+            ],
+            [
+              "plg_plague_wind"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_corrupted_staff"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -177,10 +270,26 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "plg_boltgun",
-        "plg_bolt_pistol",
-        "plg_plague_knife"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "plg_boltgun"
+            ],
+            [
+              "plg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "plg_plague_knife"
+            ]
+          ]
+        }
       ]
     }
   ],
