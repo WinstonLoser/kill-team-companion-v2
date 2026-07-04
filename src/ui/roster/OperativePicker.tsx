@@ -193,7 +193,9 @@ export function OperativePicker({
                               checked={assigned}
                               disabled={!assigned && (takenByOther || hasOther)}
                               onChange={() => {
-                                onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: [wg.id] } })
+                                // 再点已选项 → 取消选中（radio 不支持取消，手动处理）
+                                const next = assigned ? [] : [wg.id]
+                                onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: next } })
                               }}
                             />
                             <span className="weapon-name">{wg.name}</span>
