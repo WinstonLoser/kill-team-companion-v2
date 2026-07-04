@@ -19,16 +19,23 @@ export function OperativePicker({
   pack,
   operativeIds,
   loadout,
+  perOperativeMarks,
+  wargearAssignment,
   onChange,
 }: {
   pack: FactionPack
   operativeIds: string[]
   loadout: Record<string, string[]>
-  onChange: (next: { operativeIds: string[]; loadout: Record<string, string[]> }) => void
+  perOperativeMarks: Record<string, string>
+  wargearAssignment: Record<string, string[]>
+  onChange: (next: { operativeIds: string[]; loadout: Record<string, string[]>; perOperativeMarks?: Record<string, string>; wargearAssignment?: Record<string, string[]> }) => void
 }) {
   const except = new Set(pack.buildConstraints?.maxPerTypeExcept ?? [])
   const leaders = new Set(pack.buildConstraints?.leaderFrom ?? [])
   const maxTotal = pack.buildConstraints?.operatives?.max ?? 99
+  const isPerOperativeMarks = pack.faction.subFactionSelector?.id === 'markOfChaos'
+  const markOptions = pack.faction.subFactionSelector?.options ?? []
+  const wargearList = pack.wargear ?? []
   const maxPerType = (opId: string) => except.has(opId) ? 6 : 1
   const atCapacity = operativeIds.length >= maxTotal
 
@@ -149,6 +156,45 @@ export function OperativePicker({
               return (
                 <li key={key} className="loadout-item">
                   <span className="loadout-name">{op.name}{instance > 0 ? ` #${instance + 1}` : ''}</span>
+                  {/* 军团兵 per-operative 混沌印记选择 */}
+                  {isPerOperativeMarks && markOptions.length > 0 && (
+                    <div className="loadout-group">
+                      <span className="loadout-cat">混沌印记（选 1）</span>
+                      <select
+                        value={perOperativeMarks[key] ?? ''}
+                        onChange={(e) => onChange({ operativeIds, loadout, perOperativeMarks: { ...perOperativeMarks, [key]: e.target.value } })}
+                      >
+                        <option value="">未选</option>
+                        {markOptions.map((optId) => {
+                          const e = pack.effects.find((x) => x.effectId === optId)
+                          return <option key={optId} value={optId}>{e?.label.split('（')[0] ?? optId}</option>
+                        })}
+                      </select>
+                    </div>
+                  )}
+                  {/* 阵营装备分配 */}
+                  {wargearList.length > 0 && (
+                    <div className="loadout-group">
+                      <span className="loadout-cat">阵营装备（可多件）</span>
+                      {wargearList.map((wg) => {
+                        const assigned = (wargearAssignment[key] ?? []).includes(wg.id)
+                        return (
+                          <label key={wg.id} className={`weapon-pick ${assigned ? 'on' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={assigned}
+                              onChange={() => {
+                                const cur = wargearAssignment[key] ?? []
+                                const next = assigned ? cur.filter((w) => w !== wg.id) : [...cur, wg.id]
+                                onChange({ operativeIds, loadout, wargearAssignment: { ...wargearAssignment, [key]: next } })
+                              }}
+                            />
+                            <span className="weapon-name">{wg.name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
                   {ranged.length > 0 && (
                     <div className="loadout-group">
                       <span className="loadout-cat">远程（选 1）</span>

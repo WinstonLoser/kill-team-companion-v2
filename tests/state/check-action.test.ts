@@ -8,8 +8,8 @@ import type { Effect } from '../../src/rules'
 beforeEach(() => {
   useMatchStore.getState().reset()
   useRosterStore.setState({
-    rosterA: { factionId: 'angels_of_death', operativeIds: ['angels_tactical'], loadout: {}, subFactionSelection: [] },
-    rosterB: { factionId: 'angels_of_death', operativeIds: ['angels_tactical'], loadout: {}, subFactionSelection: [] },
+    rosterA: { factionId: 'angels_of_death', operativeIds: ['angels_intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
+    rosterB: { factionId: 'angels_of_death', operativeIds: ['angels_intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
     editing: 'a',
   })
   useMatchStore.setState({

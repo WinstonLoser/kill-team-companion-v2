@@ -7,16 +7,20 @@ export type Side = 'a' | 'b'
 
 /** 单支建队结果（阵营 + 特工 + 装备配置 + 子阵营选择）。 */
 export interface RosterEntry {
-  factionId: string | null // 选定阵营 id（null=未选阵营）
-  operativeIds: string[] // 入队特工 operativeId 列表
-  /** opId → 选中的 weaponId 列表（装备配置） */
+  factionId: string | null
+  operativeIds: string[]
+  /** opKey → 选中的 weaponId 列表（装备配置） */
   loadout: Record<string, string[]>
-  /** 子阵营选择器已选项 id（死亡天使战团战术 / 军团兵印记） */
+  /** 阵营级子阵营选择（死亡天使战团战术 8 选 2） */
   subFactionSelection: string[]
+  /** 每名特工的子阵营选择（军团兵混沌印记 per-operative：opKey → mark effectId） */
+  perOperativeMarks: Record<string, string>
+  /** 每名特工分配的阵营装备（opKey → wargear id 列表） */
+  wargearAssignment: Record<string, string[]>
 }
 
 export function emptyRoster(): RosterEntry {
-  return { factionId: null, operativeIds: [], loadout: {}, subFactionSelection: [] }
+  return { factionId: null, operativeIds: [], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} }
 }
 
 interface RosterState {

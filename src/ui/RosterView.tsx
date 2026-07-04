@@ -114,6 +114,8 @@ export function RosterView() {
                 pack={pack}
                 operativeIds={entry.operativeIds}
                 loadout={entry.loadout}
+                perOperativeMarks={entry.perOperativeMarks}
+                wargearAssignment={entry.wargearAssignment}
                 onChange={(next) => patchRoster(editing, next)}
               />
               {selector ? (
