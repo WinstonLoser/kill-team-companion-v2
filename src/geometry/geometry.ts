@@ -112,6 +112,18 @@ export function circlesOverlap(a: Point, ra: number, b: Point, rb: number): bool
 export function distanceToPolygon(p: Point, poly: Polygon): number {
   return nearestPoly(p, poly)
 }
+
+/**
+ * 底座圆是否撞上**阻拦**地形（墙体）：圆心在多边形内，或到边界距离 < 半径。
+ * 仅 BLOCKING 地形阻挡移动/重叠（COVER/OBSCURING 可站上去获得掩护）。
+ */
+export function circleHitsBlockingTerrain(center: Point, radius: number, terrain: TerrainFeature[]): TerrainFeature | null {
+  for (const tf of terrain) {
+    if (tf.kind !== 'BLOCKING') continue
+    if (pointInPoly(center, tf.polygon) || nearestPoly(center, tf.polygon) < radius - 1e-9) return tf
+  }
+  return null
+}
 function segIntersectsPoly(a: Point, b: Point, poly: Polygon): boolean {
   if (poly.length < 2) return false // P9：不足 2 顶点无法成边
   if (pointInPoly(a, poly) || pointInPoly(b, poly)) return true

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useMatchStore, type MatchToken } from '../../state/matchStore'
-import type { Point } from '../../geometry'
+import type { ActionType } from '../../state/turnStateMachine'
+import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { ActionBar } from './ActionBar'
@@ -26,12 +27,16 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const selected = useMatchStore((s) => s.selected)
   const setSelected = useMatchStore((s) => s.setSelected)
   const dragging = useMatchStore((s) => s.dragging)
-  const dragOrigin = useMatchStore((s) => s.dragOrigin)
   const setDragging = useMatchStore((s) => s.setDragging)
   const moveToken = useMatchStore((s) => s.moveToken)
   const rotateToken = useMatchStore((s) => s.rotateToken)
   const activate = useMatchStore((s) => s.activate)
   const endActivation = useMatchStore((s) => s.endActivation)
+  const selectOrder = useMatchStore((s) => s.selectOrder)
+  const doAction = useMatchStore((s) => s.doAction)
+  const checkAction = useMatchStore((s) => s.checkAction)
+  const undoAction = useMatchStore((s) => s.undoAction)
+  const activationUndo = useMatchStore((s) => s.activationUndo)
   const scoreAndEndTP = useMatchStore((s) => s.scoreAndEndTP)
   const undoPending = useMatchStore((s) => s.undoPending)
   const resolveAttack = useMatchStore((s) => s.resolveAttack)
@@ -76,9 +81,29 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const [pendingAsk, setPendingAsk] = useState<{ attacker: MatchToken; target: MatchToken } | null>(null)
   const [manualCollect, setManualCollect] = useState<{ attacker: MatchToken; target: MatchToken; kind: 'SHOOT' | 'MELEE'; needed: number } | null>(null)
   const [hoverInch, setHoverInch] = useState<string | null>(null)
+  const [pendingMove, setPendingMove] = useState<ActionType | null>(null)
+  const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
+  const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
+  const [movePreview, setMovePreview] = useState<boolean>(false) // 拖动后待确认
 
   const active = tokens.find((t) => t.uid === selected) ?? null
-  const activated = active ? Boolean(turn.operatives[active.uid]?.ready) : false
+  const selectedOp = active ? turn.operatives[active.uid] : undefined
+  const activated = active ? Boolean(selectedOp?.ready) : false
+  const apl = active ? effectiveAplOf(active.uid) : 0
+  // 各行动合法性（激活后才需算）
+  const canDo = (() => {
+    const z: Record<ActionType, boolean> = { MOVE: false, DASH: false, FALL_BACK: false, CHARGE: false, SHOOT: false, FIGHT: false }
+    if (active && activated) (['MOVE', 'DASH', 'FALL_BACK', 'CHARGE', 'SHOOT', 'FIGHT'] as ActionType[]).forEach((a) => { z[a] = checkAction(active.uid, a).ok })
+    return z
+  })()
+
+  /** 行动最大移动距离（英寸）。 */
+  function actionMaxDist(uid: string, action: ActionType): number {
+    const m = effectiveMoveOf(uid)
+    if (action === 'DASH') return 3
+    if (action === 'CHARGE') return m + 2
+    return m // MOVE / FALL_BACK
+  }
 
   // ===== 目标控制（1.16）— 读 store.controlOf（P7：store 当下 tokens） =====
   const objControl: ObjControl[] = mapPack.objectives.map((o) => {
@@ -90,7 +115,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
   const showViz = active && activated && active.side === turn.activePlayer && !interacting
   const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
-  const rangeRing = showViz ? { center: active!.pos, r: viz.range } : null
+  // 移动范围指示器（武装移动行动时显示，优先于武器射程环）
+  const moveRing = active && pendingMove && moveOrigin ? { center: moveOrigin, r: actionMaxDist(active.uid, pendingMove) } : null
+  const rangeRing = moveRing ?? (showViz ? { center: active!.pos, r: viz.range } : null)
   const controlRing = viz.controlRing
   const ownCover = viz.ownCover
   const losLines: LosLine[] = viz.targets.map((tg) => {
@@ -107,12 +134,20 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   // ===== 一击交互（1.13 T4）— dispatch intent =====
   function onClickToken(t: MatchToken) {
     if (t.side === turn.activePlayer) {
+      // 切换特工时放弃当前移动预览（避免回退到错位）
+      if (movePreview && t.uid !== selected) cancelMove()
       setSelected(t.uid)
       setIntercept(null)
       return
     }
     if (!active || active.side !== turn.activePlayer || !activated) {
       setIntercept({ title: '未激活', reasons: ['须先激活己方特工再攻击'] })
+      return
+    }
+    // 已装填射击/近战 → 直接走该 kind
+    if (pendingAttack) {
+      runKind(active, t, pendingAttack === 'SHOOT' ? 'SHOOT' : 'MELEE')
+      setPendingAttack(null)
       return
     }
     startAttack(active, t)
@@ -128,6 +163,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   }
 
   function runKind(attacker: MatchToken, target: MatchToken, kind: 'SHOOT' | 'MELEE') {
+    // 行动消费 AP（SHOOT→SHOOT，MELEE→FIGHT）；不通过则拦截
+    const actR = doAction(attacker.uid, kind === 'SHOOT' ? 'SHOOT' : 'FIGHT')
+    if (!actR.ok) { setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
     if (diceSource === 'manual') {
       setManualCollect({ attacker, target, kind, needed: manualDiceNeeded(kind) })
       return
@@ -144,31 +182,73 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   }
 
   function onPointerMove(p: Point) {
-    if (dragging && dragOrigin) {
-      moveToken(dragging, clampPos(p))
-      setHoverInch(`移动 ${Math.hypot(p.x - dragOrigin.x, p.y - dragOrigin.y).toFixed(1)}"`)
+    if (dragging && moveOrigin && pendingMove) {
+      // 硬 clamp 到「起点为圆心、行动最大距离为半径」的圆内（确认前可反复拖）
+      const max = actionMaxDist(dragging, pendingMove)
+      const dx = p.x - moveOrigin.x, dy = p.y - moveOrigin.y
+      const dist = Math.hypot(dx, dy)
+      const cl = dist > max ? { x: moveOrigin.x + (dx / dist) * max, y: moveOrigin.y + (dy / dist) * max } : p
+      moveToken(dragging, clampPos(cl))
+      setHoverInch(`${pendingMove === 'DASH' ? '冲刺' : pendingMove === 'CHARGE' ? '冲锋' : pendingMove === 'FALL_BACK' ? '后撤' : '转移'} ${Math.min(dist, max).toFixed(1)}/${max}"`)
     }
   }
   function onPointerUp() {
     if (dragging) {
       const t = tokens.find((x) => x.uid === dragging)
-      if (t && dragOrigin) {
-        const d = Math.hypot(t.pos.x - dragOrigin.x, t.pos.y - dragOrigin.y)
-        if (d > 0.1) {
-          const maxMove = effectiveMoveOf(t.uid)
-          const over = d > maxMove
-          pushLog('turn', `${t.name} 移动 ${d.toFixed(1)}"${over ? `（⚠ 超 ${maxMove}" 移动上限）` : `（上限 ${maxMove}"）`}`)
-        }
+      if (t && moveOrigin && pendingMove) {
+        const d = Math.hypot(t.pos.x - moveOrigin.x, t.pos.y - moveOrigin.y)
+        if (d > 0.1) setMovePreview(true) // 待确认：不立即消费 AP，可再拖
       }
       setDragging(null)
       setHoverInch(null)
     }
+  }
+  // 确认移动：校验落点 → 消费 AP；失败回退到起点
+  function confirmMove() {
+    if (!active || !pendingMove || !moveOrigin) return
+    const t = active
+    if (pendingMove === 'CHARGE') {
+      const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
+      if (!inEng) { setIntercept({ title: '冲锋非法', reasons: ['冲锋须结束在敌方 1" 控制范围内'] }); return }
+    }
+    const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
+    const wall = circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain)
+    if (overlap || wall) {
+      setIntercept({ title: overlap ? '与特工重叠' : '与墙体重叠', reasons: [`${t.name} ${overlap ? `与 ${overlap.name} 底座重叠` : '压在阻拦地形上'}`] })
+      return
+    }
+    const r = doAction(t.uid, pendingMove)
+    if (!r.ok) { setIntercept({ title: '行动不可用', reasons: [r.reason ?? '未知'] }); return }
+    setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+  }
+  function cancelMove() {
+    if (active && moveOrigin) moveToken(active.uid, moveOrigin)
+    setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+  }
+  /** 选移动行动：切换行动时先把上一次预览回退到真实起点，避免累计距离。 */
+  function pickMove(a: ActionType) {
+    setPendingAttack(null)
+    const truePos = movePreview && moveOrigin ? moveOrigin : active?.pos ?? null
+    if (pendingMove === a) { // 再点当前行动 → 取消（回退预览）
+      if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
+      setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+      return
+    }
+    if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin) // 切换：回退旧预览
+    setMoveOrigin(truePos); setMovePreview(false); setPendingMove(a)
   }
 
   return (
     <div className="play-view">
       <StatusStrip />
       {showViz && <FindingStrip active={active!} targets={viz.targets} />}
+      {movePreview && active && moveOrigin && (
+        <div className="pending-banner">
+          🎯 {active.name} 移动至 {active.pos.x.toFixed(1)},{active.pos.y.toFixed(1)}（{Math.hypot(active.pos.x - moveOrigin.x, active.pos.y - moveOrigin.y).toFixed(1)}"）
+          <button className="primary" onClick={confirmMove}>确认移动 ▶</button>
+          <button onClick={cancelMove}>取消（回退）</button>
+        </div>
+      )}
       {lastShot && (
         <div className="pending-banner">
           ⏳ 待确认伤亡：{lastShot.targetName} −{lastShot.woundsDealt}
@@ -223,14 +303,22 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerLeave={onPointerUp}
-            onTokenPointerDown={(t) => { if (t.side === turn.activePlayer) { setSelected(t.uid); setDragging(t.uid, t.pos); setIntercept(null) } }}
+            onTokenPointerDown={(t) => {
+              if (t.side !== turn.activePlayer) return
+              setSelected(t.uid)
+              setIntercept(null)
+              // #4：移动需先激活；#7：需先在行动菜单选移动行动
+              if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
+              if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
+              setDragging(t.uid, t.pos)
+            }}
             onTokenDoubleClick={(t) => rotateToken(t.uid)}
             onTokenClick={onClickToken}
           />
           </div>
           </div>
           {hoverInch && <div className="inch-readout">{hoverInch}</div>}
-          <p className="muted">拖己方特工移动（实时英寸数）· 双击旋转 45° · 点敌方一击结算（绿=可见 红=阻挡 虚=模糊）</p>
+          <p className="muted">激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
         </div>
 
         <div className="play-mid-col">
@@ -239,15 +327,29 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             selectedName={active?.name ?? null}
             selectedSide={active?.side ?? null}
             activated={activated}
+            order={selectedOp?.order ?? null}
+            apl={apl}
+            apUsed={selectedOp?.apUsed ?? 0}
+            canDo={canDo}
+            pendingMove={pendingMove}
+            pendingAttack={pendingAttack}
             hasLastShot={Boolean(lastShot)}
             onActivate={() => {
               if (active) {
                 activate(active.uid, active.side)
-                const apl = effectiveAplOf(active.uid)
-                pushLog('turn', `${active.name} 激活（APL ${apl}）`)
+                pushLog('turn', `${active.name} 激活（APL ${effectiveAplOf(active.uid)}）`)
               }
             }}
-            onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null) } }}
+            onSelectOrder={(o) => { if (active) selectOrder(active.uid, o) }}
+            onPickMove={pickMove}
+            onPickAttack={(k) => {
+              if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
+              setPendingAttack((prev) => (prev === k ? null : k))
+              setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+            }}
+            onUndoAction={() => undoAction()}
+            canUndoAction={activationUndo.length > 0}
+            onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null); setPendingMove(null); setPendingAttack(null); setMoveOrigin(null); setMovePreview(false) } }}
             onEndTP={() => scoreAndEndTP()}
             onUndo={undoPending}
           />
