@@ -89,6 +89,22 @@ export function RosterView() {
         })}
       </div>
 
+      {/* 顶部进入对局（常驻醒目） */}
+      <div className="enter-gate top">
+        <span className="eg-status">
+          <span className={`dot ${resultA.legal ? 'ok' : 'warn'}`}>A {resultA.legal ? '✓' : '!'}</span>
+          <span className={`dot ${resultB.legal ? 'ok' : 'warn'}`}>B {resultB.legal ? '✓' : '!'}</span>
+        </span>
+        <button
+          className="primary enter-btn"
+          disabled={!bothGreen}
+          onClick={enterMatch}
+          title={bothGreen ? '双方阵容合规，进入对局' : `先解决 ${unresolved} 方违规`}
+        >
+          {bothGreen ? '进入对局 ▶' : `待合规（${unresolved} 方）`}
+        </button>
+      </div>
+
       <div className="roster-layout">
         <div className="roster-main" ref={opListRef}>
           {/* AC1 顺序可达：选阵营 → 选特工+装备 → 子阵营选择器 */}

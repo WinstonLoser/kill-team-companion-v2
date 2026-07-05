@@ -1,11 +1,13 @@
+import { useState, useEffect } from 'react'
 import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
-import { circleInsidePolygon, circlesOverlap, type Point } from '../../geometry'
+import { circleInsidePolygon, circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board } from './Board'
 
 // 部署阶段（对齐 lite rule §部署）：
 //  1. 部署前掷先手权（按钮即时出结果；动画后续补）。
-//  2. 从先手方开始，轮流部署本队 1/3（向上取整），3 轮放完。
-//  3. 落点须完全在己方降落区 + 不重叠；部署即隐匿（token.order=CONCEAL，建队时已置）。
+//  2. 从先手方开始，轮流部署本队 1/3（向上取整）；放满本批后点「完成本批部署」交对方。
+//  3. 落点须完全在己方降落区 + 不与他单位/墙体重叠；部署即隐匿（token.order=CONCEAL）。
+//  宽松：已放置 token 仍可拖动微调（不出降落区、不重叠）。
 
 function clampPos(p: Point, bounds: { w: number; h: number }): Point {
   return { x: Math.max(0.5, Math.min(bounds.w - 0.5, p.x)), y: Math.max(0.5, Math.min(bounds.h - 0.5, p.y)) }
@@ -36,16 +38,6 @@ function buildSequence(nA: number, nB: number, initiative: Side): DeployTurn[] {
   return seq
 }
 
-/** 由已放置总数推算当前轮到谁、本轮已放几名。 */
-function currentTurn(seq: DeployTurn[], totalPlaced: number): { turn: DeployTurn; placedInTurn: number } | null {
-  let acc = 0
-  for (const turn of seq) {
-    if (totalPlaced < acc + turn.count) return { turn, placedInTurn: totalPlaced - acc }
-    acc += turn.count
-  }
-  return null
-}
-
 export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const mapPack = useMatchStore((s) => s.mapPack)!
   const tokens = useMatchStore((s) => s.tokens)
@@ -53,6 +45,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const rotateToken = useMatchStore((s) => s.rotateToken)
   const moveToken = useMatchStore((s) => s.moveToken)
   const dragging = useMatchStore((s) => s.dragging)
+  const dragOrigin = useMatchStore((s) => s.dragOrigin)
   const setDragging = useMatchStore((s) => s.setDragging)
   const pushLog = useMatchStore((s) => s.pushLog)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -60,6 +53,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const deployInitiative = useMatchStore((s) => s.deployInitiative)
   const deployDice = useMatchStore((s) => s.deployDice)
   const rollDeployInitiative = useMatchStore((s) => s.rollDeployInitiative)
+  const resetDeploy = useMatchStore((s) => s.resetDeploy)
 
   const bounds = mapPack.bounds
   const totalA = tokens.filter((t) => t.side === 'a').length
@@ -70,11 +64,17 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const allPlaced = totalPlaced === tokens.length && tokens.length > 0
 
   const seq = deployInitiative ? buildSequence(totalA, totalB, deployInitiative) : []
-  const cur = currentTurn(seq, totalPlaced)
-  const deploySide: Side | null = cur?.turn.side ?? null
-  const round = cur?.turn.round ?? 0
-  const placedInTurn = cur?.placedInTurn ?? 0
-  const needThisTurn = cur?.turn.count ?? 0
+  const [turnPointer, setTurnPointer] = useState(0)
+  // 重置部署（totalPlaced 归 0）时回到首批
+  useEffect(() => { if (totalPlaced === 0) setTurnPointer(0) }, [totalPlaced])
+
+  const cur = seq[turnPointer] ?? null
+  const deploySide: Side | null = cur?.side ?? null
+  const round = cur?.round ?? 0
+  const beforeCur = cur ? seq.slice(0, turnPointer).filter((t) => t.side === cur.side).reduce((s, t) => s + t.count, 0) : 0
+  const placedThisBatch = cur ? Math.max(0, (cur.side === 'a' ? placedA : placedB) - beforeCur) : 0
+  const needThisTurn = cur?.count ?? 0
+  const batchDone = cur ? placedThisBatch >= needThisTurn : false
   const canReroll = totalPlaced === 0 // 放下第一名后锁定先手
 
   function tryPlace(side: Side, p: Point) {
@@ -91,15 +91,19 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
       setIntercept({ title: '与特工重叠', reasons: [`与 ${overlap.name} 底座重叠`] })
       return
     }
+    const wall = circleHitsBlockingTerrain(pos, next.baseRadius, mapPack.terrain)
+    if (wall) {
+      setIntercept({ title: '与墙体重叠', reasons: [`落点在阻拦地形上`] })
+      return
+    }
     setIntercept(null)
     placeToken(next.uid, pos, next.facing)
     pushLog('deploy', `${next.name} 部署于 ${pos.x.toFixed(1)},${pos.y.toFixed(1)}（隐匿）`)
   }
 
   function onBoardClick(p: Point) {
-    if (allPlaced || !deploySide) return
-    if (deploySide !== cur!.turn.side) return
-    tryPlace(deploySide, p)
+    if (!cur || batchDone) return // 本批已满：需点「完成」交对方
+    tryPlace(cur.side, p)
   }
 
   function onTokenPointerDown(t: MatchToken) {
@@ -111,14 +115,33 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   function onPointerUp() {
     if (dragging) {
       const t = tokens.find((x) => x.uid === dragging)
-      if (t) {
+      if (t && dragOrigin) {
         const zone = t.side === 'a' ? mapPack.dropZones.a : mapPack.dropZones.b
+        const overlap = tokens.filter((o) => o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
+        const wall = circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain)
         if (!circleInsidePolygon(t.pos, t.baseRadius, zone)) {
-          setIntercept({ title: '出降落区', reasons: [`${t.name} 拖出己方降落区，已拉回`] })
-        } else pushLog('deploy', `${t.name} 移动至 ${t.pos.x.toFixed(1)},${t.pos.y.toFixed(1)}`)
+          moveToken(t.uid, dragOrigin)
+          setIntercept({ title: '出降落区', reasons: [`${t.name} 拖出己方降落区，已回退`] })
+        } else if (overlap) {
+          moveToken(t.uid, dragOrigin)
+          setIntercept({ title: '与特工重叠', reasons: [`${t.name} 与 ${overlap.name} 底座重叠，已回退`] })
+        } else if (wall) {
+          moveToken(t.uid, dragOrigin)
+          setIntercept({ title: '与墙体重叠', reasons: [`${t.name} 压在阻拦地形上，已回退`] })
+        } else {
+          setIntercept(null)
+          pushLog('deploy', `${t.name} 移动至 ${t.pos.x.toFixed(1)},${t.pos.y.toFixed(1)}`)
+        }
       }
       setDragging(null)
     }
+  }
+
+  function completeBatch() {
+    if (!cur || !batchDone) return
+    const side = cur.side
+    setTurnPointer((p) => p + 1)
+    pushLog('deploy', `${side.toUpperCase()} 方完成本批部署`)
   }
 
   return (
@@ -139,8 +162,16 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
           <span className="deploy-step">
             {allPlaced
               ? `部署完成 · 可开始转折点 1`
-              : `第 ${round + 1} 轮 · 轮到 ${deploySide!.toUpperCase()} 方 · 本轮 ${needThisTurn} 名（已放 ${placedInTurn}）`}
+              : cur
+                ? `第 ${round + 1} 轮 · 轮到 ${deploySide!.toUpperCase()} 方 · 本批 ${needThisTurn} 名（已放 ${placedThisBatch}）${batchDone ? ' · 本批已满' : ''}`
+                : '—'}
           </span>
+          {deploySide && !allPlaced && (
+            <span className="deploy-next">
+              <span className={`deploy-next-dot ${deploySide}`} />
+              {batchDone ? <>本批已满，点「完成本批部署」交对方</> : <>下一名：<strong>{tokens.find((t) => t.side === deploySide && !t.placed)?.name ?? '—'}</strong></>}
+            </span>
+          )}
         </div>
       )}
 
@@ -148,7 +179,23 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
         <button className="primary" disabled={!allPlaced} onClick={onBeginPlay} title={allPlaced ? '开始转折点 1' : `待部署：A×${totalA - placedA} B×${totalB - placedB}`}>
           开始转折点 1 ▶
         </button>
-        <span className="muted"> {`进度 A ${placedA}/${totalA} · B ${placedB}/${totalB} · 双击特工旋转朝向 · 拖动微调 · 部署即隐匿`}</span>
+        <button
+          className="primary"
+          disabled={!batchDone || allPlaced}
+          onClick={completeBatch}
+          title={batchDone ? '完成本批，交对方部署' : '本批尚未放满'}
+        >
+          完成本批部署 ▶
+        </button>
+        <button
+          className="reset-btn"
+          onClick={() => { if (confirm('仅重置部署？（地图和阵营保留）')) resetDeploy() }}
+          disabled={totalPlaced === 0 && !deployInitiative}
+          title="重置部署：清空落子与先手，保留地图"
+        >
+          ⟳ 重置部署
+        </button>
+        <span className="muted"> 待部署 A×{totalA - placedA} B×{totalB - placedB} · 双击特工旋转朝向 · 拖动微调 · 部署即隐匿</span>
       </div>
 
       {intercept && (

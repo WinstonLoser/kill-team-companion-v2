@@ -80,6 +80,7 @@ select, input[type=text], input:not([type]) {
   padding: 0.4rem; border-radius: 6px; min-height: 44px;
 }
 button.primary { background: var(--accent); color: #0b0d10; border-color: var(--accent); font-weight: 600; }
+button.primary:disabled, button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.5); }
 .error { color: #ff6b6b; }
 .result { margin-top: 0.5rem; }
 .outcome { font-size: 1.05rem; }
@@ -153,13 +154,14 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .weapon-stats { font-size: var(--text-xs); color: var(--muted); font-family: ui-monospace, monospace; }
 
 /* ===== 建队表格（特工/属性/阵营装备/装备配置 同行） ===== */
-.roster-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.operative-picker { overflow-x: auto; }
+.roster-table { width: 100%; min-width: 56rem; border-collapse: collapse; font-size: var(--text-sm); }
 .roster-table th, .roster-table td { padding: 0.3rem 0.4rem; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--border); }
 .roster-table thead th { font-size: var(--text-xs); color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
 .roster-table .rt-stat { text-align: center; width: 3rem; font-family: ui-monospace, monospace; }
 .roster-table .rt-stat.muted { color: var(--muted); font-size: var(--text-xs); }
-.roster-table .rt-wg { width: 9rem; }
-.roster-table .rt-wp { width: 13rem; }
+.roster-table .rt-wg { width: 10rem; }
+.roster-table .rt-wp { width: 19rem; }
 .roster-table .rt-act { width: 5.5rem; text-align: center; white-space: nowrap; }
 .roster-table .rt-wp select { width: 100%; margin-bottom: 0.2rem; }
 .roster-table select { min-height: 32px; font-size: var(--text-xs); }
@@ -173,6 +175,8 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .rt-leader-pick input { min-width: 0; width: auto; min-height: 0; }
 .rt-tag { font-size: var(--text-xs); padding: 0 0.3rem; border-radius: var(--radius-sm); background: var(--accent); color: #0b0d10; font-weight: 600; margin-left: 0.3rem; }
 .rt-mark-select { margin-left: 0.4rem; min-width: 5rem; }
+.rt-slot-fixed { font-size: var(--text-xs); color: var(--muted); margin-bottom: 0.2rem; }
+.rt-slot-desc { color: var(--muted); margin-right: 0.2rem; }
 .rt-cnt { margin-left: 0.3rem; font-weight: 700; color: var(--accent); }
 .rt-fixed { font-size: var(--text-xs); color: var(--muted); }
 .rt-remove { min-width: 28px; min-height: 28px; color: #ff6b6b; }
@@ -185,6 +189,11 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .deploy-init { display: inline-flex; align-items: center; gap: 0.4rem; }
 .deploy-init strong { color: var(--accent); }
 .deploy-step { font-size: var(--text-sm); }
+.deploy-next { display: inline-flex; align-items: center; gap: 0.35rem; font-size: var(--text-sm); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); background: rgba(74,158,255,0.1); }
+.deploy-next strong { color: var(--accent); }
+.deploy-next-dot { width: 10px; height: 10px; border-radius: 50%; }
+.deploy-next-dot.a { background: var(--side-a); }
+.deploy-next-dot.b { background: var(--side-b); }
 .mini-btn { min-height: 0; min-width: 0; padding: 0.1rem 0.5rem; font-size: var(--text-xs); margin-left: 0.4rem; }
 
 /* 命令徽标（隐/交） */
@@ -192,9 +201,11 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .token-order.conceal { background: #8a8f99; }
 .token-order.engage { background: #e0a44a; }
 
-.legality { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+.legality { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; min-width: 0; overflow: hidden; }
 .legality.has-warn { border-color: #6e3a2e; }
 .legality h3 { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--muted); }
+.legality ul { word-break: break-word; overflow-wrap: anywhere; }
+.legality li { overflow-wrap: anywhere; }
 .legality li.ok strong { color: #39d98a; }
 .legality li.warn strong { color: #ff6b6b; }
 .verdict { margin: 0.5rem 0 0; font-weight: 600; }
@@ -202,6 +213,12 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .verdict.warn { color: #ff6b6b; }
 
 .enter-gate { margin-top: 1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.enter-gate.top { margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+.enter-gate.top .enter-btn { flex: 1; min-height: 52px; font-size: 1.05rem; }
+.eg-status { display: inline-flex; gap: 0.4rem; }
+.eg-status .dot { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 28px; padding: 0 0.5rem; border-radius: 14px; font-size: 0.8rem; font-weight: 700; }
+.eg-status .dot.ok { background: #2f7d52; color: #fff; }
+.eg-status .dot.warn { background: #b5403a; color: #fff; }
 .enter-btn { min-height: 56px; padding: 0.6rem 1.4rem; font-size: 1rem; }
 .enter-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -258,6 +275,18 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .action-bar.b { border-left: 3px solid var(--side-b); }
 .push-text { font-size: 0.9rem; margin-bottom: 0.4rem; }
 .action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.ab-orders { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.ab-label { font-size: var(--text-xs); }
+.order-btn { min-height: 32px; padding: 0 0.7rem; font-size: var(--text-sm); border-radius: var(--radius-sm); }
+.order-btn.on { background: var(--accent); color: #0b0d10; border-color: var(--accent); font-weight: 700; }
+.order-btn.con.on { background: #8a8f99; border-color: #8a8f99; }
+.ap-display { margin-left: auto; font-size: var(--text-sm); font-family: ui-monospace, monospace; }
+.ap-display strong { color: var(--accent); }
+.ab-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
+.action-chip { min-height: 40px; padding: 0 0.6rem; font-size: var(--text-sm); border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 0.3rem; }
+.action-chip .chip-ap { font-size: var(--text-xs); color: var(--muted); font-family: ui-monospace, monospace; }
+.action-chip.armed { border-color: var(--accent); background: rgba(74,158,255,0.15); box-shadow: 0 0 0 2px var(--accent); }
+.action-chip.armed.atk { border-color: #b5403a; background: rgba(181,64,58,0.15); box-shadow: 0 0 0 2px #b5403a; }
 .main-btn { min-height: 56px; font-size: 0.95rem; font-weight: 600; }
 .main-btn.a { border-color: var(--side-a); }
 .main-btn.b { border-color: var(--side-b); }
@@ -383,7 +412,7 @@ button.primary { background: var(--accent); color: #0b0d10; border-color: var(--
 .faction-overview { margin-top: var(--space-3); }
 
 /* 战略阶段（6.1） */
-.strategy-phase { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
+.strategy-phase { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-3); }
 .strategy-phase h2 { text-align: center; font-size: var(--text-lg); }
 .sp-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-4); text-align: center; display: flex; flex-direction: column; gap: var(--space-2); align-items: center; }
 .sp-result { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: center; }

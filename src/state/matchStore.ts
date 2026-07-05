@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Point, TerrainFeature, OperativePlacement, Board as BoardT } from '../geometry'
 import { losFinding, engagementFinding, validateTarget, coverFinding, obscuredFinding } from '../geometry'
 import type { ObjectiveMarker, MapPack } from '../data/maps'
-import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effectiveMove, canDoAction, type ActionType } from './turnStateMachine'
+import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effectiveMove, canDoAction, ACTION_AP, type ActionType } from './turnStateMachine'
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
 import { ElectronicDiceSource, ManualDiceSource, hashSeed } from '../dice'
@@ -16,6 +16,11 @@ import plaguePack from '../data/packs/plague_marines.v1.json'
 
 // 对局聚合状态（1.12-1.16 共享）。UI 只读写 store（AR-9）；引擎/几何/骰源由 store 调用。
 const MATCH_PACK: FactionPack = loadPack(angelsPack)
+
+/** 行动中文名（日志/UI 用）。 */
+const ACTION_LABEL_ZH: Record<ActionType, string> = {
+  MOVE: '转移', DASH: '冲刺', FALL_BACK: '后撤', CHARGE: '冲锋', SHOOT: '射击', FIGHT: '近战',
+}
 // 多阵营注册表：按 opId 前缀解析特工阵营包（angels_/leg_/plg_）。
 const PACKS: FactionPack[] = [MATCH_PACK, loadPack(legionariesPack), loadPack(plaguePack)]
 function packOfOp(opId: string): FactionPack {
@@ -180,6 +185,10 @@ interface MatchState {
   strategyPasses: { a: boolean; b: boolean }
   /** 6.1 战略阶段：当前轮到谁使用计谋 */
   strategyTurn: 'a' | 'b' | null
+  /** 6.1 战略阶段：最近一次使用计谋前的快照（一级回退，防误点） */
+  lastPloy: { cp: { a: number; b: number }; strategyTurn: 'a' | 'b'; strategyPasses: { a: boolean; b: boolean }; activeStratagems: { a: string[]; b: string[] } } | null
+  /** 激活期逐步回退栈：每次 doAction 前压栈，undoAction 弹栈恢复（AP/行动记录/位置）。激活结束清空。 */
+  activationUndo: { uid: string; apUsed: number; actionsThisActivation: ActionType[]; fallBackDone: boolean; chargeDone: boolean; moveDone: boolean; pos: Point }[]
 
   // actions
   setPhase: (p: Phase) => void
@@ -191,6 +200,8 @@ interface MatchState {
   /** D2：自定义板编辑结果一次性提交（地形+目标点+降落区）。 */
   commitBlankMap: (draft: { terrain: TerrainFeature[]; objectives: ObjectiveMarker[]; dropA: Point[]; dropB: Point[] }) => void
   initTokens: (tokens: MatchToken[]) => void
+  /** 仅重置部署：所有 token 取消放置 + 清部署先手，保留地图与 token 阵容。 */
+  resetDeploy: () => void
   placeToken: (uid: string, pos: Point, facing: number) => void
   moveToken: (uid: string, pos: Point) => void
   rotateToken: (uid: string) => void
@@ -222,6 +233,8 @@ interface MatchState {
   rollInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
   /** 6.1：战略阶段使用计谋（花 CP）或跳过 */
   strategyAct: (side: Side, action: 'ploy' | 'pass') => void
+  /** 6.1：撤销最近一次战略计谋（恢复 CP/回合/激活态） */
+  strategyUndo: () => void
   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
   setOverride: (key: string, value: boolean) => void
   clearOverride: (key: string) => void
@@ -234,6 +247,12 @@ interface MatchState {
   setLogFilter: (f: LogKind | 'all') => void
   activate: (uid: string, side: Side) => void
   endActivation: (uid: string) => void
+  /** 激活时选命令（交战/隐匿）。 */
+  selectOrder: (uid: string, order: 'ENGAGED' | 'CONCEALED') => void
+  /** 执行一个行动（先 checkAction 校验，通过则 commit AP+记录）。 */
+  doAction: (uid: string, action: ActionType) => { ok: boolean; reason?: string }
+  /** 撤销当前激活特工的最近一个行动（恢复 AP/行动记录/位置）。 */
+  undoAction: () => void
   /** 查特工有效 APL（base + effects）。 */
   effectiveAplOf: (uid: string) => number
   /** 查特工有效移动距离（base + effects）。 */
@@ -310,6 +329,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   deployRollNonce: 0,
   strategyPasses: { a: false, b: false },
   strategyTurn: null,
+  lastPloy: null,
+  activationUndo: [],
 
   setPhase: (phase) => set({ phase }),
   loadMap: (m) =>
@@ -358,6 +379,15 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set({ mapPack: merged, customTerrain: draft.terrain, phase: 'deploy' })
   },
   initTokens: (tokens) => set({ tokens }),
+  resetDeploy: () =>
+    set((s) => ({
+      tokens: s.tokens.map((t) => ({ ...t, placed: false, pos: { x: -1, y: -1 }, facing: 0 })),
+      deployInitiative: null,
+      deployDice: null,
+      deployRollNonce: 0,
+      intercept: null,
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '部署已重置（地图保留）' }, ...s.log].slice(0, 80),
+    })),
   placeToken: (uid, pos, facing) =>
     set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, placed: true, pos, facing } : t)) })),
   moveToken: (uid, pos) => set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, pos } : t)) })),
@@ -455,7 +485,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       // 花 1CP
       const cp = { ...s.turn.cp, [side]: Math.max(0, s.turn.cp[side] - 1) }
       const next = side === 'a' ? 'b' : 'a'
-      set({ turn: { ...s.turn, cp }, strategyTurn: next, strategyPasses: { a: false, b: false } })
+      // 回退快照（防误点）：记下消费前的 CP/回合/跳过/激活态
+      const lastPloy = { cp: s.turn.cp, strategyTurn: side, strategyPasses: { ...s.strategyPasses }, activeStratagems: { a: [...s.activeStratagems.a], b: [...s.activeStratagems.b] } }
+      set({ turn: { ...s.turn, cp }, strategyTurn: next, strategyPasses: { a: false, b: false }, lastPloy })
       s.pushLog('ploy', `${side.toUpperCase()} 方使用战略计谋（−1CP）`)
     } else {
       // 跳过
@@ -464,13 +496,26 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const bothPassed = passes.a && passes.b
       if (bothPassed) {
         // 连续两次跳过 → 进入交战阶段
-        set({ phase: 'play', strategyPasses: passes, strategyTurn: null, turn: { ...s.turn, phase: 'ENGAGEMENT' } })
+        set({ phase: 'play', strategyPasses: passes, strategyTurn: null, lastPloy: null, turn: { ...s.turn, phase: 'ENGAGEMENT' } })
         s.pushLog('system', `战略阶段结束 → 进入交战阶段（${s.initiative?.toUpperCase()} 方先激活）`)
       } else {
         set({ strategyPasses: passes, strategyTurn: next })
         s.pushLog('system', `${side.toUpperCase()} 方跳过战略计谋`)
       }
     }
+  },
+  strategyUndo: () => {
+    const s = get()
+    const lp = s.lastPloy
+    if (!lp) return
+    set({
+      turn: { ...s.turn, cp: lp.cp },
+      strategyTurn: lp.strategyTurn,
+      strategyPasses: lp.strategyPasses,
+      activeStratagems: lp.activeStratagems,
+      lastPloy: null,
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '已撤销最近一次战略计谋' }, ...s.log].slice(0, 80),
+    })
   },
   toggleStratagem: (side, effectId) =>
     set((s) => {
@@ -501,7 +546,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   setLogFilter: (logFilter) => set({ logFilter }),
   // P5：activate 只 dispatch，由 reducer 自包含 upsert ready:true（不再手填 operatives）。
   activate: (uid, side) => {
-    set((s) => ({ turn: turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: side }) }))
+    set((s) => ({ turn: turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: side }), activationUndo: [] }))
     // 5-6 mucus_exit：激活期 effect resolver（排毒口 D3=3 挂 POISON / D3 伤）
     const s = get()
     const activator = s.tokens.find((t) => t.uid === uid)
@@ -542,7 +587,37 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }
   },
   endActivation: (uid) =>
-    set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }) })),
+    set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }), activationUndo: [] })),
+  selectOrder: (uid, order) => {
+    set((s) => ({ turn: turnReducer(s.turn, { type: 'SELECT_ORDER', opId: uid, order }) }))
+    get().pushLog('turn', `${get().tokens.find((t) => t.uid === uid)?.name ?? uid} 选命令：${order === 'ENGAGED' ? '交战' : '隐匿'}`)
+  },
+  doAction: (uid, action) => {
+    const chk = get().checkAction(uid, action)
+    if (!chk.ok) return chk
+    const s = get()
+    const op = s.turn.operatives[uid]
+    const tok = s.tokens.find((t) => t.uid === uid)
+    // 逐步回退栈：压入 commit 前状态
+    const undo = op && tok
+      ? [...s.activationUndo, { uid, apUsed: op.apUsed, actionsThisActivation: [...op.actionsThisActivation], fallBackDone: op.fallBackDone, chargeDone: op.chargeDone, moveDone: op.moveDone, pos: tok.pos }]
+      : s.activationUndo
+    set({ turn: turnReducer(s.turn, { type: 'DO_ACTION', opId: uid, action }), activationUndo: undo })
+    s.pushLog('turn', `${s.tokens.find((t) => t.uid === uid)?.name ?? uid} → ${ACTION_LABEL_ZH[action] ?? action}（−${ACTION_AP[action]}AP）`)
+    return { ok: true }
+  },
+  undoAction: () => {
+    const s = get()
+    const last = s.activationUndo[s.activationUndo.length - 1]
+    if (!last) return
+    const op = s.turn.operatives[last.uid]
+    set({
+      turn: op ? { ...s.turn, operatives: { ...s.turn.operatives, [last.uid]: { ...op, apUsed: last.apUsed, actionsThisActivation: [...last.actionsThisActivation], fallBackDone: last.fallBackDone, chargeDone: last.chargeDone, moveDone: last.moveDone } } } : s.turn,
+      tokens: s.tokens.map((t) => (t.uid === last.uid ? { ...t, pos: last.pos } : t)),
+      activationUndo: s.activationUndo.slice(0, -1),
+      log: [{ id: nextLogId(), kind: 'turn' as LogKind, text: `↶ 撤销 ${s.tokens.find((t) => t.uid === last.uid)?.name ?? ''} 上一步行动` }, ...s.log].slice(0, 80),
+    })
+  },
   effectiveAplOf: (uid) => {
     const s = get()
     const t = s.tokens.find((x) => x.uid === uid)
@@ -576,11 +651,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const apl = effectiveApl(baseApl, effects)
     // effectiveActionAp 已在 canDoAction 内消费（ACTION_AP_MOD delta → ACTION_AP 调整）
     const isAstartes = pack.faction.keywords.includes('ASTARTES')
+    // 1" 控制范围内是否有敌方（驱动 FALL_BACK/SHOOT/FIGHT 门控）
+    const inEng = s.tokens.some(
+      (e) => e.alive && e.placed && e.side !== t.side &&
+        Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1,
+    )
     return canDoAction(s.turn, uid, action, {
       apl,
       isAstartes,
-      inEngagementRange: false,
-      enemyInEngagement: false,
+      inEngagementRange: inEng,
+      enemyInEngagement: inEng,
     })
   },
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====
@@ -872,6 +952,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   deployRollNonce: 0,
   strategyPasses: { a: false, b: false },
   strategyTurn: null,
+  lastPloy: null,
+  activationUndo: [],
     }),
 }))
 

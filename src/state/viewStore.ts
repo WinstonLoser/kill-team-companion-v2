@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
-// 三顶层入口（无存档面 D-20）。视图切换走 Zustand 状态，不用路由库（AQ-7 细化）。
-export type View = 'roster' | 'match' | 'rules'
+// 顶层入口（无存档面 D-20）。视图切换走 Zustand 状态，不用路由库（AQ-7 细化）。
+export type View = 'roster' | 'match' | 'rules' | 'testLab'
 
 interface ViewState {
   currentView: View

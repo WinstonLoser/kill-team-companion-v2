@@ -44,14 +44,38 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_plasma_pistol_std",
-        "leg_plasma_pistol_overload",
-        "leg_corrupted_bolt_pistol",
-        "leg_power_fist",
-        "leg_power_maul",
-        "leg_power_weapon",
-        "leg_corrupted_chainsword"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_plasma_pistol_std"
+            ],
+            [
+              "leg_plasma_pistol_overload"
+            ],
+            [
+              "leg_corrupted_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_power_fist"
+            ],
+            [
+              "leg_power_maul"
+            ],
+            [
+              "leg_power_weapon"
+            ],
+            [
+              "leg_corrupted_chainsword"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -72,11 +96,32 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_plasma_pistol_std",
-        "leg_plasma_pistol_overload",
-        "leg_corrupted_bolt_pistol",
-        "leg_daemon_blade"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_plasma_pistol_std"
+            ],
+            [
+              "leg_plasma_pistol_overload"
+            ],
+            [
+              "leg_corrupted_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_daemon_blade"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "leg_soulfeast"
       ]
     },
     {
@@ -96,9 +141,26 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_demon_claw"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_demon_claw"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "leg_rite_of_possession"
       ]
     },
     {
@@ -119,11 +181,29 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_infernal_blast",
-        "leg_soul_siphon",
-        "leg_wicked_dagger"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ],
+            [
+              "leg_infernal_blast"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_soul_siphon"
+            ],
+            [
+              "leg_wicked_dagger"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -144,9 +224,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_twohanded_chainsword"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_twohanded_chainsword"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -167,13 +261,35 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_flamer",
-        "leg_meltagun",
-        "leg_plasma_gun_std",
-        "leg_plasma_gun_overload",
-        "leg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ],
+            [
+              "leg_flamer"
+            ],
+            [
+              "leg_meltagun"
+            ],
+            [
+              "leg_plasma_gun_std"
+            ],
+            [
+              "leg_plasma_gun_overload"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -194,15 +310,41 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_heavy_bolter_c",
-        "leg_heavy_bolter_s",
-        "leg_missile_frag",
-        "leg_missile_kraken",
-        "leg_reaper_c",
-        "leg_reaper_s",
-        "leg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ],
+            [
+              "leg_heavy_bolter_c"
+            ],
+            [
+              "leg_heavy_bolter_s"
+            ],
+            [
+              "leg_missile_frag"
+            ],
+            [
+              "leg_missile_kraken"
+            ],
+            [
+              "leg_reaper_c"
+            ],
+            [
+              "leg_reaper_s"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -223,11 +365,29 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_boltgun",
-        "leg_chainsword",
-        "leg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ],
+            [
+              "leg_boltgun"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_chainsword"
+            ],
+            [
+              "leg_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -247,9 +407,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol_talon",
-        "leg_flaying_knife"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol_talon"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_flaying_knife"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -269,11 +443,29 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "leg_bolt_pistol",
-        "leg_boltgun",
-        "leg_chainsword",
-        "leg_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "leg_bolt_pistol"
+            ],
+            [
+              "leg_boltgun"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "leg_chainsword"
+            ],
+            [
+              "leg_fists"
+            ]
+          ]
+        }
       ]
     }
   ],

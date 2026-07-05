@@ -44,10 +44,30 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_plasma_pistol_std",
-        "angels_plasma_pistol_overload",
-        "angels_power_fist"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_plasma_pistol_std"
+            ],
+            [
+              "angels_plasma_pistol_overload"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_power_fist"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "ability_heroicLeader",
+        "ability_ironHalo"
       ]
     },
     {
@@ -67,15 +87,44 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_heavy_bolt_pistol",
-        "angels_hand_flamer",
-        "angels_chainsword",
-        "angels_power_fist",
-        "angels_power_weapon",
-        "angels_thunder_hammer",
-        "angels_plasma_pistol_std",
-        "angels_plasma_pistol_overload"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_heavy_bolt_pistol"
+            ],
+            [
+              "angels_hand_flamer"
+            ],
+            [
+              "angels_plasma_pistol_std"
+            ],
+            [
+              "angels_plasma_pistol_overload"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_chainsword"
+            ],
+            [
+              "angels_power_fist"
+            ],
+            [
+              "angels_power_weapon"
+            ],
+            [
+              "angels_thunder_hammer"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "ability_doctrineOfWar"
       ]
     },
     {
@@ -95,16 +144,47 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_auto_bolt_rifle",
-        "angels_bolt_rifle",
-        "angels_stalker_heavy",
-        "angels_stalker_mobile",
-        "angels_chainsword",
-        "angels_fists",
-        "angels_power_fist",
-        "angels_power_weapon",
-        "angels_thunder_hammer"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_auto_bolt_rifle"
+            ],
+            [
+              "angels_bolt_rifle"
+            ],
+            [
+              "angels_stalker_heavy"
+            ],
+            [
+              "angels_stalker_mobile"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_chainsword"
+            ],
+            [
+              "angels_fists"
+            ],
+            [
+              "angels_power_fist"
+            ],
+            [
+              "angels_power_weapon"
+            ],
+            [
+              "angels_thunder_hammer"
+            ]
+          ]
+        }
+      ],
+      "abilities": [
+        "ability_doctrineOfWar"
       ]
     },
     {
@@ -124,9 +204,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_heavy_bolt_pistol",
-        "angels_chainsword"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_heavy_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_chainsword"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -145,9 +239,23 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_heavy_bolt_pistol",
-        "angels_chainsword"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_heavy_bolt_pistol"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_chainsword"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -166,12 +274,32 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_bolt_pistol",
-        "angels_sniper_executioner",
-        "angels_sniper_superfrag",
-        "angels_sniper_kraken",
-        "angels_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_bolt_pistol"
+            ],
+            [
+              "angels_sniper_executioner"
+            ],
+            [
+              "angels_sniper_superfrag"
+            ],
+            [
+              "angels_sniper_kraken"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -191,11 +319,29 @@
       "base": {
         "diameterMm": 40
       },
-      "weaponRefs": [
-        "angels_bolt_pistol",
-        "angels_hb_concentrating",
-        "angels_hb_sweeping",
-        "angels_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_bolt_pistol"
+            ],
+            [
+              "angels_hb_concentrating"
+            ],
+            [
+              "angels_hb_sweeping"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -215,14 +361,38 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_auto_bolt_rifle",
-        "angels_bolt_rifle",
-        "angels_stalker_heavy",
-        "angels_stalker_mobile",
-        "angels_gl_frag",
-        "angels_gl_kraken",
-        "angels_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_auto_bolt_rifle"
+            ],
+            [
+              "angels_bolt_rifle"
+            ],
+            [
+              "angels_stalker_heavy"
+            ],
+            [
+              "angels_stalker_mobile"
+            ],
+            [
+              "angels_gl_frag"
+            ],
+            [
+              "angels_gl_kraken"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_fists"
+            ]
+          ]
+        }
       ]
     },
     {
@@ -241,12 +411,32 @@
       "base": {
         "diameterMm": 32
       },
-      "weaponRefs": [
-        "angels_auto_bolt_rifle",
-        "angels_bolt_rifle",
-        "angels_stalker_heavy",
-        "angels_stalker_mobile",
-        "angels_fists"
+      "loadouts": [
+        {
+          "description": "远程武器",
+          "options": [
+            [
+              "angels_auto_bolt_rifle"
+            ],
+            [
+              "angels_bolt_rifle"
+            ],
+            [
+              "angels_stalker_heavy"
+            ],
+            [
+              "angels_stalker_mobile"
+            ]
+          ]
+        },
+        {
+          "description": "近战武器",
+          "options": [
+            [
+              "angels_fists"
+            ]
+          ]
+        }
       ]
     }
   ],
