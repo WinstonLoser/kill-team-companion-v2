@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { OperativeCard } from '../components/OperativeCard/OperativeCard';
 import { useLocaleStore } from '../../state/localeStore';
 import { t } from '../../utils/i18n';

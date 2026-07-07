@@ -21,10 +21,10 @@ export const PIPELINE_STEPS = [
 ] as const
 export type PipelineStep = (typeof PIPELINE_STEPS)[number]
 
-// ===== 叠加 policy（架构 §2.6，6 种） =====
+// ===== 叠加 policy（架构 §2.6 + DN2 R9，7 种） =====
 export const STACKING_POLICIES = [
   'STACKABLE', 'UNIQUE_PER_SOURCE', 'UNIQUE_PER_GROUP',
-  'MUTUALLY_EXCLUSIVE_WITH', 'CONDITIONAL', 'CAP_PER_ATTACK_DIE',
+  'MUTUALLY_EXCLUSIVE_WITH', 'CONDITIONAL', 'CAP_PER_ATTACK_DIE', 'UNIQUE_PER_ACTION',
 ] as const
 export type StackingPolicy = (typeof STACKING_POLICIES)[number]
 
@@ -56,9 +56,11 @@ export type Modifier =
   | { kind: 'IMMUNITY'; payload: { immuneToEffectGroup: string } }
   | { kind: 'EXTRA_DAMAGE_ON_HIT'; payload: { amount: number; cap?: number } }
   | { kind: 'GRANT_MARKER'; payload: { marker: string; target: 'SELF' | 'DEFENDER' | 'ATTACKER'; atStep?: string } }
-  | { kind: 'HEAL_OPERATIVE'; payload: { amount: number; target: 'SELF' | 'target'; condition?: string } }
+  | { kind: 'HEAL_OPERATIVE'; payload: { amount: number; target: 'SELF' | 'DEFENDER' | 'ATTACKER'; condition?: string } }
   | { kind: 'APL_PLUS'; payload: { amount: number; duration: 'ACTIVATION' | 'TURNING_POINT' | 'BATTLE' } }
   | { kind: 'CUSTOM_HOOK'; payload: { hookId: string; prompt: string } }
+  | { kind: 'STAT_OVERRIDE'; payload: { stat: 'save' | 'move' | 'apl'; value: number } }
+  | { kind: 'ACTION_AP_MOD'; payload: { action: string; delta: number } }
 
 export type ModifierKind = Modifier['kind']
 
@@ -68,6 +70,7 @@ export const MODIFIER_KINDS = [
   'REROLL', 'AUTO_SUCCESS', 'ATTACH_WEAPON_RULE', 'PIERCE', 'COVER_SAVE',
   'DAMAGE_MITIGATION', 'IGNORE_DAMAGE', 'IMMUNITY', 'EXTRA_DAMAGE_ON_HIT',
   'GRANT_MARKER', 'HEAL_OPERATIVE', 'APL_PLUS', 'CUSTOM_HOOK',
+  'STAT_OVERRIDE', 'ACTION_AP_MOD',
 ] as const satisfies readonly ModifierKind[]
 
 // ===== Effect 描述符（四问：trigger.point / pipelineStep / modifier.kind / stacking.policy） =====
@@ -87,8 +90,11 @@ export interface Effect {
 export interface SubFactionSelector {
   id: string
   label: string
-  options: string[]
+  options: string[] // option ids（阵营机制 = 数据；死亡天使=战团战术 effectId，军团兵=印记 id）
+  max: number // 可选项数上限（死亡天使 8 选 2 → max=2；军团兵印记 5 选 1 → max=1）
   default?: string
+  /** 选择器作用域：team=整队选 max 项（战团战术）；perOperative=每名特工各选（混沌印记，存 perOperativeMarks）。默认 team。 */
+  scope?: 'team' | 'perOperative'
 }
 
 export interface OperativeStats {
@@ -98,10 +104,10 @@ export interface OperativeStats {
   wounds: number
 }
 
+/** 装备选配槽：从 `options` 里选一个 option（每个 option 是一束 weaponId，多数单项 [id]）。 */
 export interface Loadout {
-  description: string
-  count: number
-  options: string[][]
+  description: string // 槽位名（远程武器/近战武器/…）
+  options: string[][] // 互斥选项；每项 = 一束 weaponId
 }
 
 export interface Operative {
@@ -110,10 +116,8 @@ export interface Operative {
   keywords: string[]
   stats: OperativeStats
   base: { diameterMm: number } // D-27：规则源不提供，GW 约定
-  weaponRefs?: string[]
-  loadouts?: Loadout[]
-  abilities?: string[]
-  factionRuleRefs?: string[]
+  loadouts: Loadout[] // 装备选配槽（替换原扁平 weaponRefs）
+  abilities?: string[] // 该特工拥有的 ability effectId 列表（数据卡展示用）
 }
 
 export type WeaponKind = 'RANGED' | 'MELEE'
@@ -149,7 +153,15 @@ export interface Wargear {
 }
 
 export interface BuildConstraints {
+  // 特工来源结构性约束（KT Lite 无点数 D-30，仅 min/max 数量）
+  operatives?: { min?: number; max?: number }
+  /** AC3 队长规则：入队特工须 ≥1 名来自该列表（如 [野心勇士, 神选者]）。 */
+  leaderFrom?: string[]
+  /** AC3 每类限 1：除该例外列表（如 [战士]）外，每个 operativeId 全队最多 1 名。 */
+  maxPerTypeExcept?: string[]
+  // 装备限制：key 为 weaponId 或武器 keyword（按 equipmentLimitScope 判定），value 为全队上限数量
   equipmentLimits?: Record<string, number>
+  equipmentLimitScope?: 'weaponId' | 'keyword'
   notes?: string
 }
 

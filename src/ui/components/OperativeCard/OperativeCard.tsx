@@ -85,8 +85,8 @@ export function OperativeCard({ operative, pack, selectedWeaponIds, factionRuleS
               <h3 className="rule-header">{locale === 'zh' ? '阵营规则' : 'FACTION RULES'}</h3>
               <div className="rule-list">
                 {factionRules.map((r: any) => {
-                  if (r.options && factionRuleSelections && factionRuleSelections[r.ruleId] && factionRuleSelections[r.ruleId].length > 0) {
-                    const selectedOpts = r.options.filter((opt: any) => factionRuleSelections[r.ruleId].includes(opt.id));
+                  if (r.options && factionRuleSelections && factionRuleSelections[r.ruleId] && factionRuleSelections[r.ruleId]!.length > 0) {
+                    const selectedOpts = r.options.filter((opt: any) => factionRuleSelections[r.ruleId]!.includes(opt.id));
                     return selectedOpts.map((opt: any) => (
                       <div key={opt.id} className="rule-item clickable" onClick={() => setActiveInfo({ title: `${t(opt.name, locale)} (${t(r.name, locale)})`, content: t(opt.description, locale) })}>
                         <span className="rule-name">{t(opt.name, locale)} ({t(r.name, locale)})</span>

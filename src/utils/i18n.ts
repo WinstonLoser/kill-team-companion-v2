@@ -81,8 +81,8 @@ export function t(text: string, locale: Locale): string {
   if (parts.length < 2) return text; // Not bilingual format
   
   if (locale === 'en') {
-    return parts[0].trim();
+    return parts[0]?.trim() ?? text;
   } else {
-    return parts[parts.length - 1].trim();
+    return parts[parts.length - 1]?.trim() ?? text;
   }
 }

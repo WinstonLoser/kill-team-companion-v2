@@ -1,0 +1,7 @@
+- [ ] Run `git merge origin/main --no-commit`
+- [ ] Resolve `src/App.tsx` and `src/state/viewStore.ts` (Merge logic)
+- [ ] Resolve `src/ui/components/OperativeCard/*` (Keep HEAD)
+- [ ] Resolve `src/ui/test-lab/*` (Keep HEAD layout, adapt props to main)
+- [ ] Resolve `src/data/packs/*.json` (Keep HEAD)
+- [ ] Resolve `src/rules/types.ts` & `faction-pack.schema.json` (Merge schema changes)
+- [ ] Verify build
