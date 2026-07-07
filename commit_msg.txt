@@ -1,0 +1,12 @@
+feat(ui): Add InfoOverlay, universal rules, and new faction packs
+
+UI Changes:
+- Implemented `InfoOverlay` component to serve as a generic tech-themed modal overlay for rule explanations.
+- Integrated `InfoOverlay` into `OperativeCard` making weapon special rules, abilities, and faction rules clickable.
+- Updated `OperativeCard.css` to allow absolute positioning of the overlay tightly bound to the card itself (using a relative wrapper).
+
+Rules & Data:
+- Created `universalWeaponRules.ts` to manage English and Chinese explanations for generic weapon rules (Piercing, Lethal, Blast, Torrent, etc.).
+- Fixed missing bilingual strings in `angels_of_death.v1.json` ability names, ensuring correct translations.
+- Added new faction data packs: `legionaries.v1.json` and `plague_marines.v1.json`.
+- Integrated `i18n.ts` and `localeStore.ts` to fully support dynamic language switching in the UI testing lab.

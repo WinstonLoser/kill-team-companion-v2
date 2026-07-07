@@ -11,72 +11,72 @@
     {
       "ruleId": "chapter_tactics",
       "name": "Chapter Tactics / 战团战术",
-      "description": "Select a primary and secondary CHAPTER TACTIC for friendly ANGEL OF DEATH operatives. Multiple instances of the same CHAPTER TACTIC aren’t cumulative.",
+      "description": "Select a primary and secondary CHAPTER TACTIC for friendly ANGEL OF DEATH operatives. Multiple instances of the same CHAPTER TACTIC aren’t cumulative. / 为友方死亡天使特工选择一个主要和一个次要战团战术。同一战团战术的多个实例不可叠加。",
       "type": "SELECTION",
       "selectionLimit": 2,
       "options": [
         {
           "id": "tactic_aggressive",
           "name": "1. Aggressive / 猛攻",
-          "description": "This operative’s melee weapons have the Rending weapon rule."
+          "description": "This operative’s melee weapons have the Rending weapon rule. / 该特工的近战武器拥有“撕裂”武器规则。"
         },
         {
           "id": "tactic_dueller",
           "name": "2. Dueller / 决斗家",
-          "description": "Whenever this operative is fighting or retaliating, each of your normal successes can block one unresolved critical success (unless the enemy operative’s weapon has the Brutal weapon rule)."
+          "description": "Whenever this operative is fighting or retaliating, each of your normal successes can block one unresolved critical success (unless the enemy operative’s weapon has the Brutal weapon rule). / 每当该特工进行近战或反击时，您的每个普通成功都可以格挡一个未结算的关键成功（除非敌方特工的武器拥有“残暴”武器规则）。"
         },
         {
           "id": "tactic_resolute",
           "name": "3. Resolute / 坚决",
-          "description": "You can ignore any changes to this operative’s APL stat and it isn’t affected by enemy operatives’ Shock weapon rule."
+          "description": "You can ignore any changes to this operative’s APL stat and it isn’t affected by enemy operatives’ Shock weapon rule. / 您可以忽略对该特工APL属性的任何改变，并且它不受敌方特工“震荡”武器规则的影响。"
         },
         {
           "id": "tactic_stealthy",
           "name": "4. Stealthy / 隐秘",
-          "description": "Whenever an operative is shooting this operative, if you can retain any cover saves, you can retain one additional cover save, or you can retain one cover save as a critical success instead."
+          "description": "Whenever an operative is shooting this operative, if you can retain any cover saves, you can retain one additional cover save, or you can retain one cover save as a critical success instead. / 每当有特工对该特工进行射击时，如果您可以保留任何掩护豁免，您可以额外保留一个掩护豁免，或者您可以将一个掩护豁免作为关键成功保留。"
         },
         {
           "id": "tactic_mobile",
           "name": "5. Mobile / 机动",
-          "description": "This operative can perform the Fall Back action for 1 less AP. It can perform the Charge action while within control range of an enemy operative."
+          "description": "This operative can perform the Fall Back action for 1 less AP. It can perform the Charge action while within control range of an enemy operative. / 该特工执行“撤退”行动时少消耗1AP。当位于敌方特工控制范围内时，它可以执行“冲锋”行动。"
         },
         {
           "id": "tactic_hardy",
           "name": "6. Hardy / 强健",
-          "description": "Whenever an operative is shooting this operative, defence dice results of 5+ are critical successes. When retaliating, the first time taking Normal Dmg of 3+, inflicts 1 less damage."
+          "description": "Whenever an operative is shooting this operative, defence dice results of 5+ are critical successes. When retaliating, the first time taking Normal Dmg of 3+, inflicts 1 less damage. / 每当有特工对该特工进行射击时，5+的防御骰结果视为关键成功。反击时，首次受到3+普通伤害时，伤害减少1点。"
         },
         {
           "id": "tactic_sharpshooter",
           "name": "7. Sharpshooter / 神射手",
-          "description": "Whenever shooting during an activation without Charge, Fall Back or Reposition, its bolt weapons have Accurate 1 and Severe rules."
+          "description": "Whenever shooting during an activation without Charge, Fall Back or Reposition, its bolt weapons have Accurate 1 and Severe rules. / 在没有进行“冲锋”、“撤退”或“重新部署”的激活中射击时，其爆矢武器拥有“精准 1”和“严重”规则。"
         },
         {
           "id": "tactic_siege_specialist",
           "name": "8. Siege Specialist / 攻城专家",
-          "description": "Ranged weapons have Saturate rule. Whenever fighting or retaliating, enemy operatives cannot assist."
+          "description": "Ranged weapons have Saturate rule. Whenever fighting or retaliating, enemy operatives cannot assist. / 远程武器拥有“饱和”规则。进行近战或反击时，敌方特工不能协助。"
         }
       ]
     },
     {
       "ruleId": "combat_doctrine",
       "name": "Combat Doctrine / 战斗条令",
-      "description": "Select one COMBAT DOCTRINE. Whenever a friendly ANGEL OF DEATH operative is X, its weapons have the Balanced weapon rule.",
+      "description": "Select one COMBAT DOCTRINE. Whenever a friendly ANGEL OF DEATH operative is X, its weapons have the Balanced weapon rule. / 选择一个战斗条令。每当友方死亡天使特工符合对应条件时，其武器拥有“平衡”武器规则。",
       "type": "PASSIVE",
       "options": [
         {
           "id": "doctrine_devastator",
           "name": "Devastator Doctrine / 毁灭者条令",
-          "description": "Shooting an operative more than 6\" from it."
+          "description": "Shooting an operative more than 6\" from it. / 射击距离其 6\" 以外的特工。"
         },
         {
           "id": "doctrine_tactical",
           "name": "Tactical Doctrine / 战术条令",
-          "description": "Shooting an operative within 6\" of it."
+          "description": "Shooting an operative within 6\" of it. / 射击距离其 6\" 以内的特工。"
         },
         {
           "id": "doctrine_assault",
           "name": "Assault Doctrine / 突击条令",
-          "description": "Fighting or retaliating."
+          "description": "Fighting or retaliating. / 进行近战或反击。"
         }
       ]
     }
@@ -84,43 +84,43 @@
   "abilities": [
     {
       "abilityId": "heroic_leader",
-      "name": "Heroic Leader",
-      "description": "Once per turning point, use a firefight ploy for 0CP, Combat Doctrine, or Adjust Doctrine for 0CP."
+      "name": "Heroic Leader / 英勇领袖",
+      "description": "Once per turning point, use a firefight ploy for 0CP, Combat Doctrine, or Adjust Doctrine for 0CP. / 每个转折点限一次，以 0CP 使用一个交战计谋，或者以 0CP 使用战斗条令。"
     },
     {
       "abilityId": "iron_halo",
-      "name": "Iron Halo",
-      "description": "Once per battle, ignore Normal Dmg from an attack dice."
+      "name": "Iron Halo / 钢铁光环",
+      "description": "Once per battle, ignore Normal Dmg from an attack dice. / 每场战斗限一次，忽略一枚攻击骰造成的普通伤害。"
     },
     {
       "abilityId": "doctrine_warfare_assault_tactical",
-      "name": "Doctrine Warfare",
-      "description": "Once per battle: Assault doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP."
+      "name": "Doctrine Warfare / 条令战争",
+      "description": "Once per battle: Assault doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP. / 每场战斗限一次：突击条令计谋消耗 0CP。战术条令计谋消耗 0CP。"
     },
     {
       "abilityId": "doctrine_warfare_devastator_tactical",
-      "name": "Doctrine Warfare",
-      "description": "Once per battle: Devastator doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP."
+      "name": "Doctrine Warfare / 条令战争",
+      "description": "Once per battle: Devastator doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP. / 每场战斗限一次：毁灭者条令计谋消耗 0CP。战术条令计谋消耗 0CP。"
     },
     {
       "abilityId": "chapter_veteran",
-      "name": "Chapter Veteran",
-      "description": "Select one additional CHAPTER TACTIC for the battle."
+      "name": "Chapter Veteran / 战团老兵",
+      "description": "Select one additional CHAPTER TACTIC for the battle. / 为本场战斗额外选择一个战团战术。"
     },
     {
       "abilityId": "grenadier",
-      "name": "Grenadier",
-      "description": "Can use frag and krak grenades without counting towards limited uses. When doing so, improve Hit stat by 1."
+      "name": "Grenadier / 掷弹兵",
+      "description": "Can use frag and krak grenades without counting towards limited uses. When doing so, improve Hit stat by 1. / 可以使用破片和穿甲手雷，且不计入使用限制。如此做时，命中属性提升 1。"
     },
     {
       "abilityId": "camo_cloak",
-      "name": "Camo Cloak",
-      "description": "When shot, ignore Saturate weapon rule. If Stealthy chapter tactic is selected, retain two cover saves."
+      "name": "Camo Cloak / 迷彩披风",
+      "description": "When shot, ignore Saturate weapon rule. If Stealthy chapter tactic is selected, retain two cover saves. / 被射击时，忽略“饱和”武器规则。如果选择了隐秘战团战术，则保留两个掩护豁免。"
     },
     {
       "abilityId": "optics",
-      "name": "Optics (1AP)",
-      "description": "Until next activation, when shooting, enemy operatives cannot be obscured."
+      "name": "Optics (1AP) / 光学瞄具 (1AP)",
+      "description": "Until next activation, when shooting, enemy operatives cannot be obscured. / 直到下一次激活前，进行射击时，敌方特工不能被遮挡。"
     }
   ],
   "operatives": [

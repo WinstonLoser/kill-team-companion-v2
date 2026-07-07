@@ -1,0 +1,359 @@
+{
+  "packId": "plague_marines",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "plague_marines",
+    "name": "瘟疫战士 / Plague Marines",
+    "keywords": ["CHAOS", "HERETIC ASTARTES", "PLAGUE MARINE", "NURGLE"]
+  },
+  "factionRules": [
+    {
+      "ruleId": "poison",
+      "name": "Poison / 毒素",
+      "description": "Nurgle deals in warp-tainted poisons, toxins, viral plagues and sicknesses of the soul that defy both natural resilience and medical intervention. Some weapons in this team’s rules have the Poison weapon rule. *Poison: In the Resolve Attack Dice step, if you inflict damage with any successes, the operative this weapon is being used against (excluding friendly PLAGUE MARINE operatives) gains one of your Poison tokens (if it doesn’t already have one). Whenever an operative that has one of your Poison tokens is activated, inflict 1 damage on it. / 纳垢能够制造各种被亚空间腐蚀的剧毒、毒液、病毒和灵魂上的疾病，能够超越一切自然的抵抗力和医疗措施。本杀戮小队中特工装备的一些武器拥有“毒素”武器规则。*毒素：在结算成功骰子步骤中，如果您使用任意成功造成了任何伤害，那么成为该武器攻击目标的特工（己方瘟疫战士特工除外）在流程结束时获得一枚己方毒素指示物（如果特工还没有获得毒素指示物）。每当一名拥有己方毒素指示物的特工被激活时，对其造成 1 点伤害。",
+      "type": "PASSIVE",
+      "options": []
+    },
+    {
+      "ruleId": "disgustingly_resilient",
+      "name": "Disgustingly Resilient / 恼人韧性",
+      "description": "The followers of Nurgle possess extreme resilience to bullet and blade, for their hideous forms are swollen by death, decay and disease. Whenever an attack dice inflicts damage of 3 or more on a friendly PLAGUE MARINE operative, roll one D6: on a 4+, subtract 1 from that inflicted damage. / 纳垢的信徒拥有抵御枪弹和剑刃的极度韧性，他们的躯体因死亡、腐败和疾病而变得肿胀。每当一枚攻击骰对一名己方瘟疫战士特工造成 3 点或更多伤害时，掷一枚 D6：若结果为 4+，那么那次造成的伤害减少 1 点。",
+      "type": "PASSIVE",
+      "options": []
+    },
+    {
+      "ruleId": "astartes",
+      "name": "Astartes / 阿斯塔特",
+      "description": "During each friendly PLAGUE MARINE operative’s activation, it can perform either two Shoot actions or two Fight actions. If it’s two Shoot actions, a bolt pistol, boltgun or PSYCHIC weapon must be selected for at least one of them. You cannot select the same PSYCHIC ranged weapon more than once per activation. Each friendly PLAGUE MARINE operative can counteract regardless of its order. / 在每一名己方瘟疫战士特工的激活期间，特工可以执行两次近战行动或者两次射击行动。如果选择执行两次射击行动，那么其中至少有一次必须选择使用一件爆矢手枪、爆矢枪或灵能武器进行攻击。您在每一次激活中不能多次选择同一件灵能远程武器。每一名己方瘟疫战士特工可以进行反应，无论其拥有的命令。",
+      "type": "PASSIVE",
+      "options": []
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "grandfathers_blessing",
+      "name": "Grandfather's Blessing / 慈父的祝福",
+      "description": "Whenever an enemy operative that has one of your Poison tokens loses one or more wounds within 7\" of this operative, this operative regains up to an equal number of lost wounds (to a maximum of 3 lost wounds per turning point, and only if this operative isn’t incapacitated). / 每当一名位于该特工 7\" 内且拥有己方毒素指示物的敌方特工失去一点或更多耐伤时，该特工回复相当于那次失去耐伤数量的耐伤（在每个转折点中最多回复 3 点失去的耐伤，并且只有在该特工没有被残废时生效）。"
+    },
+    {
+      "abilityId": "grenadier",
+      "name": "Grenadier / 掷弹兵",
+      "description": "This operative can use blight and krak grenades (see faction and universal equipment). Doing so doesn’t count towards any limited uses you have. Whenever it’s doing so, improve the Hit stat of that weapon by 1 and blight grenades have the Toxic weapon rule. / 该特工可以使用穿甲和疫病手雷（参见阵营和通用装备）。该特工使用这些装备时不算入您拥有的使用限制。每当该特工使用穿甲或疫病手雷时，那件武器的命中属性提升 1，并且疫病手雷拥有“剧毒”武器规则。"
+    },
+    {
+      "abilityId": "flail",
+      "name": "Flail (1AP) / 连枷挥打",
+      "description": "Inflict D3+2 damage on each other operative that’s both visible to and within 2\" of this operative. Roll separately for each: if it’s an enemy operative, if the D3 result is a 3, that enemy operative also gains one of your Poison tokens. For the purposes of action restrictions and the Astartes faction rule, this action is treated as a Fight action. This operative cannot perform this action while it has a Conceal order. / 对位于该特工 2\" 内且对其可见的每一名其他特工造成 D3+2 点伤害。为每一个特工分别进行掷骰：如果是敌方特工，并且 D3 的掷骰结果为 3，那么那名敌方特工还会获得一枚己方毒素指示物。在判定行动限制和阿斯塔特阵营规则时，该行动被视作近战行动，该特工不能在拥有隐匿命令时执行本行动。"
+    },
+    {
+      "abilityId": "icon_bearer",
+      "name": "Icon Bearer / 持徽手",
+      "description": "Whenever determining control of a marker, treat this operative’s APL stat as 1 higher. Note this isn’t a change to its APL stat, so any changes are cumulative with this. / 在判断一个标识的控制权时，将该特工的 APL 属性视作为比原本要高 1 点。请注意这并非对 APL 属性的修正，因此会与任何修正效果叠加。"
+    },
+    {
+      "abilityId": "icon_of_contagion",
+      "name": "Icon of Contagion / 传疫徽记",
+      "description": "Whenever this operative is within your opponent’s territory, the Contagion strategy ploy costs you 0CP. / 当该特工位于对手的领地内时，“传染”战略计谋消耗 0 CP。"
+    },
+    {
+      "abilityId": "poisonous_miasma",
+      "name": "Poisonous Miasma (1AP) / 有毒瘴气",
+      "description": "PSYCHIC. Select one enemy operative visible to and within 7\" of this operative, or one enemy operative that’s a valid target for this operative. That enemy operative gains one of your Poison tokens (if it doesn’t already have one). If it already has one, inflict 3 damage on that enemy operative instead. This operative cannot perform this action while within control range of an enemy operative. / 灵能。选择一名位于该特工 7\" 内且对其可见的敌方特工，或者一名属于该特工有效目标的敌方特工。那名敌方特工获得一枚您的毒素标识（如果特工还没有获得标识的话）。如果那名敌方特工已经拥有毒素标识，则对其造成 3 点伤害。该特工不能在敌方特工的控制范围内执行此行动。"
+    },
+    {
+      "abilityId": "putrescent_vitality",
+      "name": "Putrescent Vitality (1AP) / 腐烂活力",
+      "description": "PSYCHIC. Select one friendly operative visible to and within 3\" of this operative, then roll 2D6: if the result is 7, the selected operative regains 7 lost wounds; otherwise, the selected operative regains lost wounds equal to the highest D6. This operative cannot perform this action while within control range of an enemy operative, or more than once per turning point. / 灵能。选择一个位于该特工 3\" 内且对其可见的己方特工并掷 2D6：如果结果为 7，那么被选择的特工回复最多 7 点失去的耐伤；若是其他情况，则被选择的特工回复最多相当于最高 D6 结果数量的耐伤。该特工不能在敌方特工的控制范围内执行此行动，或者在每个转折点中执行本行动超过一次。"
+    },
+    {
+      "abilityId": "repulsive_fortitude",
+      "name": "Repulsive Fortitude / 可憎韧性",
+      "description": "Whenever an operative is shooting this operative, defence dice results of 5+ are critical successes. / 每当一名特工对该特工进行射击时，结果为 5+ 的防御骰为关键成功。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "champion",
+      "name": "Plague Marine Champion / 瘟疫战士勇士",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "LEADER", "CHAMPION"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Pistol & Melee / 手枪与近战武器",
+          "count": 1,
+          "options": [
+            ["plasma_pistol_std", "plasma_pistol_sup", "plague_sword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["grandfathers_blessing"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "bombardier",
+      "name": "Plague Marine Bombardier / 瘟疫战士掷弹兵",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "BOMBARDIER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["boltgun", "fists"]
+          ]
+        }
+      ],
+      "abilityRefs": ["grenadier"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "fighter",
+      "name": "Plague Marine Fighter / 瘟疫战士斗士",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "FIGHTER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "flail_of_corruption"]
+          ]
+        }
+      ],
+      "abilityRefs": ["flail"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "heavy_gunner",
+      "name": "Plague Marine Heavy Gunner / 瘟疫战士重炮手",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "HEAVY GUNNER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Heavy Weapon / 重型武器",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "plague_spewer", "fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "icon_bearer",
+      "name": "Plague Marine Icon Bearer / 瘟疫战士持徽手",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "ICON BEARER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Weapon / 武器",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "plague_knife"]
+          ]
+        }
+      ],
+      "abilityRefs": ["icon_bearer", "icon_of_contagion"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "malignant_plaguecaster",
+      "name": "Malignant Plaguecaster / 恶瘟投放者",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "PSYKER", "MALIGNANT PLAGUECASTER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["entropy", "plague_wind", "corrupted_staff"]
+          ]
+        }
+      ],
+      "abilityRefs": ["poisonous_miasma", "putrescent_vitality"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    },
+    {
+      "operativeId": "warrior",
+      "name": "Plague Marine Warrior / 瘟疫战士士兵",
+      "keywords": ["PLAGUE MARINE", "CHAOS", "HERETIC ASTARTES", "WARRIOR"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Weapon / 武器",
+          "count": 1,
+          "options": [
+            ["boltgun", "plague_knife_melee"],
+            ["bolt_pistol", "plague_knife_melee"]
+          ]
+        }
+      ],
+      "abilityRefs": ["repulsive_fortitude"],
+      "factionRuleRefs": ["poison", "disgustingly_resilient", "astartes"]
+    }
+  ],
+  "weapons": [
+    {
+      "weaponId": "plasma_pistol_std",
+      "name": "Plasma pistol (standard) / 等离子手枪(标准)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plasma_pistol_sup",
+      "name": "Plasma pistol (supercharge) / 等离子手枪(过载)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "range": 8, "weaponRules": ["Hot", "Lethal 5+", "Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plague_sword",
+      "name": "Plague sword / 瘟疫剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Severe", "Poison", "Toxic"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "boltgun",
+      "name": "Boltgun / 爆矢枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "bolt_pistol",
+      "name": "Bolt pistol / 爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "fists",
+      "name": "Fists / 拳头",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "flail_of_corruption",
+      "name": "Flail of Corruption / 腐败连枷",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Brutal", "Severe", "Shock", "Poison"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "plague_spewer",
+      "name": "Plague spewer / 瘟疫喷射器",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "range": 7, "weaponRules": ["Saturate", "Severe", "Torrent 2\"", "Poison"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plague_knife",
+      "name": "Plague knife / 瘟疫小刀",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Severe", "Poison"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "plague_knife_melee",
+      "name": "Plague knife / 瘟疫小刀",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Severe", "Poison"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "entropy",
+      "name": "Entropy / 熵",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 7, "range": 7, "weaponRules": ["PSYCHIC", "Saturate", "Severe", "Poison"] },
+      "keywords": ["PSYCHIC"]
+    },
+    {
+      "weaponId": "plague_wind",
+      "name": "Plague wind / 瘟疫之风",
+      "kind": "RANGED",
+      "profile": { "attacks": 6, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "weaponRules": ["PSYCHIC", "Saturate", "Severe", "Torrent 1\"", "Poison"] },
+      "keywords": ["PSYCHIC"]
+    },
+    {
+      "weaponId": "corrupted_staff",
+      "name": "Corrupted staff / 腐化法杖",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["PSYCHIC", "Severe", "Shock", "Stun", "Poison"] },
+      "keywords": ["PSYCHIC", "MELEE"]
+    }
+  ],
+  "effects": [],
+  "stratagems": [
+    {
+      "id": "cloud_of_flies",
+      "name": "Cloud of Flies",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "nurglings",
+      "name": "Nurglings",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "contagion",
+      "name": "Contagion",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "lumbering_death",
+      "name": "Lumbering Death",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "sickening_resilience",
+      "name": "Sickening Resilience",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "curse_of_rot",
+      "name": "Curse of Rot",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "virulent_poison",
+      "name": "Virulent Poison",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "poisonous_demise",
+      "name": "Poisonous Demise",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    }
+  ],
+  "buildConstraints": {
+    "notes": "1 Leader (Champion). 5 other operatives."
+  }
+}

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { OperativeCard } from '../components/OperativeCard/OperativeCard';
+import { useLocaleStore } from '../../state/localeStore';
+import { t } from '../../utils/i18n';
 import './TestLab.css';
 
 export function TestLab({ pack }: { pack: any }) {
   const [selectedOpId, setSelectedOpId] = useState(pack.operatives[0]?.operativeId);
   const [loadoutSelections, setLoadoutSelections] = useState<number[]>([]);
   const [factionRuleSelections, setFactionRuleSelections] = useState<Record<string, string[]>>({});
+  const locale = useLocaleStore((s) => s.locale);
 
   const selectedOp = pack.operatives.find((o: any) => o.operativeId === selectedOpId);
 
@@ -43,7 +46,7 @@ export function TestLab({ pack }: { pack: any }) {
               className={`op-list-item ${selectedOpId === o.operativeId ? 'active' : ''}`}
               onClick={() => setSelectedOpId(o.operativeId)}
             >
-              {o.name.split(' / ')[0]}
+              {t(o.name, locale)}
             </li>
           ))}
         </ul>
@@ -53,7 +56,7 @@ export function TestLab({ pack }: { pack: any }) {
             <h2 className="sidebar-title" style={{ marginTop: '8px' }}>LOADOUT</h2>
             {selectedOp.loadouts.map((loadout: any, lIndex: number) => (
               <div key={lIndex} className="loadout-group">
-                <div className="loadout-desc">{loadout.description}</div>
+                <div className="loadout-desc">{t(loadout.description, locale)}</div>
                 {loadout.options.length > 1 ? (
                   <div className="loadout-options">
                     <select 
@@ -65,7 +68,7 @@ export function TestLab({ pack }: { pack: any }) {
                         const primaryWeapon = pack.weapons.find((w: any) => w.weaponId === optWeapons[0]);
                         return (
                           <option key={oIndex} value={oIndex}>
-                            {primaryWeapon ? primaryWeapon.name.split(' / ')[0] : 'Option ' + (oIndex + 1)}
+                            {primaryWeapon ? t(primaryWeapon.name, locale) : 'Option ' + (oIndex + 1)}
                           </option>
                         );
                       })}
@@ -75,7 +78,7 @@ export function TestLab({ pack }: { pack: any }) {
                   <div className="loadout-fixed">
                     {loadout.options[0].map((wid: string) => {
                       const w = pack.weapons.find((wx: any) => wx.weaponId === wid);
-                      return w ? <div key={wid} className="fixed-weapon">• {w.name.split(' / ')[0]}</div> : null;
+                      return w ? <div key={wid} className="fixed-weapon">• {t(w.name, locale)}</div> : null;
                     })}
                   </div>
                 )}
@@ -88,7 +91,7 @@ export function TestLab({ pack }: { pack: any }) {
           <div className="loadout-section">
             <h2 className="sidebar-title" style={{ marginTop: '8px' }}>FACTION RULES</h2>
             {pack.factionRules.map((rule: any) => {
-              if (!rule.options) return null;
+              if (!rule.options || rule.options.length === 0) return null;
               const limit = rule.selectionLimit || 1;
               const selectedIds = factionRuleSelections[rule.ruleId] || [];
 
@@ -105,7 +108,7 @@ export function TestLab({ pack }: { pack: any }) {
 
               return (
                 <div key={rule.ruleId} className="loadout-group">
-                  <div className="loadout-desc">{rule.name.split(' / ')[0]} (Select {limit})</div>
+                  <div className="loadout-desc">{t(rule.name, locale)} (Select {limit})</div>
                   <div className="loadout-options">
                     {slots.map(slotIndex => (
                       <select 
@@ -116,7 +119,7 @@ export function TestLab({ pack }: { pack: any }) {
                       >
                         <option value="">-- Select Option --</option>
                         {rule.options.map((opt: any) => (
-                          <option key={opt.id} value={opt.id}>{opt.name.split(' / ')[0]}</option>
+                          <option key={opt.id} value={opt.id}>{t(opt.name, locale)}</option>
                         ))}
                       </select>
                     ))}

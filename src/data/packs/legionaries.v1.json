@@ -1,0 +1,566 @@
+{
+  "packId": "legionaries",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "legionaries",
+    "name": "军团 / Legionaries",
+    "keywords": ["CHAOS", "HERETIC ASTARTES", "LEGIONARY"]
+  },
+  "factionRules": [
+    {
+      "ruleId": "marks_of_chaos",
+      "name": "Marks of Chaos / 混沌印记",
+      "description": "Whenever you select a LEGIONARY operative for the battle, you must select one of the following keywords for it to have for that battle: KHORNE, NURGLE, SLAANESH, TZEENTCH, UNDIVIDED. Each operative's keyword can be different, but a BALEFIRE ACOLYTE operative cannot have the KHORNE keyword.",
+      "type": "SELECTION",
+      "selectionLimit": 1,
+      "options": [
+        {
+          "id": "mark_khorne",
+          "name": "Khorne / 恐虐",
+          "description": "Wrathful Onslaught: This operative’s melee weapons have the Severe weapon rule. / 狂怒攻势：该特工的近战武器拥有“严重”武器规则。"
+        },
+        {
+          "id": "mark_nurgle",
+          "name": "Nurgle / 纳垢",
+          "description": "Disgusting Vigour: Whenever Normal Dmg of 3 or more is inflicted on this operative, roll one D6: on a 5+, subtract 1 from that inflicted damage. / 恼人生命力：每当该特工受到一次大于等于 3 的普通伤害时，掷一枚 D6：若结果为 5+，特工受到的伤害减少 1 点。"
+        },
+        {
+          "id": "mark_slaanesh",
+          "name": "Slaanesh / 色孽",
+          "description": "Unnatural Agility: Add 1\" to this operative’s Move stat. / 超凡敏捷：该特工的移动属性增加 1\"。"
+        },
+        {
+          "id": "mark_tzeentch",
+          "name": "Tzeentch / 奸奇",
+          "description": "Empyreal Guidance: This operative’s ranged weapons have the Severe weapon rule. / 亚空间指引：该特工的远程武器拥有“严重”武器规则。"
+        },
+        {
+          "id": "mark_undivided",
+          "name": "Undivided / 无分",
+          "description": "Vicious Reavers: Whenever this operative is shooting against, fighting against or retaliating against an enemy operative within 6\" of it, this operative’s weapons have the Ceaseless weapon rule. / 凶恶劫掠者：每当该特工对一名位于其 6\" 内的敌方特工进行射击、近战或者反击时，该特工的武器拥有“无休”武器规则。"
+        }
+      ]
+    },
+    {
+      "ruleId": "astartes",
+      "name": "Astartes / 阿斯塔特",
+      "description": "During each friendly LEGIONARY operative’s activation, it can perform either two Shoot actions or two Fight actions. If it’s two Shoot actions, a bolt pistol, boltgun or tainted bolt pistol must be selected for at least one of them. Each friendly LEGIONARY operative can counteract regardless of its order. / 在每一名己方军团特工的激活期间，特工可以执行两次近战行动或者两次射击行动。如果选择执行两次射击行动，那么其中至少有一次必须选择使用爆矢手枪、爆矢枪，或者腐化爆矢手枪进行。每一名己方军团特工可以进行反应，无论其拥有何种命令。",
+      "type": "PASSIVE",
+      "options": []
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "in_the_eyes_of_the_gods",
+      "name": "In the Eyes of the Gods / 诸神的注视",
+      "description": "Once during each of this operative’s activations, if it incapacitates an enemy operative, add 1 to its APL stat until the end of that activation. / 该特工的每次激活限一次，如果该特工将一名敌方特工残废，那么直到那次激活结束前，该特工的 APL 属性增加 1 点。"
+    },
+    {
+      "abilityId": "daemonic_aura",
+      "name": "Daemonic Aura / 恶魔光环",
+      "description": "Whenever an enemy operative performs the Fall Back action while within control range of this operative, you can use this rule. If you do, roll one D6: on a 3+, that enemy operative cannot perform that action during that activation/counteraction (the AP spent on it is refunded). / 每当一名位于该特工控制范围内的敌方特工执行后撤行动时，您可以使用本规则。若使用，掷一枚 D6：若结果为 3+，那名敌方特工不能执行那次行动（返还被消耗的 AP）。"
+    },
+    {
+      "abilityId": "soul_gorge",
+      "name": "Soul Gorge / 灵魂盛宴",
+      "description": "After this operative fights or retaliates, if it isn’t incapacitated, but it incapacitated an enemy operative or inflicted Critical Dmg during that sequence, it regains up to D3+1 lost wounds. / 在该特工进行近战或者反击后，如果该特工没有被残废，但是在流程中将敌方特工残废或造成了暴击伤害，那么该特工回复最多 D3+1 点失去的耐伤。"
+    },
+    {
+      "abilityId": "unleash_daemon",
+      "name": "Unleash Daemon / 释放恶魔",
+      "description": "Once per battle, when this operative is activated, you can use this rule. If you do, until the end of the battle: This operative cannot perform the Pick Up Marker or mission actions. Normal and Critical Dmg of 4 or more inflicts 1 less damage on this operative. Its daemonic claw has the Ceaseless and Lethal 5+ weapon rules. / 每场战斗限一次，在该特工被激活时，您可以使用本规则。若使用，那么直到战斗结束前：该特工不能执行拾取标识或者任务行动；大于等于 4 的普通和暴击伤害对该特工造成的伤害减少 1 点；该特工的恶魔之爪拥有“无休”和“致命 5+”武器规则。"
+    },
+    {
+      "abilityId": "devastating_onslaught",
+      "name": "Devastating Onslaught / 毁灭性猛攻",
+      "description": "Whenever this operative is fighting or retaliating, enemy operatives cannot assist. At the end of each enemy operative's activation or counteraction, you can select one enemy operative within 2\" of this operative. This operative can perform a free Charge action, but it cannot move more than 2\" and must end that move within control range of that selected operative. / 每当该特工进行近战或者反击时，敌方特工不能协助。在每名敌方特工的激活或反应结束时，您可以选择一名位于该特工 2\" 内的敌方特工。该特工可以执行一次无消耗的冲锋行动，但移动距离不能超过 2\"，且结束移动时必须位于被选择特工的控制范围内。"
+    },
+    {
+      "abilityId": "icon_bearer",
+      "name": "Icon Bearer / 持徽手",
+      "description": "Whenever determining control of a marker, treat this operative’s APL stat as 1 higher. Note this isn’t a change to its APL stat, so any changes are cumulative with this. / 在判断一个标识的控制权时，将该特工的 APL 属性视作为比原本要高 1 点。请注意，这并非对 APL 属性的修正，因此任何额外的修正效果会与本规则叠加。"
+    },
+    {
+      "abilityId": "favoured_of_the_dark_gods",
+      "name": "Favoured of the Dark Gods / 黑暗诸神的青睐",
+      "description": "In the Ready step of each Strategy phase, if this operative controls an objective marker that isn’t tainted, that objective marker is tainted for the battle and you gain 1CP. Note that if any operative (including enemy operatives) has tainted an objective marker, you cannot taint that objective marker. / 在每个战略阶段的就绪步骤中，如果该特工控制了一个没有被腐化的目标标识，那么那个目标标识在战斗中被腐化，您获得 1CP。请注意，如果任何特工已经腐化了一个目标标识（包括敌方特工），那么那个目标标识不能被您腐化。"
+    },
+    {
+      "abilityId": "vicious_reflexes",
+      "name": "Vicious Reflexes / 险恶反应力",
+      "description": "Whenever this operative is retaliating, you resolve the first attack dice (i.e. defender instead of attacker). / 每当该特工进行反击时，您将结算第一枚攻击骰（也就是说，由防守方先进行结算，而不是进攻方）。"
+    },
+    {
+      "abilityId": "horrifying_dismemberment",
+      "name": "Horrifying Dismemberment / 可怕肢解",
+      "description": "Whenever this operative incapacitates an enemy operative while fighting or retaliating, select one other enemy operative visible to and within 3\" of either this operative or the incapacitated enemy operative. Subtract 1 from that enemy operative’s APL stat until the end of its next activation. / 每当该特工通过近战或者反击将一名敌方特工残废时，选择一名位于该特工或那名被残废敌方特工 3\" 内且可见的其他敌方特工。直到那名敌方特工的下一次激活结束前，其 APL 属性减少 1 点。"
+    },
+    {
+      "abilityId": "grisly_mark",
+      "name": "Grisly Mark (2AP) / 血腥标记",
+      "description": "Place your Grisly marker within this operative’s control range. Whenever an enemy operative is within 3\" of your Grisly marker, your opponent must spend 1 additional AP for that enemy operative to perform the Pick Up Marker and mission actions. Whenever determining control of a marker, treat the total APL stat of enemy operatives that contest it as 1 lower if at least one of those enemy operatives is within 3\" of your Grisly marker. / 将一枚己方血腥标识放置在该特工的控制范围内。位于己方血腥标识 3\" 内的敌方特工在执行拾取标识或者任务行动时必须额外消耗 1AP。在判断对一枚标识的控制权时，如果有至少一名争夺标识的敌方特工位于己方血腥标识的 3\" 内，那么将争夺标识的敌方特工的 APL 属性总和视作为比原本低 1 点。"
+    },
+    {
+      "abilityId": "infernal_pact",
+      "name": "Infernal Pact / 炼狱契约",
+      "description": "Once per battle, when a friendly LEGIONARY WARRIOR operative is activated, you can use this rule. If you do, change that operative’s Marks of Chaos keyword. / 每场战斗限一次，在一名己方军团战士特工被激活后，您可以使用本规则。若使用，更改那名特工的混沌印记关键词。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "aspiring_champion",
+      "name": "Legionary Aspiring Champion / 军团野心勇士",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "LEADER", "ASPIRING CHAMPION"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Pistol & Melee / 手枪与近战武器",
+          "count": 1,
+          "options": [
+            ["plasma_pistol_std", "plasma_pistol_sup", "power_fist"],
+            ["plasma_pistol_std", "plasma_pistol_sup", "power_maul"],
+            ["plasma_pistol_std", "plasma_pistol_sup", "power_weapon"],
+            ["plasma_pistol_std", "plasma_pistol_sup", "tainted_chainsword"],
+            ["tainted_bolt_pistol", "power_fist"],
+            ["tainted_bolt_pistol", "power_maul"],
+            ["tainted_bolt_pistol", "power_weapon"],
+            ["tainted_bolt_pistol", "tainted_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["in_the_eyes_of_the_gods"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "chosen",
+      "name": "Legionary Chosen / 军团神选者",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "LEADER", "CHOSEN"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Pistol & Melee / 手枪与近战武器",
+          "count": 1,
+          "options": [
+            ["plasma_pistol_std", "plasma_pistol_sup", "daemon_blade"],
+            ["tainted_bolt_pistol", "daemon_blade"]
+          ]
+        }
+      ],
+      "abilityRefs": ["daemonic_aura", "soul_gorge"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "anointed",
+      "name": "Legionary Anointed / 军团受选者",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "ANOINTED"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "daemonic_claw"]
+          ]
+        }
+      ],
+      "abilityRefs": ["unleash_daemon"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "balefire_acolyte",
+      "name": "Legionary Balefire Acolyte / 军团邪火使徒",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "PSYKER", "BALEFIRE ACOLYTE"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "fireblast", "life_siphon", "fell_dagger"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "butcher",
+      "name": "Legionary Butcher / 军团屠夫",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "BUTCHER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "double_handed_chainaxe"]
+          ]
+        }
+      ],
+      "abilityRefs": ["devastating_onslaught"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "gunner",
+      "name": "Legionary Gunner / 军团炮手",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "GUNNER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "flamer", "fists"],
+            ["bolt_pistol", "meltagun", "fists"],
+            ["bolt_pistol", "plasma_gun_std", "plasma_gun_sup", "fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "heavy_gunner",
+      "name": "Legionary Heavy Gunner / 军团重炮手",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "HEAVY GUNNER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Heavy Weapon / 重型武器",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "heavy_bolter_focused", "heavy_bolter_sweeping", "fists"],
+            ["bolt_pistol", "missile_launcher_frag", "missile_launcher_krak", "fists"],
+            ["bolt_pistol", "reaper_chaincannon_focused", "reaper_chaincannon_sweeping", "fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "icon_bearer",
+      "name": "Legionary Icon Bearer / 军团持徽手",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "ICON BEARER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Weapon / 武器",
+          "count": 1,
+          "options": [
+            ["boltgun", "fists"],
+            ["bolt_pistol", "chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["icon_bearer", "favoured_of_the_dark_gods"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "shrivetalon",
+      "name": "Legionary Shrivetalon / 军团赦罪之爪",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "SHRIVETALON"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard / 标准",
+          "count": 1,
+          "options": [
+            ["bolt_pistol", "flensing_blades"]
+          ]
+        }
+      ],
+      "abilityRefs": ["vicious_reflexes", "horrifying_dismemberment", "grisly_mark"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    },
+    {
+      "operativeId": "warrior",
+      "name": "Legionary Warrior / 军团战士",
+      "keywords": ["LEGIONARY", "CHAOS", "HERETIC ASTARTES", "WARRIOR"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Weapon / 武器",
+          "count": 1,
+          "options": [
+            ["boltgun", "fists"],
+            ["bolt_pistol", "chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["infernal_pact"],
+      "factionRuleRefs": ["marks_of_chaos", "astartes"]
+    }
+  ],
+  "weapons": [
+    {
+      "weaponId": "plasma_pistol_std",
+      "name": "Plasma pistol (standard) / 等离子手枪(标准)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plasma_pistol_sup",
+      "name": "Plasma pistol (supercharge) / 等离子手枪(过载)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "range": 8, "weaponRules": ["Hot", "Lethal 5+", "Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "tainted_bolt_pistol",
+      "name": "Tainted bolt pistol",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Rending"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "power_fist",
+      "name": "Power fist",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "power_maul",
+      "name": "Power maul",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Shock"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "power_weapon",
+      "name": "Power weapon / 动力武器",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "tainted_chainsword",
+      "name": "Tainted chainsword / 腐化链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Rending"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "daemon_blade",
+      "name": "Daemon blade / 恶魔之刃",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 7, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "bolt_pistol",
+      "name": "Bolt pistol / 爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "daemonic_claw",
+      "name": "Daemonic claw / 恶魔之爪",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Rending"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "fireblast",
+      "name": "Fireblast / 烈火爆破",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["PSYCHIC", "Blast 2\"", "1\" Devastating 1", "Saturate"] },
+      "keywords": ["PSYCHIC"]
+    },
+    {
+      "weaponId": "life_siphon",
+      "name": "Life siphon / 生命虹吸",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 3, "weaponRules": ["PSYCHIC", "Saturate", "Siphon Life"] },
+      "keywords": ["PSYCHIC"]
+    },
+    {
+      "weaponId": "fell_dagger",
+      "name": "Fell dagger / 邪恶匕首",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["PSYCHIC", "Rending", "Siphon Life"] },
+      "keywords": ["MELEE", "PSYCHIC"]
+    },
+    {
+      "weaponId": "double_handed_chainaxe",
+      "name": "Double-handed chainaxe / 双手链锯斧",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "flamer",
+      "name": "Flamer / 火焰喷射器",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "range": 8, "weaponRules": ["Saturate", "Torrent 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "meltagun",
+      "name": "Meltagun / 热熔枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 6, "criticalDamage": 3, "range": 6, "weaponRules": ["Devastating 4", "Piercing 2"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plasma_gun_std",
+      "name": "Plasma gun (standard) / 等离子枪(标准)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "plasma_gun_sup",
+      "name": "Plasma gun (supercharge) / 等离子枪(过载)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 5, "criticalDamage": 6, "weaponRules": ["Hot", "Lethal 5+", "Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "fists",
+      "name": "Fists / 拳头",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "heavy_bolter_focused",
+      "name": "Heavy bolter (focused) / 重型爆矢枪(聚焦)",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Heavy (Reposition only)", "Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "heavy_bolter_sweeping",
+      "name": "Heavy bolter (sweeping) / 重型爆矢枪(扫射)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Heavy (Reposition only)", "Piercing Crits 1", "Torrent 1\""] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "missile_launcher_frag",
+      "name": "Missile launcher (frag) / 导弹发射器(破片)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["Blast 2\"", "Heavy (Reposition only)"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "missile_launcher_krak",
+      "name": "Missile launcher (krak) / 导弹发射器(穿甲)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Heavy (Reposition only)", "Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "reaper_chaincannon_focused",
+      "name": "Reaper chaincannon (focused) / 收割者链炮(聚焦)",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Ceaseless", "Heavy (Reposition only)", "Punishing"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "reaper_chaincannon_sweeping",
+      "name": "Reaper chaincannon (sweeping) / 收割者链炮(扫射)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Ceaseless", "Heavy (Reposition only)", "Punishing", "Torrent 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "boltgun",
+      "name": "Boltgun / 爆矢枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "chainsword",
+      "name": "Chainsword",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "flensing_blades",
+      "name": "Flensing blades",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    }
+  ],
+  "effects": [],
+  "stratagems": [
+    {
+      "id": "blood_for_the_blood_god",
+      "name": "Blood for the Blood God",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "implacable",
+      "name": "Implacable",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "quicksilver_speed",
+      "name": "Quicksilver Speed",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "fickle_fates",
+      "name": "Fickle Fates",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY"
+    },
+    {
+      "id": "unending_bloodshed",
+      "name": "Unending Bloodshed",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "mutability_and_change",
+      "name": "Mutability and Change",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "malignant_aura",
+      "name": "Malignant Aura",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    },
+    {
+      "id": "sickening_captivation",
+      "name": "Sickening Captivation",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "FIREFIGHT"
+    }
+  ],
+  "buildConstraints": {
+    "notes": "1 Leader (Aspiring Champion or Chosen). 5 other operatives."
+  }
+}

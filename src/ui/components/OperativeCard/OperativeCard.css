@@ -277,3 +277,29 @@
   color: #cbd5e1;
   line-height: 1.5;
 }
+
+.w-rule-clickable {
+  color: #ffaa77;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: rgba(255, 170, 119, 0.5);
+  transition: all 0.2s ease;
+}
+
+.w-rule-clickable:hover {
+  color: #ffffff;
+  text-decoration-color: #ffffff;
+}
+
+.rule-item.clickable {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  margin: -8px;
+}
+
+.rule-item.clickable:hover {
+  background: rgba(255, 90, 0, 0.1);
+}

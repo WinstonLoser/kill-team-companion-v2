@@ -1,10 +1,18 @@
+import { useState } from 'react'
 import { useViewStore, type View } from './state/viewStore'
+import { useLocaleStore } from './state/localeStore'
 import { ResolveDemo } from './ui/ResolveDemo'
 import { TestLab } from './ui/test-lab/TestLab'
 import { loadPack } from './'
 import angelsPack from './data/packs/angels_of_death.v1.json'
+import legionariesPack from './data/packs/legionaries.v1.json'
+import plagueMarinesPack from './data/packs/plague_marines.v1.json'
 
-const pack = loadPack(angelsPack)
+const packs = {
+  angels_of_death: loadPack(angelsPack as any),
+  legionaries: loadPack(legionariesPack as any),
+  plague_marines: loadPack(plagueMarinesPack as any),
+}
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'testLab', label: 'UI 测试实验室' },
@@ -14,13 +22,33 @@ const VIEWS: { key: View; label: string }[] = [
 ]
 
 export function App() {
+  const [activePackId, setActivePackId] = useState<keyof typeof packs>('angels_of_death')
+  const pack = packs[activePackId]
   const currentView = useViewStore((s) => s.currentView)
   const setView = useViewStore((s) => s.setView)
+  const locale = useLocaleStore((s) => s.locale)
+  const setLocale = useLocaleStore((s) => s.setLocale)
 
   return (
     <div className="app">
       <header className="topbar">
         <h1>Kill Team 战棋助手</h1>
+        <div style={{ marginLeft: '1rem' }}>
+          <select value={activePackId} onChange={(e) => setActivePackId(e.target.value as keyof typeof packs)}>
+            <option value="angels_of_death">死亡天使 (Angels of Death)</option>
+            <option value="legionaries">军团 (Legionaries)</option>
+            <option value="plague_marines">瘟疫战士 (Plague Marines)</option>
+          </select>
+        </div>
+        <div style={{ marginLeft: '1rem' }}>
+          <button 
+            onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
+            className="lang-switcher"
+            style={{ padding: '4px 8px', borderRadius: '4px' }}
+          >
+            {locale === 'en' ? 'EN | 中文' : '中文 | EN'}
+          </button>
+        </div>
         <nav>
           {VIEWS.map((v) => (
             <button
