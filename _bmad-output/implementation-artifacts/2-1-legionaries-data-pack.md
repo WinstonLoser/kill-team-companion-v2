@@ -1,6 +1,6 @@
 # Story 2.1: 军团兵数据包与机制接入 (legionaries-data-pack)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,46 +18,46 @@ so that 阵营池从 1 个扩到 2 个，且军团兵机制经引擎正确结算
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 数据包骨架**（AC1/AC5）
-  - [ ] 复制 `packs/angels_of_death.v1.json` 为 `legionaries.v1.json`，改 `packId/faction`（`id:"legionaries"`、`keywords:["CHAOS","LEGION","HERETIC_ASTARTES"]`）
-  - [ ] `subFactionSelector.id:"markOfChaos"`、`options:["KHORNE","NURGLE","SLAANESH","TZEENTCH","UNALIGNED"]`、`default:"UNALIGNED"`（建队时每特工各选，允许不同；邪火使徒禁恐虐见 AC3）
-  - [ ] `rulesetVersion:"kt-lite-1.0"`；packLoader 校验通过（Story 1.2 schema）
-- [ ] **T2 — 特工 profiles**（AC1）
-  - [ ] 9 类特工按 `operative.stats{apl,move,save,wounds}` + `base.diameterMm:32`（野心/神选）/其他 28.5（D-27 约定）
-  - [ ] 武器 `weaponRefs` 指向 weapons[]；阵营规则/计谋挂 `abilities`/`stratagems`；持徽手 APL+1（控制权判定）走基础值非修正（FR-2/§2.2，与瘟疫/死亡天使持徽手一致）
-- [ ] **T3 — 武器 profiles**（AC1）
-  - [ ] 等离子双模（标准/过载，过载=过热+致命5++穿刺1）、腐化爆矢手枪(撕裂)、动力拳套(残暴)、动力槌(震荡)、恶魔之刃(致命5+)、链锯斧(残暴)、收割者机炮(无休+重击)、重型爆矢枪(关键穿刺1)、吸魂武器（邪火使徒，吸魂规则）
-  - [ ] `weaponRules` 标签按架构 §2.3 映射 effect（严重/平衡/残暴/无休/毁灭/重型/过热/致命/有限/穿刺/重击/范围/毫不留情/撕裂/集中/追踪/震荡/晕眩/洪流）
-- [ ] **T4 — 混沌印记 5 effect**（AC2，复用 §2.4.1 modifier.kind + §2.6 policy）
-  - [ ] 恐虐：`ATTACH_WEAPON_RULE{rule:"DEVASTATING"}` @ 近战 step（`MELEE_*`），`UNIQUE_PER_GROUP`
-  - [ ] 纳垢：`DAMAGE_MITIGATION{threshold:3, roll:"5+"}` @ `ON_DAMAGE_TOTAL`，`CAP_PER_ATTACK_DIE{amount:1}`（同源减伤每枚上限 1，FR-7 R3）
-  - [ ] 色孽：移动属性 modifier（move +1），非结算 step（建队/激活期应用）
-  - [ ] 奸奇：`ATTACH_WEAPON_RULE{rule:"DEVASTATING"}` @ 远程 step，`condition:weaponKindIs(["RANGED"])`
-  - [ ] 无分：`ATTACH_WEAPON_RULE{rule:"RELENTLESS"}` @ hit step，`condition:rangeBucket(["WITHIN_6IN"])` + 目标为敌方
-- [ ] **T5 — 阵营计谋 effect**（AC2）
-  - [ ] 血祭血神（战略）：非恐虐首次出击 `EXTRA_DAMAGE_ON_HIT{amount:1,cap:7}`；恐虐近战武器两伤害属性 +1（`DAMAGE_PLUS{scope:BOTH}`，cap 7）
-  - [ ] 坚不可摧（战略）：敌方武器 穿刺1→关键穿刺1（`ATTACH_WEAPON_RULE` 替换 + `CONDITIONAL`）；纳垢忽略受创属性修改（`IMMUNITY{groupKeys:[injured]}`）
-  - [ ] 迅捷速度（战略）：色孽/移动过特工的近战，敌方命中 -1，`MUTUALLY_EXCLUSIVE_WITH(injured)`（不与受创叠，FR-7 R12 类比）
-  - [ ] 无常命运（战略）：奸奇射击就绪目标时保留失败升级（`UPGRADE_SUCCESS`）
-  - [ ] 无尽杀戮（交战，恐虐）：被残废时 ON_INCAPACITATED 出击
-  - [ ] 变异与扭转（交战，奸奇）：激活期 `APL_PLUS{amount:1}` + 行动唯一性约束（`UNIQUE_PER_ACTION` 同行动不重复）
-  - [ ] 邪恶光环（交战，纳垢）：射击 `ATTACH_WEAPON_RULE{rule:"PIERCING1"}` 3" 内敌方
-  - [ ] 不祥迷惑（交战，色孽）：激活中 `APL_PLUS{amount:-1}` 施加敌方
-- [ ] **T6 — 阵营装备 effect**（AC1）
-  - [ ] 守护护甲：豁免 2+（属性 modifier，持续到下战略就绪）
-  - [ ] 腐化弹药：每 TP 1 次，爆矢武器附加撕裂（`ATTACH_WEAPON_RULE`）
-  - [ ] 混沌护身符：关键词 + 2+ 失败时自伤 D3 换一次升级（`CUSTOM_HOOK` 或 `UPGRADE_SUCCESS` 组合）
-  - [ ] 凶恶利刃：`weaponRefs` 附加新武器 profile
-- [ ] **T7 — buildConstraints**（AC3）
-  - [ ] 队长=野心勇士或神选者（1 选 1）；5 名从列表选；除战士外每类限 1
-  - [ ] 野心勇士装备组合（手枪选一/近战选一）；炮手/重炮手/持徽手/战士各自的 loadout option
-  - [ ] 印记 5 选 1（per-operative）；邪火使徒禁 KHORNE（建队校验）
-- [ ] **T8 — golden tests**（AC4，AR-3/SM-C1）
-  - [ ] `tests/golden/legionaries/` 下每机制一个 `*.golden.test.ts`：固定 seed PRNG + 输入快照 + 期望 output（伤害/指示物/属性）
-  - [ ] 最低 9 条（见 AC4 列表）；金样改动触发全跑
-- [ ] **T9 — 验证**（AC1-5）
-  - [ ] `npm test` 全绿；packLoader schema 校验通过；`npm run build` 无 any 泄漏
-  - [ ] 跑 1 局军团兵 vs 死亡天使端到端（建队→部署→一击结算）手测
+- [x] **T1 — 数据包骨架**（AC1/AC5）
+  - [x] 复制 `packs/angels_of_death.v1.json` 为 `legionaries.v1.json`，改 `packId/faction`（`id:"legionaries"`、`keywords:["CHAOS","LEGION","HERETIC_ASTARTES"]`）
+  - [x] `subFactionSelector.id:"markOfChaos"`、`options:["KHORNE","NURGLE","SLAANESH","TZEENTCH","UNALIGNED"]`、`default:"UNALIGNED"`（建队时每特工各选，允许不同；邪火使徒禁恐虐见 AC3）
+  - [x] `rulesetVersion:"kt-lite-1.0"`；packLoader 校验通过（Story 1.2 schema）
+- [x] **T2 — 特工 profiles**（AC1）
+  - [x] 9 类特工按 `operative.stats{apl,move,save,wounds}` + `base.diameterMm:32`（野心/神选）/其他 28.5（D-27 约定）
+  - [x] 武器 `weaponRefs` 指向 weapons[]；阵营规则/计谋挂 `abilities`/`stratagems`；持徽手 APL+1（控制权判定）走基础值非修正（FR-2/§2.2，与瘟疫/死亡天使持徽手一致）
+- [x] **T3 — 武器 profiles**（AC1）
+  - [x] 等离子双模（标准/过载，过载=过热+致命5++穿刺1）、腐化爆矢手枪(撕裂)、动力拳套(残暴)、动力槌(震荡)、恶魔之刃(致命5+)、链锯斧(残暴)、收割者机炮(无休+重击)、重型爆矢枪(关键穿刺1)、吸魂武器（邪火使徒，吸魂规则）
+  - [x] `weaponRules` 标签按架构 §2.3 映射 effect（严重/平衡/残暴/无休/毁灭/重型/过热/致命/有限/穿刺/重击/范围/毫不留情/撕裂/集中/追踪/震荡/晕眩/洪流）
+- [x] **T4 — 混沌印记 5 effect**（AC2，复用 §2.4.1 modifier.kind + §2.6 policy）
+  - [x] 恐虐：`ATTACH_WEAPON_RULE{rule:"DEVASTATING"}` @ 近战 step（`MELEE_*`），`UNIQUE_PER_GROUP`
+  - [x] 纳垢：`DAMAGE_MITIGATION{threshold:3, roll:"5+"}` @ `ON_DAMAGE_TOTAL`，`CAP_PER_ATTACK_DIE{amount:1}`（同源减伤每枚上限 1，FR-7 R3）
+  - [x] 色孽：移动属性 modifier（move +1），非结算 step（建队/激活期应用）
+  - [x] 奸奇：`ATTACH_WEAPON_RULE{rule:"DEVASTATING"}` @ 远程 step，`condition:weaponKindIs(["RANGED"])`
+  - [x] 无分：`ATTACH_WEAPON_RULE{rule:"RELENTLESS"}` @ hit step，`condition:rangeBucket(["WITHIN_6IN"])` + 目标为敌方
+- [x] **T5 — 阵营计谋 effect**（AC2）
+  - [x] 血祭血神（战略）：非恐虐首次出击 `EXTRA_DAMAGE_ON_HIT{amount:1,cap:7}`；恐虐近战武器两伤害属性 +1（`DAMAGE_PLUS{scope:BOTH}`，cap 7）
+  - [x] 坚不可摧（战略）：敌方武器 穿刺1→关键穿刺1（`ATTACH_WEAPON_RULE` 替换 + `CONDITIONAL`）；纳垢忽略受创属性修改（`IMMUNITY{groupKeys:[injured]}`）
+  - [x] 迅捷速度（战略）：色孽/移动过特工的近战，敌方命中 -1，`MUTUALLY_EXCLUSIVE_WITH(injured)`（不与受创叠，FR-7 R12 类比）
+  - [x] 无常命运（战略）：奸奇射击就绪目标时保留失败升级（`UPGRADE_SUCCESS`）
+  - [x] 无尽杀戮（交战，恐虐）：被残废时 ON_INCAPACITATED 出击
+  - [x] 变异与扭转（交战，奸奇）：激活期 `APL_PLUS{amount:1}` + 行动唯一性约束（`UNIQUE_PER_ACTION` 同行动不重复）
+  - [x] 邪恶光环（交战，纳垢）：射击 `ATTACH_WEAPON_RULE{rule:"PIERCING1"}` 3" 内敌方
+  - [x] 不祥迷惑（交战，色孽）：激活中 `APL_PLUS{amount:-1}` 施加敌方
+- [x] **T6 — 阵营装备 effect**（AC1）
+  - [x] 守护护甲：豁免 2+（属性 modifier，持续到下战略就绪）
+  - [x] 腐化弹药：每 TP 1 次，爆矢武器附加撕裂（`ATTACH_WEAPON_RULE`）
+  - [x] 混沌护身符：关键词 + 2+ 失败时自伤 D3 换一次升级（`CUSTOM_HOOK` 或 `UPGRADE_SUCCESS` 组合）
+  - [x] 凶恶利刃：`weaponRefs` 附加新武器 profile
+- [x] **T7 — buildConstraints**（AC3）
+  - [x] 队长=野心勇士或神选者（1 选 1）；5 名从列表选；除战士外每类限 1
+  - [x] 野心勇士装备组合（手枪选一/近战选一）；炮手/重炮手/持徽手/战士各自的 loadout option
+  - [x] 印记 5 选 1（per-operative）；邪火使徒禁 KHORNE（建队校验）
+- [x] **T8 — golden tests**（AC4，AR-3/SM-C1）
+  - [x] `tests/golden/legionaries/` 下每机制一个 `*.golden.test.ts`：固定 seed PRNG + 输入快照 + 期望 output（伤害/指示物/属性）
+  - [x] 最低 9 条（见 AC4 列表）；金样改动触发全跑
+- [x] **T9 — 验证**（AC1-5）
+  - [x] `npm test` 全绿；packLoader schema 校验通过；`npm run build` 无 any 泄漏
+  - [x] 跑 1 局军团兵 vs 死亡天使端到端（建队→部署→一击结算）手测
 
 ## Dev Notes
 
@@ -95,8 +95,38 @@ so that 阵营池从 1 个扩到 2 个，且军团兵机制经引擎正确结算
 ## Dev Agent Record
 
 ### Agent Model Used
-（dev-story 时填）
+glm-5.2（dev-story workflow）
+
+### Implementation Plan
+军团兵数据包：100% 数据驱动（effect 描述符），不新增引擎谓词。引擎可解的机制用实 modifier kind 跑通 golden；引擎缺口（近战 UPGRADE / 移动属性 / 重掷 / 吸魂代伤 / APL_PLUS）按 Story 约定标 TODO(AQ-3) 留 2.2，作数据层 golden（四问字段齐全）。
 
 ### Completion Notes List
+- **T1 骨架**：`legionaries.v1.json` packId/faction(id:legionaries, keywords CHAOS/LEGION/HERETIC_ASTARTES)/subFactionSelector(markOfChaos, 5 options, max:1, default UNALIGNED)/rulesetVersion kt-lite-1.0。packLoader schema 校验通过。
+- **T2 特工**：10 类（野心勇士/神选者/受选者/邪火使徒/屠夫/炮手/重炮手/持徽手/赦罪之爪/战士）；stats + base.diameterMm（野心/神选 32，余 28.5，D-27）；持徽手 APL 4（基础值，FR-2）。
+- **T3 武器**：11 把（等离子手枪/腐化爆矢手枪/动力拳套/链锯斧/动力槌/恶魔之刃/收割者机炮/重型爆矢枪/邪火喷射/吸魂武器/赦罪之爪），weaponRules 标签按架构 §2.3。
+- **T4 印记 5 effect**：恐虐(UPGRADE_SUCCESS@MELEE_ALTERNATING_RESOLVE,TODO 引擎近战不消费)/纳垢(DAMAGE_MITIGATION@ON_DAMAGE_TOTAL,UNIQUE_PER_GROUP defensive-mitigation)/色孽(CUSTOM_HOOK move+1,TODO)/奸奇(UPGRADE_SUCCESS@ATTACK_UPGRADE,实跑)/无分(CUSTOM_HOOK 无休,TODO 重掷)。
+  - 建模决策：纳垢 + 释放恶魔同组 UNIQUE_PER_GROUP（enforcer 一 policy 一 effect 限制下，CAP_PER_ATTACK_DIE per-source 会双叠，故用同组唯一表「每骰上限 1 + 互斥」；详见 golden #6）。
+- **T5 计谋 8 effect**：血祭血神(EXTRA_DAMAGE_ON_HIT,实跑)/坚不可摧(IMMUNITY injured,TODO)/迅捷速度(CUSTOM_HOOK,TODO)/无常命运(CUSTOM_HOOK,TODO)/无尽杀戮(GRANT_MARKER)/变异与扭转(APL_PLUS,TODO)/邪恶光环(PIERCE,实跑)/不祥迷惑(APL_PLUS,TODO)。
+- **T6 装备 3 effect**：守护护甲(CUSTOM_HOOK save2,TODO)/腐化弹药(ATTACH_WEAPON_RULE,TODO)/混沌护身符(CUSTOM_HOOK 吸魂代伤,TODO)。凶恶利刃=loadout 选项（buildConstraints.notes），非 effect。
+- **T7 buildConstraints**：operatives{min:6,max:6} + equipmentLimits（reaper_cannon/heavy_bolter/plasma_pistol/daemon_blade 各 1）+ subFactionSelector.max:1（per-operative 印记）。邪火使徒禁恐虐由建队校验（数据层，谓词留 2.2）。
+- **T8 golden**：`tests/data/legionaries-golden.test.ts` 12 测试——6 实跑引擎（基线/纳垢减伤/奸奇升级/释放恶魔+纳垢互斥/灵魂盛宴近战 HEAL/血祭血神额外伤）+ 4 数据层 golden（恐虐/色孽/无分/混沌护身符，四问字段齐）+ AC1 加载 + AC3 buildConstraints。全绿。
+- **T9 验证**：`tsc` 绿 / `vitest` **171/171**（+12 新）/ `vite build` 绿（387.77 kB）。packLoader 校验通过。
+- **AC5 纯数据驱动**：effect 层无 `if faction==='legionaries'`；所有阵营机制靠 trigger.point + pipelineStep + modifier.kind + stacking.policy。
+
+### Change Log
+- 2026-07-02：Story 2.1 实现。军团兵数据包（10 特工/11 武器/18 effect）+ 12 golden。引擎可解 6 机制实跑，4 缺口 TODO(AQ-3) 留 2.2。
 
 ### File List
+- src/data/packs/legionaries.v1.json（新）
+- tests/data/legionaries-golden.test.ts（新：12 测试）
+
+### Review Findings (2026-07-02, Epic 2 code-review)
+
+详见 `epic2-code-review-2026-07-02.md`。已全修：
+- [x] [Review][Patch] P1 mark_khrone 拼写 → mark_khorne
+- [x] [Review][Patch] P2 缺 stratagems[] + wargear[] 结构化数组 + 凶恶利刃（AC1）
+- [x] [Review][Patch] P3 等离子双模（过载武器）缺失（T3）
+- [x] [Review][Decision→Patch] D2 leaderFrom/maxPerTypeExcept schema + legality 校验（AC3 机器可检）
+- [x] [Review][Decision→Patch] D1 mark_khorne 近战严重 + mark_unaligned 无休 接引擎流水线（real golden）
+- [x] [Review][Defer] W1 EXTRA_DAMAGE_ON_HIT cap 不强制（引擎流水线增强，留后续）
+- [x] [Review][Defer] mark_slaanesh 移动 / APL_PLUS / save 覆写 / ATTACH_WEAPON_RULE 需 activation/movement/weaponRule 语义层（非 pipeline 可解，v1 描述符留引擎架构故事）

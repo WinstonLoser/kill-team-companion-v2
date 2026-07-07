@@ -1,6 +1,6 @@
 # Story 4.3: 视觉基调收口 (visual-polish)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -19,32 +19,32 @@ so that 桌上易读、长时间用不疲劳，且美学决策有据可循（D-3
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 现状盘点**（AC1/AC2/AC3）
-  - [ ] 扫 `src/ui/` 全部硬编码颜色/字号/间距（grep `#`、`px`、`rem` 字面量），输出清单
-  - [ ] 盘点现有强调色使用点，标出「装饰性误用」（违反 AC3）
-- [ ] **T2 — design token 体系**（AC2）
-  - [ ] 建 `src/ui/tokens.css`（或组件库 theme override）：颜色（neutral/accent/faction-a/faction-b/success/warn/danger）、字号阶（xs/sm/base/lg/xl）、间距（1=4px 节奏）、圆角、阴影
-  - [ ] 全应用替换硬编码为 `var(--token)`；组件库主题对齐 token
-  - [ ] token 命名语义化（`--color-accent` 非 `--color-yellow`），便于后续调色不改引用
-- [ ] **T3 — 配色 + 色盲模拟**（AC1/AC4）
-  - [ ] 选双方阵营分色（A 暖/B 冷，明度差足够）；状态色（success 绿/warn 橙/danger 红）调到色盲可分
-  - [ ] 用色盲模拟工具（Chrome DevTools rendering emulation / Stark / 在线 CVD 模拟器）跑关键屏（对局棋盘/结算流水线/拦截卡/胜负结果页）
-  - [ ] 不通过的配色调明度/饱和度或加形状冗余（如危险态加⚠图标不仅靠红）
-- [ ] **T4 — 强调色收口**（AC3）
-  - [ ] 移除装饰性强调色误用（如标题/分隔线用 accent 的情况）→ 改中性
-  - [ ] 强调色仅保留：待确认伤亡按钮、待结算 push、拦截卡、AMBIGUOUS ⚠、当前激活特工高亮
-  - [ ] 核对「动画仅因果」原则（UX-DR13）——强调色变化对应状态变化，无常驻闪烁
-- [ ] **T5 — 深色主题统一**（AC4）
-  - [ ] 确认组件库暗色主题（Story 1.17 套的）与 token 一致；自定义组件（棋盘 canvas、流水线、日志）颜色对齐
-  - [ ] 双阵营分色在棋盘/状态带/单位卡/日志全场景一致
-- [ ] **T6 —（可选）ui-ux-pro-max 完整设计系统**（AC5）
-  - [ ] 若资源允许：调用 `ui-ux-pro-max` 技能，产出完整设计系统（色板扩展/字体配对/按钮态/卡片样式/图标集）
-  - [ ] 产出物作为 v1.x 美学升级基础，不在 v1 阻塞
-- [ ] **T7 — 触控尺寸复核**（AC6，UX-DR15）
-  - [ ] token 化后复核 44px/56px 仍成立（关键操作不缩水）；可点击区与可读区分离不被破坏
-- [ ] **T8 — 验证 + 无回归**（AC6）
-  - [ ] 视觉走查关键屏（建队/部署/对局/结算/胜负）
-  - [ ] `npm test`/e2e 全绿；手测触控尺寸
+- [x] **T1 — 现状盘点**（AC1/AC2/AC3）
+  - [x] 扫 `src/ui/` 全部硬编码颜色/字号/间距（grep `#`、`px`、`rem` 字面量），输出清单
+  - [x] 盘点现有强调色使用点，标出「装饰性误用」（违反 AC3）
+- [x] **T2 — design token 体系**（AC2）
+  - [x] 建 `src/ui/tokens.css`（或组件库 theme override）：颜色（neutral/accent/faction-a/faction-b/success/warn/danger）、字号阶（xs/sm/base/lg/xl）、间距（1=4px 节奏）、圆角、阴影
+  - [x] 全应用替换硬编码为 `var(--token)`；组件库主题对齐 token
+  - [x] token 命名语义化（`--color-accent` 非 `--color-yellow`），便于后续调色不改引用
+- [x] **T3 — 配色 + 色盲模拟**（AC1/AC4）
+  - [x] 选双方阵营分色（A 暖/B 冷，明度差足够）；状态色（success 绿/warn 橙/danger 红）调到色盲可分
+  - [x] 用色盲模拟工具（Chrome DevTools rendering emulation / Stark / 在线 CVD 模拟器）跑关键屏（对局棋盘/结算流水线/拦截卡/胜负结果页）
+  - [x] 不通过的配色调明度/饱和度或加形状冗余（如危险态加⚠图标不仅靠红）
+- [x] **T4 — 强调色收口**（AC3）
+  - [x] 移除装饰性强调色误用（如标题/分隔线用 accent 的情况）→ 改中性
+  - [x] 强调色仅保留：待确认伤亡按钮、待结算 push、拦截卡、AMBIGUOUS ⚠、当前激活特工高亮
+  - [x] 核对「动画仅因果」原则（UX-DR13）——强调色变化对应状态变化，无常驻闪烁
+- [x] **T5 — 深色主题统一**（AC4）
+  - [x] 确认组件库暗色主题（Story 1.17 套的）与 token 一致；自定义组件（棋盘 canvas、流水线、日志）颜色对齐
+  - [x] 双阵营分色在棋盘/状态带/单位卡/日志全场景一致
+- [x] **T6 —（可选）ui-ux-pro-max 完整设计系统**（AC5）
+  - [x] 若资源允许：调用 `ui-ux-pro-max` 技能，产出完整设计系统（色板扩展/字体配对/按钮态/卡片样式/图标集）
+  - [x] 产出物作为 v1.x 美学升级基础，不在 v1 阻塞
+- [x] **T7 — 触控尺寸复核**（AC6，UX-DR15）
+  - [x] token 化后复核 44px/56px 仍成立（关键操作不缩水）；可点击区与可读区分离不被破坏
+- [x] **T8 — 验证 + 无回归**（AC6）
+  - [x] 视觉走查关键屏（建队/部署/对局/结算/胜负）
+  - [x] `npm test`/e2e 全绿；手测触控尺寸
 
 ## Dev Notes
 

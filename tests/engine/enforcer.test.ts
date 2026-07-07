@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { enforcer, resolveStat } from '../../src/engine'
+import { enforcer, enforcerWithTrace, resolveStat } from '../../src/engine'
 import type { AppliedModifier } from '../../src/engine'
 
 const mk = (over: Partial<AppliedModifier>): AppliedModifier => ({
@@ -57,6 +57,100 @@ describe('enforcer — 12 条叠加规则', () => {
     const out = enforcer([mk({ id: 'a', policy: 'CONDITIONAL', amount: 0 })])
     expect(out).toHaveLength(1)
   })
+
+  it('R9 UNIQUE_PER_ACTION：同 actionId 每行动只留一个（过热每行动一次）', () => {
+    const out = enforcer([
+      mk({ id: 'a', source: 'overheat', policy: 'UNIQUE_PER_ACTION', actionId: 'act1' }),
+      mk({ id: 'b', source: 'overheat', policy: 'UNIQUE_PER_ACTION', actionId: 'act1' }),
+    ])
+    expect(out).toHaveLength(1) // 第二条同 actionId 被去重
+  })
+
+  it('R9 不同 actionId 各留一个', () => {
+    const out = enforcer([
+      mk({ id: 'a', policy: 'UNIQUE_PER_ACTION', actionId: 'act1' }),
+      mk({ id: 'b', policy: 'UNIQUE_PER_ACTION', actionId: 'act2' }),
+    ])
+    expect(out).toHaveLength(2)
+  })
+
+  it('R9 无 actionId 退化为每源唯一（保持一次）', () => {
+    const out = enforcer([
+      mk({ id: 'a', source: 'oh', policy: 'UNIQUE_PER_ACTION' }),
+      mk({ id: 'b', source: 'oh', policy: 'UNIQUE_PER_ACTION' }),
+    ])
+    expect(out).toHaveLength(1)
+  })
+
+  it('R7 CONDITIONAL：带 condition + evalCondition=false → 丢弃', () => {
+    const out = enforcer(
+      [mk({ id: 'a', policy: 'CONDITIONAL', condition: { op: 'attackerHasCritical' } })],
+      { evalCondition: () => false },
+    )
+    expect(out).toHaveLength(0)
+  })
+
+  it('R7 CONDITIONAL：evalCondition=true → 保留', () => {
+    const out = enforcer(
+      [mk({ id: 'a', policy: 'CONDITIONAL', condition: { op: 'attackerHasCritical' } })],
+      { evalCondition: () => true },
+    )
+    expect(out).toHaveLength(1)
+  })
+
+  it('CONDITIONAL 无 evalCondition → 透传（谓词库 1.6 接入前向后兼容）', () => {
+    const out = enforcer([mk({ id: 'a', policy: 'CONDITIONAL', condition: { op: 'attackerHasCritical' } })])
+    expect(out).toHaveLength(1)
+  })
+})
+
+describe('R3 CAP_PER_ATTACK_DIE — per-die（DN5）', () => {
+  it('默认（无 attackDiceCount）= 每源上限 cap（向后兼容，1 枚骰）', () => {
+    const out = enforcer([
+      mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+    ])
+    expect(out).toHaveLength(1) // cap 1 × 1 骰 = 1
+  })
+
+  it('attackDiceCount=3 → 同源可留 cap×3 条', () => {
+    const out = enforcer(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 3 },
+    )
+    expect(out).toHaveLength(3) // cap 1 × 3 骰 = 3
+  })
+
+  it('attackDiceCount=2 → 超过 cap×2 被拒带 ruleId', () => {
+    const out = enforcerWithTrace(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 2 },
+    )
+    expect(out.kept).toHaveLength(2) // cap 1 × 2 骰 = 2，第三条被拒
+    expect(out.rejected[0]?.id).toBe('c')
+    expect(out.rejected[0]?.ruleId).toBe('R3')
+  })
+
+  it('不同源各自按 cap×diceCount 计', () => {
+    const out = enforcer(
+      [
+        mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'c', source: 'guard', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+        mk({ id: 'd', source: 'guard', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      ],
+      { attackDiceCount: 2 },
+    )
+    expect(out).toHaveLength(4) // 每源 cap 1 × 2 骰 = 2，两源各留 2
+  })
 })
 
 describe('resolveStat — 两层属性模型', () => {
@@ -69,5 +163,47 @@ describe('resolveStat — 两层属性模型', () => {
     // UNIQUE_PER_SOURCE 同源只留一个 → 1 + 1(a stackable) + 1(one of b/c) = 3
     expect(r.base).toBe(3)
     expect(r.effective).toBe(5)
+  })
+})
+
+describe('enforcerWithTrace — 被拒留痕（P2-trace / FR-17 可审计）', () => {
+  it('R6 UNIQUE_PER_SOURCE：被拒方进 rejected 带 ruleId', () => {
+    const out = enforcerWithTrace([
+      mk({ id: 'a', source: 'tactic', policy: 'UNIQUE_PER_SOURCE', priority: 10 }),
+      mk({ id: 'b', source: 'tactic', policy: 'UNIQUE_PER_SOURCE', priority: 5 }),
+    ])
+    expect(out.kept.map((m) => m.id)).toEqual(['a'])
+    expect(out.rejected).toHaveLength(1)
+    expect(out.rejected[0]?.id).toBe('b')
+    expect(out.rejected[0]?.ruleId).toBe('R6')
+    expect(out.rejected[0]?.reason).toBeTruthy()
+  })
+
+  it('R3 CAP_PER_ATTACK_DIE：超 cap 被拒带 ruleId', () => {
+    const out = enforcerWithTrace([
+      mk({ id: 'a', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+      mk({ id: 'b', source: 'rd', policy: 'CAP_PER_ATTACK_DIE', cap: 1 }),
+    ])
+    expect(out.kept).toHaveLength(1)
+    expect(out.rejected[0]?.id).toBe('b')
+    expect(out.rejected[0]?.ruleId).toBe('R3')
+  })
+
+  it('R7 CONDITIONAL：evalCondition=false 被拒', () => {
+    const out = enforcerWithTrace(
+      [mk({ id: 'a', policy: 'CONDITIONAL', condition: { op: 'attackerHasCritical' } })],
+      { evalCondition: () => false },
+    )
+    expect(out.kept).toHaveLength(0)
+    expect(out.rejected[0]?.id).toBe('a')
+    expect(out.rejected[0]?.ruleId).toBe('R2/R7')
+  })
+
+  it('enforcer 与 enforcerWithTrace.kept 一致（向后兼容）', () => {
+    const mods = [
+      mk({ id: 'a', source: 's', policy: 'UNIQUE_PER_SOURCE' }),
+      mk({ id: 'b', source: 's', policy: 'UNIQUE_PER_SOURCE' }),
+    ]
+    expect(enforcer(mods)).toEqual(enforcerWithTrace(mods).kept)
   })
 })

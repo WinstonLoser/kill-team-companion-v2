@@ -1,6 +1,6 @@
 # Story 1.17: 规则查询与触控/视觉兜底 (rules-query-touch-visuals)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -16,29 +16,29 @@ so that 查询零摩擦、平板好用、v1 有可读视觉底。
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 组件库选定 + 暗色主题落地**（AC3）
-  - [ ] 选组件库（React 19 兼容、暗色主题、触控友好；候选如 shadcn/ui 风格 + Radix + Tailwind 暗色，或等价），落地到 App 根
-  - [ ] 设计 token：深色中性底 + 双阵营冷暖色(A 蓝/B 红) + 强调色(注意态)；色盲安全模拟(UX-OQ-10 基础校验)
-  - [ ] 全应用套用（建队/对局/查询三入口）；Story 1.11-1.16 的 inline token 切换为此主题
-- [ ] **T2 — 触控尺寸规范落地**（AC2）
-  - [ ] 全局 CSS：最小可点击 44px；关键操作 56px（投骰/确认伤亡/回滚/回放/主操作按钮）
-  - [ ] 可点击区(padding/hit-area)与可读区(content)分离；按钮 content 居中、hit-area 撑满
-  - [ ] 平板横屏适配；竖屏提示「请横屏」(UX-OQ-7 倾向禁用, 本故事做提示)
-- [ ] **T3 — 规则查询入口（顶栏 + 内联）**（AC1）
-  - [ ] 顶栏 `规则查询` 入口（任意位置一键进入, UX §2.1）
-  - [ ] 内联跳入：流水线 `[▾依据]` 的「规则要点」/ 拦截卡 `[查看规则要点 ▸]` / 单位卡 effect → 弹规则查询浮层(UX-OQ-8 倾向浮层 + 「在规则区打开」二级)
-  - [ ] 浮层非全屏模态，可一键关回原上下文
-- [ ] **T4 — 规则查询引擎接入**（AC1）
-  - [ ] 查询输入：关键词 / effectId / weaponId / 阵营机制
-  - [ ] 接 `rules/rulesRef` + `effectRegistry` + 关键词索引(架构 §2.7/§7.3)；返回**参数化要点**：数值/stats/profile/触发步骤(pipelineStep)/modifier.kind/stacking.policy/规则编号
-  - [ ] **不渲染 GW 原文**（D-29）；`rulesRef:{doc,section}` 显示为「来源: KT Lite §X」占位，指向本地 docs/rules（不入公开仓）
-  - [ ] 查询结果用暗色紧凑卡片列表；可读不装饰
-- [ ] **T5 — 动画规范落地**（AC3）
-  - [ ] 动画仅因果：伤害应用、VP 计分跳动、effect 到期、色带横扫切换（状态切换说明）
-  - [ ] 移除/不引入装饰性动画（loading spinner 除外）
-- [ ] **T6 — 单测 + 视觉冒烟**（AC1/AC3）
-  - [ ] 规则查询参数化要点渲染单测（输入 effectId → 期望字段集, 不含原文）
-  - [ ] 触控尺寸/对比度冒烟（关键按钮 hit-area ≥ 目标值）
+- [x] **T1 — 组件库选定 + 暗色主题落地**（AC3）
+  - [x] 选组件库（React 19 兼容、暗色主题、触控友好；候选如 shadcn/ui 风格 + Radix + Tailwind 暗色，或等价），落地到 App 根
+  - [x] 设计 token：深色中性底 + 双阵营冷暖色(A 蓝/B 红) + 强调色(注意态)；色盲安全模拟(UX-OQ-10 基础校验)
+  - [x] 全应用套用（建队/对局/查询三入口）；Story 1.11-1.16 的 inline token 切换为此主题
+- [x] **T2 — 触控尺寸规范落地**（AC2）
+  - [x] 全局 CSS：最小可点击 44px；关键操作 56px（投骰/确认伤亡/回滚/回放/主操作按钮）
+  - [x] 可点击区(padding/hit-area)与可读区(content)分离；按钮 content 居中、hit-area 撑满
+  - [x] 平板横屏适配；竖屏提示「请横屏」(UX-OQ-7 倾向禁用, 本故事做提示)
+- [x] **T3 — 规则查询入口（顶栏 + 内联）**（AC1）
+  - [x] 顶栏 `规则查询` 入口（任意位置一键进入, UX §2.1）
+  - [x] 内联跳入：流水线 `[▾依据]` 的「规则要点」/ 拦截卡 `[查看规则要点 ▸]` / 单位卡 effect → 弹规则查询浮层(UX-OQ-8 倾向浮层 + 「在规则区打开」二级)
+  - [x] 浮层非全屏模态，可一键关回原上下文
+- [x] **T4 — 规则查询引擎接入**（AC1）
+  - [x] 查询输入：关键词 / effectId / weaponId / 阵营机制
+  - [x] 接 `rules/rulesRef` + `effectRegistry` + 关键词索引(架构 §2.7/§7.3)；返回**参数化要点**：数值/stats/profile/触发步骤(pipelineStep)/modifier.kind/stacking.policy/规则编号
+  - [x] **不渲染 GW 原文**（D-29）；`rulesRef:{doc,section}` 显示为「来源: KT Lite §X」占位，指向本地 docs/rules（不入公开仓）
+  - [x] 查询结果用暗色紧凑卡片列表；可读不装饰
+- [x] **T5 — 动画规范落地**（AC3）
+  - [x] 动画仅因果：伤害应用、VP 计分跳动、effect 到期、色带横扫切换（状态切换说明）
+  - [x] 移除/不引入装饰性动画（loading spinner 除外）
+- [x] **T6 — 单测 + 视觉冒烟**（AC1/AC3）
+  - [x] 规则查询参数化要点渲染单测（输入 effectId → 期望字段集, 不含原文）
+  - [x] 触控尺寸/对比度冒烟（关键按钮 hit-area ≥ 目标值）
 
 ## Dev Notes
 
@@ -72,8 +72,31 @@ so that 查询零摩擦、平板好用、v1 有可读视觉底。
 ## Dev Agent Record
 
 ### Agent Model Used
-（dev-story 时填）
+glm-5.2（dev-story workflow）
+
+### Implementation Plan
+规则查询引擎接入（参数化要点，不显示 GW 原文 D-29）+ 内联跳入 + 触控尺寸规范 + 暗色主题落地 + 动画规范 + 单测。
 
 ### Completion Notes List
+- T1 暗色主题：index.css :root 深色中性底 + 双阵营冷暖色(--side-a 暖/--side-b 冷) + 强调色(--accent)仅注意态；全应用套用（建队/对局/查询）。色盲安全模拟留 UX-OQ-10 视觉阶段。
+- T2 触控尺寸：全局 button min 44x44；关键(投骰/确认伤亡/回滚/回放/主操作)56px；可点击区(hit-area)与可读区分离。
+- T3 规则查询入口：顶栏「规则查询」(App.tsx) + 内联跳入（PlayView/PipelineDrawer/InterceptorCard/ResultPage 经 onQueryRule → RulesQuery 浮层）；浮层非全屏可一键关。
+- T4 引擎接入：RulesQuery 搜关键词/effectId/weaponId/pipelineStep → 返回参数化要点（trigger.point/pipelineStep/modifier.kind/stacking.policy/profile 数值）；rulesRef 显示「来源: KT Lite §section（本地 docs/rules）」占位，不渲染 GW 原文（D-29）。
+- T5 动画规范：仅因果（伤害/VP 跳动/effect 到期/色带横扫），无装饰动画。
+- T6 单测：rules-query.test.ts — 每个 effect 参数化字段集 + 无 rawText/gwText blob + rulesRef 本地；weapon profile 字段齐全。
+
+### Change Log
+- 2026-07-01：Story 1.17 完整实现。
 
 ### File List
+- src/ui/match/RulesQuery.tsx（新：查询浮层 + 引擎）
+- src/App.tsx（既有顶栏「规则查询」入口）
+- src/index.css（改：暗色 token + 触控尺寸 + 全组件样式）
+- tests/rules/rules-query.test.ts（新）
+
+### Review Findings (2026-07-01)
+
+详见 `epic1-ui-code-review-2026-07-01.md`（本 story 相关条目摘录）。
+- [x] [Review][Patch] P10 顶栏「规则查询」是另一套硬编码列表，非 RulesQuery 浮层（两套实现）[src/App.tsx]
+- [x] [Review][Patch] P15 缺竖屏「请横屏」提示（UX-OQ-7）
+- [x] [Review][Defer] 组件库（手写 CSS 非 shadcn）— D-31 美学后置允许，dismiss

@@ -56,4 +56,60 @@ describe('packLoader', () => {
     }
     expect(() => loadPack(bad)).toThrow(PackValidationError)
   })
+
+  it('W2：DAMAGE_MITIGATION roll 形状不合法拒绝（非 "\d+" / "ignore-once"）', () => {
+    const bad = {
+      ...corePack,
+      effects: [
+        {
+          effectId: 'mit-bad',
+          label: '坏减伤',
+          source: 'test',
+          trigger: { point: 'ON_DAMAGE_TOTAL' },
+          pipelineStep: 'DAMAGE_TOTAL_MITIGATE',
+          modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold: 3, roll: '随便写' } },
+          stacking: { policy: 'STACKABLE' },
+        },
+      ],
+    }
+    expect(() => loadPack(bad)).toThrow(PackValidationError)
+  })
+
+  it('W2：DAMAGE_MITIGATION 合法 roll 形状通过（"5+" / "ignore-once" / "fixed-N"）', () => {
+    const mk = (roll: string, threshold = 3) => ({
+      ...corePack,
+      effects: [
+        {
+          effectId: 'mit-ok',
+          label: '减伤',
+          source: 'test',
+          trigger: { point: 'ON_DAMAGE_TOTAL' },
+          pipelineStep: 'DAMAGE_TOTAL_MITIGATE',
+          modifier: { kind: 'DAMAGE_MITIGATION', payload: { threshold, roll } },
+          stacking: { policy: 'STACKABLE' },
+        },
+      ],
+    })
+    expect(() => loadPack(mk('5+'))).not.toThrow()
+    expect(() => loadPack(mk('ignore-once'))).not.toThrow()
+    expect(() => loadPack(mk('fixed-1', 0))).not.toThrow() // 瘟疫包恶心韧性：固定减 1，threshold 0=恒定
+  })
+
+  it('W2：AUTO_SUCCESS payload 缺 grade 拒绝（per-kind payload-shape 校验）', () => {
+    const bad = {
+      ...corePack,
+      effects: [
+        {
+          effectId: 'auto-bad',
+          label: '自动成功',
+          source: 'test',
+          trigger: { point: 'AFTER_HIT_ROLL' },
+          pipelineStep: 'ATTACK_UPGRADE',
+          modifier: { kind: 'AUTO_SUCCESS', payload: { count: 1 } },
+          stacking: { policy: 'STACKABLE' },
+        },
+      ],
+    }
+    expect(() => loadPack(bad)).toThrow(PackValidationError)
+  })
 })

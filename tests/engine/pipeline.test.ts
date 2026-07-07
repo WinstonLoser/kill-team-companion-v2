@@ -21,6 +21,7 @@ function mkInput(over: Partial<ShootInput> & { diceSeq: number[] }): ShootInput 
     effects: over.effects ?? [],
     dice,
     hasCover: over.hasCover ?? false,
+    geometry: over.geometry,
   }
 }
 
@@ -58,6 +59,37 @@ describe('runShooting 射击流水线', () => {
     expect(r.traces[8]?.stepId).toBe('DAMAGE_TOTAL_MITIGATE')
   })
 
+  it('W1：EXTRA_DAMAGE_ON_HIT 多 effect 叠加超 cap → 钳到最严 cap', () => {
+    // 命中 2N+1C → base 10；两条 EXTRA_DAMAGE（不同源 STACKABLE）各 amount 5，一条带 cap 7
+    // 原始 extra = 10，最严 cap = 7 → 造伤 10 + 7 = 17（非 20）
+    const extraA: Effect = {
+      effectId: 'ea', label: '额外甲', source: 'srcA',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 5, cap: 7 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const extraB: Effect = {
+      effectId: 'eb', label: '额外乙', source: 'srcB',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 5 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const r = runShooting(mkInput({ diceSeq: [4, 5, 2, 6, 2, 3, 1], effects: [extraA, extraB] }))
+    expect(r.woundsDealt).toBe(17) // base 10 + min(10, cap 7) = 17
+    expect(r.traces[7]?.summary).toContain('7') // DAMAGE_PER_DIE summary 反映钳后额外 7
+  })
+
+  it('W1：单 EXTRA_DAMAGE 未超 cap → 不钳（向后兼容）', () => {
+    const extra: Effect = {
+      effectId: 'e', label: '额外', source: 'src',
+      trigger: { point: 'ON_DAMAGE_PER_DIE' }, pipelineStep: 'DAMAGE_PER_DIE',
+      modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 1, cap: 7 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    const r = runShooting(mkInput({ diceSeq: [4, 5, 2, 6, 2, 3, 1], effects: [extra] }))
+    expect(r.woundsDealt).toBe(11) // 10 + 1，未钳
+  })
+
   it('PIERCE 减防御骰', () => {
     const pierce: Effect = {
       effectId: 'p', label: 't', source: 'test',
@@ -67,5 +99,73 @@ describe('runShooting 射击流水线', () => {
     // attack [4,5,2,6]; defence 仅 2 颗 [2,3]（pierce-1）
     const r = runShooting(mkInput({ diceSeq: [4, 5, 2, 6, 2, 3], effects: [pierce] }))
     expect(r.traces[4]?.summary).toContain('防御骰2')
+  })
+
+  it('互斥 effect 被拒进 rejectedEffectIds（P2-trace 可审计）', () => {
+    // 两条 HIT_MINUS 同组互斥，priority 高者胜，低者进 rejectedEffectIds
+    const hm1: Effect = {
+      effectId: 'hm1', label: '高优先', source: 'src',
+      trigger: { point: 'BEFORE_HIT_ROLL' }, pipelineStep: 'HIT_ROLL',
+      modifier: { kind: 'HIT_MINUS', payload: { amount: 1 } },
+      stacking: { policy: 'MUTUALLY_EXCLUSIVE_WITH', groupKeys: ['hit-debuff'] }, priority: 10,
+    }
+    const hm2: Effect = {
+      effectId: 'hm2', label: '低优先', source: 'src',
+      trigger: { point: 'BEFORE_HIT_ROLL' }, pipelineStep: 'HIT_ROLL',
+      modifier: { kind: 'HIT_MINUS', payload: { amount: 1 } },
+      stacking: { policy: 'MUTUALLY_EXCLUSIVE_WITH', groupKeys: ['hit-debuff'] }, priority: 5,
+    }
+    const r = runShooting(mkInput({ diceSeq: [4, 5, 3, 2, 2, 3, 1], effects: [hm1, hm2] }))
+    expect(r.traces[2]?.appliedEffectIds).toEqual(['hm1'])
+    expect(r.traces[2]?.rejectedEffectIds).toHaveLength(1)
+    expect(r.traces[2]?.rejectedEffectIds[0]?.id).toBe('hm2')
+    expect(r.traces[2]?.rejectedEffectIds[0]?.reason).toContain('R4')
+  })
+
+  it('HIT_MINUS 经 resolveStat 两层模型升阈 → 命中数减少（P22）', () => {
+    // attack [4,5,3,2]：无 debuff hit3+ → 4,5,3 三普通；HIT_MINUS +1 → hit4+ 仅 4,5 两普通
+    const hitMinus: Effect = {
+      effectId: 'hm', label: 't', source: 'test',
+      trigger: { point: 'BEFORE_HIT_ROLL' }, pipelineStep: 'HIT_ROLL',
+      modifier: { kind: 'HIT_MINUS', payload: { amount: 1 } }, stacking: { policy: 'STACKABLE' },
+    }
+    const baseline = runShooting(mkInput({ diceSeq: [4, 5, 3, 2, 2, 3, 1] }))
+    const debuffed = runShooting(mkInput({ diceSeq: [4, 5, 3, 2, 2, 3, 1], effects: [hitMinus] }))
+    expect(baseline.traces[2]?.summary).toContain('命中3+')
+    expect(debuffed.traces[2]?.summary).toContain('命中4+') // resolveStat(base=3, +1) = 4
+    expect(debuffed.remaining.normalSuccess).toBeLessThan(baseline.remaining.normalSuccess)
+  })
+
+  it('P12：几何资格接线 — 超射程目标 → woundsDealt 0、TARGET_VALIDATE 标无效', () => {
+    const r = runShooting(
+      mkInput({
+        diceSeq: [4, 5, 2, 6, 2, 3, 1],
+        geometry: {
+          board: { terrain: [], operatives: [] },
+          attackerPlacement: { operativeId: 'a', pos: { x: 0, y: 0 }, baseRadius: 0.5 },
+          targetPlacement: { operativeId: 'd', pos: { x: 50, y: 0 }, baseRadius: 0.5 },
+          range: 12,
+        },
+      }),
+    )
+    expect(r.woundsDealt).toBe(0)
+    expect(r.traces[1]?.summary).toContain('无效')
+    expect(r.traces[1]?.rulings?.some((x) => x.includes('射程'))).toBe(true)
+  })
+
+  it('P12：几何合法目标 → 正常造伤（与无几何一致）', () => {
+    const r = runShooting(
+      mkInput({
+        diceSeq: [4, 5, 2, 6, 2, 3, 1],
+        geometry: {
+          board: { terrain: [], operatives: [] },
+          attackerPlacement: { operativeId: 'a', pos: { x: 0, y: 0 }, baseRadius: 0.5 },
+          targetPlacement: { operativeId: 'd', pos: { x: 8, y: 0 }, baseRadius: 0.5 },
+          range: 12,
+        },
+      }),
+    )
+    expect(r.woundsDealt).toBe(10)
+    expect(r.traces[1]?.summary).toContain('有效')
   })
 })

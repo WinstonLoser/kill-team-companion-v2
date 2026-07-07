@@ -11,7 +11,7 @@ describe('schema 与 TS 类型同源', () => {
   it('modifier.kind 一致（含 HEAL_OPERATIVE，21 种）', () => {
     const kinds = defs.modifierKind?.enum ?? []
     expect([...kinds].sort()).toEqual([...MODIFIER_KINDS].sort())
-    expect(kinds).toHaveLength(21)
+    expect(kinds).toHaveLength(23)
   })
 
   it('trigger.point 一致', () => {
@@ -19,9 +19,9 @@ describe('schema 与 TS 类型同源', () => {
     expect([...pts].sort()).toEqual([...TRIGGER_POINTS].sort())
   })
 
-  it('stacking.policy 一致（6 种）', () => {
+  it('stacking.policy 一致（7 种，含 DN2 R9 UNIQUE_PER_ACTION）', () => {
     const pols = defs.stackingPolicy?.enum ?? []
     expect([...pols].sort()).toEqual([...STACKING_POLICIES].sort())
-    expect(pols).toHaveLength(6)
+    expect(pols).toHaveLength(7)
   })
 })

@@ -1,6 +1,8 @@
 // 回合/激活状态机（FR-11/FR-12）。用可测 reducer 表达分层状态；XState 可作生产包装。
 // 行动合法性 guard 是 FR-12 的可测核心。
 
+import type { Effect } from '../rules/types'
+
 export type Order = 'ENGAGED' | 'CONCEALED'
 export type ActionType = 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE' | 'SHOOT' | 'FIGHT'
 
@@ -44,6 +46,41 @@ export interface ActionContext {
 export interface LegalityResult {
   ok: boolean
   reason?: string
+}
+
+/**
+ * 激活期有效 APL（W3a：消费 APL_PLUS kind）。base APL + Σ(本激活生效的 APL_PLUS amount)。
+ * duration=ACTIVATION 的 APL_PLUS（如「变异与扭转」+1 / 「不祥迷惑」−1）在此叠加；
+ * duration=TURNING_POINT/BATTLE 由调用方决定是否计入 active effects（默认全计）。
+ * 纯函数：由 UI/matchStore 在构造 ActionContext.apl 时调用（AR-9 intent 驱动）。
+ */
+export function effectiveApl(baseApl: number, activeEffects: Effect[]): number {
+  const bonus = activeEffects
+    .filter((e) => e.modifier.kind === 'APL_PLUS')
+    .reduce((s, e) => s + (e.modifier.payload as { amount: number }).amount, 0)
+  return baseApl + bonus
+}
+
+/**
+ * 5-1：激活期有效行动 AP（消费 ACTION_AP_MOD kind）。
+ * base AP + Σ(匹配 action 的 ACTION_AP_MOD delta)；如 chapterTactic_mobile 后撤 -1 AP。
+ */
+export function effectiveActionAp(action: ActionType, baseAp: number, activeEffects: Effect[]): number {
+  const mod = activeEffects
+    .filter((e) => e.modifier.kind === 'ACTION_AP_MOD' && (e.modifier.payload as { action?: string }).action === action)
+    .reduce((s, e) => s + (e.modifier.payload as { delta: number }).delta, 0)
+  return Math.max(1, baseAp + mod) // AP 至少 1
+}
+
+/**
+ * 5-2：激活期有效移动距离（消费 STAT_OVERRIDE{stat:'move'} as delta）。
+ * base move + Σ(STAT_OVERRIDE{stat:'move'} value)，如 mark_slaanesh +1。
+ */
+export function effectiveMove(baseMove: number, activeEffects: Effect[]): number {
+  const bonus = activeEffects
+    .filter((e) => e.modifier.kind === 'STAT_OVERRIDE' && (e.modifier.payload as { stat?: string }).stat === 'move')
+    .reduce((s, e) => s + (e.modifier.payload as { value: number }).value, 0)
+  return Math.max(0, baseMove + bonus)
 }
 
 /** 行动合法性（FR-12）。纯函数。 */
@@ -118,7 +155,7 @@ export type TurnEvent =
   | { type: 'START_ENGAGEMENT' }
   | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
   | { type: 'SELECT_ORDER'; opId: string; order: Order }
-  | { type: 'DO_ACTION'; opId: string; action: ActionType }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext }
   | { type: 'END_ACTIVATION'; opId: string }
   | { type: 'END_TURNING_POINT' }
   | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
@@ -141,13 +178,24 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     case 'START_ENGAGEMENT':
       return { ...state, phase: 'ENGAGEMENT' }
     case 'ACTIVATE': {
-      const op = state.operatives[event.opId]
+      // P5：ACTIVATE 自包含——upsert 一条 ready:true 的激活条目（保留既有 order）。
+      // 调用方只需 dispatch ACTIVATE，不再需手填 operatives（避免双写/孤儿条目）。
+      const prev = state.operatives[event.opId]
       return {
         ...state,
         activePlayer: event.player,
-        operatives: op
-          ? { ...state.operatives, [event.opId]: { ...op, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false } }
-          : state.operatives,
+        operatives: {
+          ...state.operatives,
+          [event.opId]: {
+            order: prev?.order ?? 'ENGAGED',
+            ready: true,
+            apUsed: 0,
+            actionsThisActivation: [],
+            fallBackDone: false,
+            chargeDone: false,
+            moveDone: false,
+          },
+        },
       }
     }
     case 'SELECT_ORDER': {
@@ -158,6 +206,9 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     case 'DO_ACTION': {
       const op = state.operatives[event.opId]
       if (!op) return state
+      // DN6：内嵌 guard。带 ctx 则先验合法性，非法行动防御性 no-op（不依赖调用方先 guard）。
+      // 无 ctx → 向后兼容（调用方已 guard），直接应用。
+      if (event.ctx && !canDoAction(state, event.opId, event.action, event.ctx).ok) return state
       const next: OperativeActivation = {
         ...op,
         apUsed: op.apUsed + ACTION_AP[event.action],
@@ -174,10 +225,12 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } }
     }
     case 'USE_PLOY': {
+      // DN6：内嵌 guard（计谋次数上限先验）+ CP clamp 防负（补丁 #10）。
+      if (!canUsePloy(state, event.ployId).ok) return state
       const ploy = state.ployUses[event.ployId]
       const next = {
         ...state,
-        cp: { ...state.cp, [event.player]: state.cp[event.player] - event.cpCost },
+        cp: { ...state.cp, [event.player]: Math.max(0, state.cp[event.player] - event.cpCost) },
         ployUses: {
           ...state.ployUses,
           [event.ployId]: { used: (ploy?.used ?? 0) + 1, perBattle: ploy?.perBattle, perTurningPoint: ploy?.perTurningPoint },
@@ -186,10 +239,18 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return next
     }
     case 'END_TURNING_POINT': {
+      if (state.phase === 'BATTLE_END') return state // 终态保护（P11）
       const next = state.turningPoint + 1
       // 翻回就绪 + CP 发放（先手+1/非先手+2，简化：双方 +2）
       const ops = Object.fromEntries(
         Object.entries(state.operatives).map(([id, o]) => [id, { ...o, ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false }]),
+      )
+      // P10：每转折点计谋次数重置（perBattle 保留）
+      const ployUses = Object.fromEntries(
+        Object.entries(state.ployUses).map(([k, v]) => [
+          k,
+          v.perTurningPoint ? { ...v, used: 0 } : v,
+        ]),
       )
       return {
         ...state,
@@ -197,6 +258,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
         cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
         operatives: ops,
+        ployUses,
       }
     }
     default:

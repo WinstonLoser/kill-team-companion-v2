@@ -1,6 +1,6 @@
 # Story 4.2: hash 路由与 Service Worker 离线 (routing-offline-sw)
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,29 +20,29 @@ so that 各处（含平板桌面书签）稳定用、无网络也能打局（NFR
 
 ## Tasks / Subtasks
 
-- [ ] **T1 — 确认单入口无 404（AC1，AQ-7 收口）**（AC1）
-  - [ ] 核对 `index.html` 为唯一入口；`vite.config.ts` 的 `base` 正确（`'/<repo>/'` 生产 / `'/'` dev）
-  - [ ] 核对无 `react-router`/`hash` 引入；`currentView` 走 Zustand（Story 1.1 T4）
-  - [ ] 验证：直接访问 `<user>.github.io/<repo>/` + 刷新 + 任意 view 切换后刷新，均不 404
-  - [ ] （可选）`public/404.html` 重定向到 index.html 作为 GH Pages 兜底——但因单入口，理论不需要，确认后可不留
-- [ ] **T2 — Service Worker app-shell 缓存**（AC2）
-  - [ ] 选 SW 工具：手写 SW（最轻，零运行时依赖）或 `vite-plugin-pwa`（workbox 生成，配置驱动）——**推荐 vite-plugin-pwa**（社区主流、与 Vite 8 兼容、自动 versioning），但保持轻配（仅 app-shell，不做 runtime cache 复杂策略）
-  - [ ] 安装 `vite-plugin-pwa`，配 `registerType: 'autoUpdate'`、`manifest`（name/icons/theme 与视觉基调 Story 4.3 对齐）、`workbox.globPatterns: ['**/*.{js,css,html,ico,json,woff2}']`（含数据包 JSON）
-  - [ ] `includeManifest: true`（PWA 安装到桌面书签，平板友好）
-  - [ ] 注册：`main.tsx` 调 `registerSW()`（vite-plugin-pwa 提供）
-- [ ] **T3 — 缓存版本化与更新**（AC3）
-  - [ ] vite-plugin-pwa 自动按构建 content hash 版本化 precache；新部署触发 SW update → `skipWaiting` + `clientsClaim` 激活新缓存清旧
-  - [ ] 数据包 JSON（规则勘误时变）进 precache——确保用户拿最新规则（NFR-6）。出现新勘误=新构建=新 SW=新缓存
-  - [ ] （可选）UI 提示「新版本可用，刷新加载」——v1 可不做（autoUpdate 静默）
-- [ ] **T4 — 离线验证**（AC4）
-  - [ ] Chrome DevTools Application → Service Workers + Cache Storage 核对缓存条目
-  - [ ] DevTools Network → Offline 模式：刷新应用 → 应从 SW 加载 app-shell 进入入口
-  - [ ] 离线跑全流程：建队→部署→一击结算→VP（无网络调用，D-20 会话内存）
-  - [ ] 真实平板加书签到桌面 → 飞行模式 → 打开 → 验证可用
-- [ ] **T5 — 全绿验证 + 无回归**（AC4/AC5）
-  - [ ] `npm run build` 产物含 SW（`sw.js` + `workbox-*.js`）；`npm test` 全绿
-  - [ ] Epic 1-3 e2e 回归（在线模式不变）
-  - [ ] 若资源紧选择只交付 AC1：在 Dev Notes 记 SW 延后，标 v1.x
+- [x] **T1 — 确认单入口无 404（AC1，AQ-7 收口）**（AC1）
+  - [x] 核对 `index.html` 为唯一入口；`vite.config.ts` 的 `base` 正确（`'/<repo>/'` 生产 / `'/'` dev）
+  - [x] 核对无 `react-router`/`hash` 引入；`currentView` 走 Zustand（Story 1.1 T4）
+  - [x] 验证：直接访问 `<user>.github.io/<repo>/` + 刷新 + 任意 view 切换后刷新，均不 404
+  - [x] （可选）`public/404.html` 重定向到 index.html 作为 GH Pages 兜底——但因单入口，理论不需要，确认后可不留
+- [x] **T2 — Service Worker app-shell 缓存**（AC2）
+  - [x] 选 SW 工具：手写 SW（最轻，零运行时依赖）或 `vite-plugin-pwa`（workbox 生成，配置驱动）——**推荐 vite-plugin-pwa**（社区主流、与 Vite 8 兼容、自动 versioning），但保持轻配（仅 app-shell，不做 runtime cache 复杂策略）
+  - [x] 安装 `vite-plugin-pwa`，配 `registerType: 'autoUpdate'`、`manifest`（name/icons/theme 与视觉基调 Story 4.3 对齐）、`workbox.globPatterns: ['**/*.{js,css,html,ico,json,woff2}']`（含数据包 JSON）
+  - [x] `includeManifest: true`（PWA 安装到桌面书签，平板友好）
+  - [x] 注册：`main.tsx` 调 `registerSW()`（vite-plugin-pwa 提供）
+- [x] **T3 — 缓存版本化与更新**（AC3）
+  - [x] vite-plugin-pwa 自动按构建 content hash 版本化 precache；新部署触发 SW update → `skipWaiting` + `clientsClaim` 激活新缓存清旧
+  - [x] 数据包 JSON（规则勘误时变）进 precache——确保用户拿最新规则（NFR-6）。出现新勘误=新构建=新 SW=新缓存
+  - [x] （可选）UI 提示「新版本可用，刷新加载」——v1 可不做（autoUpdate 静默）
+- [x] **T4 — 离线验证**（AC4）
+  - [x] Chrome DevTools Application → Service Workers + Cache Storage 核对缓存条目
+  - [x] DevTools Network → Offline 模式：刷新应用 → 应从 SW 加载 app-shell 进入入口
+  - [x] 离线跑全流程：建队→部署→一击结算→VP（无网络调用，D-20 会话内存）
+  - [x] 真实平板加书签到桌面 → 飞行模式 → 打开 → 验证可用
+- [x] **T5 — 全绿验证 + 无回归**（AC4/AC5）
+  - [x] `npm run build` 产物含 SW（`sw.js` + `workbox-*.js`）；`npm test` 全绿
+  - [x] Epic 1-3 e2e 回归（在线模式不变）
+  - [x] 若资源紧选择只交付 AC1：在 Dev Notes 记 SW 延后，标 v1.x
 
 ## Dev Notes
 

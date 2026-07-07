@@ -33,7 +33,11 @@ const validate = ajv.compile(schema)
 
 function toIssues(errors: ErrorObject[] | null | undefined): PackValidationIssue[] {
   if (!errors) return []
-  return errors.map((e) => ({ path: e.instancePath || '/', message: e.message ?? 'invalid' }))
+  return errors.map((e) => {
+    const allowed = (e.params as { allowedValues?: string[] } | undefined)?.allowedValues
+    const message = allowed?.length ? `${e.message ?? 'invalid'} (允许: ${allowed.join('/')})` : e.message ?? 'invalid'
+    return { path: e.instancePath || '/', message }
+  })
 }
 
 /** 加载并校验 faction pack。结构非法或版本不符 → 抛错，绝不静默降级（NFR-5）。 */

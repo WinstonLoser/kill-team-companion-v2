@@ -4,9 +4,21 @@ import {
   canUsePloy,
   turnReducer,
   createInitialTurnState,
+  effectiveApl,
   type TurnState,
   type ActionContext,
 } from '../../src/state'
+import type { Effect } from '../../src/rules'
+
+const aplPlus = (amount: number, duration: 'ACTIVATION' | 'TURNING_POINT' | 'BATTLE' = 'ACTIVATION'): Effect => ({
+  effectId: `apl${amount}`,
+  label: 't',
+  source: 'test',
+  trigger: { point: 'ON_ACTIVATION_START' },
+  pipelineStep: 'ACTIVATION_PRE',
+  modifier: { kind: 'APL_PLUS', payload: { amount, duration } },
+  stacking: { policy: 'UNIQUE_PER_ACTION' },
+})
 
 function stateWithOp(over: Partial<TurnState['operatives'][string]> = {}): TurnState {
   const s = createInitialTurnState()
@@ -110,5 +122,97 @@ describe('turnReducer 激活流', () => {
     s.turningPoint = 4
     s = turnReducer(s, { type: 'END_TURNING_POINT' })
     expect(s.phase).toBe('BATTLE_END')
+  })
+})
+
+describe('turnReducer 内嵌 guard（DN6：reducer 自防御）', () => {
+  it('DO_ACTION 带 ctx 且 guard 失败 → 不变更（防御性 no-op）', () => {
+    const s0 = stateWithOp({ apUsed: 2 }) // APL 3 剩 1，FALL_BACK 需 2
+    const before = JSON.parse(JSON.stringify(s0))
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'FALL_BACK', ctx: ctx() })
+    expect(s).toEqual(before) // apUsed 仍 2，未应用
+  })
+
+  it('DO_ACTION 带 ctx 且 guard 通过 → 应用', () => {
+    const s0 = stateWithOp()
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'MOVE', ctx: ctx() })
+    expect(s.operatives.op1?.apUsed).toBe(1)
+  })
+
+  it('DO_ACTION 无 ctx → 向后兼容不拦（调用方已 guard）', () => {
+    const s0 = stateWithOp({ apUsed: 2 })
+    const s = turnReducer(s0, { type: 'DO_ACTION', opId: 'op1', action: 'FALL_BACK' })
+    expect(s.operatives.op1?.apUsed).toBe(4) // 无 guard，2+2
+  })
+
+  it('USE_PLOY 超 perBattle 上限 → 不变更', () => {
+    let s = createInitialTurnState()
+    s.ployUses = { p1: { used: 1, perBattle: 1 } }
+    s.cp = { a: 4, b: 4 }
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'p1', player: 'a', cpCost: 1 })
+    expect(s.cp.a).toBe(4) // 未扣
+    expect(s.ployUses.p1?.used).toBe(1) // 未增
+  })
+
+  it('USE_PLOY CP clamp 防负', () => {
+    let s = createInitialTurnState()
+    s.cp = { a: 1, b: 4 }
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'x', player: 'a', cpCost: 3 })
+    expect(s.cp.a).toBe(0) // 非 -2
+  })
+
+  it('END_TURNING_POINT 重置 perTurningPoint 计谋 used（战斗级保持）', () => {
+    let s = createInitialTurnState()
+    s.ployUses = {
+      perTP: { used: 1, perTurningPoint: 1 },
+      perBattle: { used: 1, perBattle: 3 },
+    }
+    s = turnReducer(s, { type: 'END_TURNING_POINT' })
+    expect(s.ployUses.perTP?.used).toBe(0) // 跨 TP 重置
+    expect(s.ployUses.perBattle?.used).toBe(1) // 战斗级保持
+  })
+
+  it('USE_PLOY perTurningPoint 跨 TP 后可再用', () => {
+    let s = createInitialTurnState()
+    s.ployUses = { perTP: { used: 1, perTurningPoint: 1 } }
+    s = turnReducer(s, { type: 'END_TURNING_POINT' }) // 重置 used→0
+    s = turnReducer(s, { type: 'USE_PLOY', ployId: 'perTP', player: 'a', cpCost: 1 })
+    expect(s.ployUses.perTP?.used).toBe(1) // 重置后再次使用成功
+  })
+})
+
+describe('effectiveApl — APL_PLUS 引擎消费（W3a）', () => {
+  it('base APL + Σ APL_PLUS amount', () => {
+    expect(effectiveApl(3, [aplPlus(1)])).toBe(4) // 变异与扭转 +1
+  })
+
+  it('负向 APL_PLUS（不祥迷惑 −1）扣减', () => {
+    expect(effectiveApl(3, [aplPlus(-1)])).toBe(2)
+  })
+
+  it('多条 APL_PLUS 叠加', () => {
+    expect(effectiveApl(2, [aplPlus(1), aplPlus(-1)])).toBe(2)
+  })
+
+  it('非 APL_PLUS effect 不影响（过滤）', () => {
+    const hit: Effect = {
+      effectId: 'h', label: 't', source: 'test',
+      trigger: { point: 'BEFORE_HIT_ROLL' }, pipelineStep: 'HIT_ROLL',
+      modifier: { kind: 'HIT_PLUS', payload: { amount: 1 } },
+      stacking: { policy: 'STACKABLE' },
+    }
+    expect(effectiveApl(3, [hit, aplPlus(1)])).toBe(4)
+  })
+
+  it('无 APL_PLUS → base 不变', () => {
+    expect(effectiveApl(3, [])).toBe(3)
+  })
+
+  it('端到端：effectiveApl 喂 canDoAction → APL+1 允许原本超 AP 的行动', () => {
+    // base APL 2，apUsed 2：剩 0，FALL_BACK(需2) 拒；APL_PLUS +1 → 剩 1 仍拒；
+    // 但 MOVE(需1) 在 base 下 apUsed2>剩0 拒，+1 后剩1 允
+    const s = stateWithOp({ apUsed: 2 })
+    expect(canDoAction(s, 'op1', 'MOVE', ctx({ apl: effectiveApl(2, []) })).ok).toBe(false)
+    expect(canDoAction(s, 'op1', 'MOVE', ctx({ apl: effectiveApl(2, [aplPlus(1)]) })).ok).toBe(true)
   })
 })

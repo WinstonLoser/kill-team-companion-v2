@@ -4,21 +4,28 @@ import { useLocaleStore } from '../../state/localeStore';
 import { t } from '../../utils/i18n';
 import './TestLab.css';
 
-export function TestLab({ pack }: { pack: any }) {
-  const [selectedOpId, setSelectedOpId] = useState(pack.operatives[0]?.operativeId);
+export function TestLab({ packs }: { packs: { id: string; name: string; pack: any }[] }) {
+  const [packId, setPackId] = useState<string>(packs[0]?.id ?? '')
+  const pack = packs.find((p) => p.id === packId)?.pack ?? packs[0]?.pack
+  const [selectedOpId, setSelectedOpId] = useState(pack?.operatives[0]?.operativeId);
   const [loadoutSelections, setLoadoutSelections] = useState<number[]>([]);
   const [factionRuleSelections, setFactionRuleSelections] = useState<Record<string, string[]>>({});
   const locale = useLocaleStore((s) => s.locale);
 
-  const selectedOp = pack.operatives.find((o: any) => o.operativeId === selectedOpId);
+  const selectedOp = pack?.operatives.find((o: any) => o.operativeId === selectedOpId);
 
+  // 切阵营：重置特工选择
+  useEffect(() => { if (pack) setSelectedOpId(pack.operatives[0]?.operativeId ?? '') }, [packId])
+  
   useEffect(() => {
     if (selectedOp && selectedOp.loadouts) {
       setLoadoutSelections(selectedOp.loadouts.map(() => 0)); // default to first option
     } else {
       setLoadoutSelections([]);
     }
-  }, [selectedOpId, selectedOp]);
+  }, [selectedOpId, selectedOp, packId]);
+
+  if (!pack) return null;
 
   const handleSelectionChange = (loadoutIndex: number, optionIndex: number) => {
     const newSelections = [...loadoutSelections];
@@ -38,7 +45,14 @@ export function TestLab({ pack }: { pack: any }) {
   return (
     <div className="test-lab-container">
       <div className="sidebar">
-        <h2 className="sidebar-title">OPERATIVES</h2>
+        <div className="tl-section">
+          <h2 className="sidebar-title">FACTIONS</h2>
+          <select className="loadout-select" value={packId} onChange={(e) => setPackId(e.target.value)}>
+            {packs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+
+        <h2 className="sidebar-title" style={{ marginTop: '8px' }}>OPERATIVES</h2>
         <ul className="op-list">
           {pack.operatives.map((o: any) => (
             <li 

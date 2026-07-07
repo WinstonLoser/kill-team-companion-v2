@@ -1,0 +1,537 @@
+diff --git a/src/data/packs/plague_marines.v1.json b/src/data/packs/plague_marines.v1.json
+new file mode 100644
+index 0000000..b67c73e
+--- /dev/null
++++ b/src/data/packs/plague_marines.v1.json
+@@ -0,0 +1,211 @@
++{
++  "packId": "plague_marines",
++  "version": "1.0.0",
++  "rulesetVersion": "kt-lite-1.0",
++  "faction": {
++    "id": "plague_marines",
++    "name": "瘟疫战士",
++    "keywords": ["CHAOS", "PLAGUE_MARINES", "HERETIC_ASTARTES", "NURGLE"]
++  },
++  "operatives": [
++    { "operativeId": "plg_champion", "name": "勇士", "keywords": ["CHAOS", "CHAMPION"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 15 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_plague_sword"] },
++    { "operativeId": "plg_grenadier", "name": "掷弹兵", "keywords": ["CHAOS", "GUNNER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_blight_grenade"] },
++    { "operativeId": "plg_fighter", "name": "斗士", "keywords": ["CHAOS", "FIGHTER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_pistol", "plg_corrosive_flail"] },
++    { "operativeId": "plg_heavy", "name": "重炮手", "keywords": ["CHAOS", "GUNNER", "HEAVY"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_spewer", "plg_boltgun"] },
++    { "operativeId": "plg_bearer", "name": "持徽手", "keywords": ["CHAOS", "BEARER"], "stats": { "apl": 4, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_sword"] },
++    { "operativeId": "plg_caster", "name": "恶瘟投放者", "keywords": ["CHAOS", "PSYKER"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_plague_pistol", "plg_putrescent_spell", "plg_plague_wind"] },
++    { "operativeId": "plg_troop", "name": "士兵", "keywords": ["CHAOS", "TROOP"], "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 14 }, "base": { "diameterMm": 32 }, "weaponRefs": ["plg_boltgun", "plg_plague_pistol", "plg_plague_sword"] }
++  ],
++  "weapons": [
++    { "weaponId": "plg_boltgun", "name": "爆矢枪", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 24, "weaponRules": ["RAPID_FIRE"] }, "keywords": ["BOLT"] },
++    { "weaponId": "plg_plague_pistol", "name": "瘟疫手枪", "kind": "RANGED", "profile": { "attacks": 3, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "range": 12, "weaponRules": ["PISTOL", "TOXIN"] }, "keywords": ["BOLT", "PLAGUE"] },
++    { "weaponId": "plg_plague_sword", "name": "瘟疫之剑", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["DEVASTATING", "TOXIN", "VIRULENT"] }, "keywords": ["MELEE", "PLAGUE"] },
++    { "weaponId": "plg_corrosive_flail", "name": "腐蚀连枷", "kind": "MELEE", "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["BRUTAL", "DEVASTATING", "TOXIN"] }, "keywords": ["MELEE", "PLAGUE"] },
++    { "weaponId": "plg_plague_spewer", "name": "瘟疫喷吐炮", "kind": "RANGED", "profile": { "attacks": 5, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "range": 8, "weaponRules": ["TORRENT", "DEVASTATING", "TOXIN"] }, "keywords": ["FLAME", "PLAGUE"] },
++    { "weaponId": "plg_putrescent_spell", "name": "衰败术", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 12, "weaponRules": ["PSYCHIC", "DEVASTATING", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
++    { "weaponId": "plg_plague_wind", "name": "瘟疫之风", "kind": "RANGED", "profile": { "attacks": 5, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 12, "weaponRules": ["PSYCHIC", "TORRENT", "TOXIN"] }, "keywords": ["PSYCHIC", "PLAGUE"] },
++    { "weaponId": "plg_blght_grenade", "name": "疫病手雷", "kind": "RANGED", "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 3, "range": 6, "weaponRules": ["CONCEAL", "TOXIN"] }, "keywords": ["PLAGUE"] }
++  ],
++  "effects": [
++    {
++      "effectId": "plg_toxin_grant_marker",
++      "label": "毒素指示物（阵营规则：流程结束挂 POISON 到防御方，己方瘟疫除外）",
++      "source": "factionRule:plagueToxin",
++      "trigger": { "point": "AT_PIPELINE_END" },
++      "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
++      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "POISON", "target": "DEFENDER" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素指示物" }
++    },
++    {
++      "effectId": "plg_toxin_activation_damage",
++      "label": "毒素激活伤（持 POISON 特工激活时受 1 伤）",
++      "source": "factionRule:plagueToxin",
++      "trigger": { "point": "ON_ACTIVATION_START" },
++      "pipelineStep": "ACTIVATION_PRE",
++      "modifier": { "kind": "DAMAGE_MINUS", "payload": { "amount": 1 } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-毒素激活" }
++    },
++    {
++      "effectId": "plg_devastating_resilience",
++      "label": "恼人韧性（每枚≥3伤 D6 4+ 减 1，同源每枚上限 1）",
++      "source": "factionRule:disgustingResilience",
++      "trigger": { "point": "ON_DAMAGE_TOTAL" },
++      "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
++      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 3, "roll": "4+" } },
++      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "阵营规则-恼人韧性" }
++    },
++    {
++      "effectId": "plg_disgusting_resilience",
++      "label": "恶心韧性（计谋：激活/反应期固定减 1，覆盖恼人韧性掷骰）",
++      "source": "stratagem:disgustingResilience",
++      "trigger": { "point": "ON_DAMAGE_TOTAL" },
++      "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
++      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 0, "roll": "fixed-1" } },
++      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["defensive-mitigation"] },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-恶心韧性" }
++    },
++    {
++      "effectId": "plg_contagion",
++      "label": "传染（持 POISON 特工在己方瘟疫 3\"内：命中 -1，不与受创叠）",
++      "source": "stratagem:contagion",
++      "trigger": { "point": "BEFORE_HIT_ROLL" },
++      "pipelineStep": "HIT_ROLL",
++      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "contagion-hit-minus", "prompt": "传染命中-1+移动-2（需 operativeHasMarker+距离谓词，留 3.2 AQ-3）" } },
++      "stacking": { "policy": "MUTUALLY_EXCLUSIVE_WITH", "groupKeys": ["injured"] },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-传染" }
++    },
++    {
++      "effectId": "plg_cloud_of_flies",
++      "label": "飞蝇云（放 FLY_CLOUD 标识；目标完全位于 1\"内+射击方 3\"外 → 遮挡）",
++      "source": "stratagem:cloudOfFlies",
++      "trigger": { "point": "AT_PIPELINE_END" },
++      "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
++      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "FLY_CLOUD", "target": "DEFENDER" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-飞蝇云" }
++    },
++    {
++      "effectId": "plg_walk_death",
++      "label": "慢步死亡（激活移动≤3\" 时附加无休）",
++      "source": "stratagem:walkDeath",
++      "trigger": { "point": "BEFORE_HIT_ROLL" },
++      "pipelineStep": "HIT_ROLL",
++      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "RELENTLESS" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-慢步死亡" }
++    },
++    {
++      "effectId": "plg_nurgling",
++      "label": "纳垢灵（持 POISON 敌方 APL -1）",
++      "source": "stratagem:nurgling",
++      "trigger": { "point": "ON_ACTIVATION_START" },
++      "pipelineStep": "ACTIVATION_PRE",
++      "modifier": { "kind": "APL_PLUS", "payload": { "amount": -1, "duration": "ACTIVATION" } },
++      "stacking": { "policy": "UNIQUE_PER_ACTION" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-纳垢灵" }
++    },
++    {
++      "effectId": "plg_lethal_toxin",
++      "label": "致命毒素（3\"内或 7\"可见敌方挂 POISON）",
++      "source": "stratagem:lethalToxin",
++      "trigger": { "point": "AT_PIPELINE_END" },
++      "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
++      "modifier": { "kind": "GRANT_MARKER", "payload": { "marker": "POISON", "target": "DEFENDER" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-致命毒素" }
++    },
++    {
++      "effectId": "plg_virulent_blight",
++      "label": "剧毒破灭（被残废时 3\"可见敌方挂 POISON + 已有 POISON 受 1 伤）",
++      "source": "stratagem:virulentBlight",
++      "trigger": { "point": "ON_INCAPACITATED" },
++      "pipelineStep": "WOUNDS_APPLY_AND_AFTER",
++      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "virulent-blight-aoe", "prompt": "残废时范围挂指示物+伤（需范围多目标+ON_INCAPACITATED 谓词，留 3.2 AQ-3）" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-剧毒破灭" }
++    },
++    {
++      "effectId": "plg_rot_curse",
++      "label": "腐烂诅咒（对手掷骰每出 3 即伤，不可保留/重掷）",
++      "source": "stratagem:rotCurse",
++      "trigger": { "point": "ON_DEFENCE_ROLL" },
++      "pipelineStep": "DEFENCE_ROLL",
++      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "rot-curse-die-face-3", "prompt": "掷出 3 即伤（需 dieFaceEquals 谓词 + DAMAGE_PER_DIE_FACE，留 3.2 AQ-3）" } },
++      "stacking": { "policy": "CONDITIONAL" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "计谋-腐烂诅咒" }
++    },
++    {
++      "effectId": "plg_fathers_blessing",
++      "label": "慈父的祝福（7\"内有 POISON 敌方失耐伤时回复等量，每 TP 上限 3）",
++      "source": "ability:fathersBlessing",
++      "trigger": { "point": "AT_PIPELINE_END" },
++      "pipelineStep": "MELEE_AFTER",
++      "modifier": { "kind": "HEAL_OPERATIVE", "payload": { "amount": 1, "target": "SELF" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "勇士-慈父的祝福" }
++    },
++    {
++      "effectId": "wargear_plague_bell",
++      "label": "瘟疫之钟（忽略受创属性修改）",
++      "source": "wargear:plagueBell",
++      "trigger": { "point": "ON_ACTIVATION_START" },
++      "pipelineStep": "ACTIVATION_PRE",
++      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "injured" } },
++      "stacking": { "policy": "UNIQUE_PER_GROUP", "groupKeys": ["injured"] },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-瘟疫之钟" }
++    },
++    {
++      "effectId": "wargear_plague_ammo",
++      "label": "瘟疫弹药（爆矢武器附加毒素+严重）",
++      "source": "wargear:plagueAmmo",
++      "trigger": { "point": "BEFORE_HIT_ROLL" },
++      "pipelineStep": "HIT_ROLL",
++      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "TOXIN" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-瘟疫弹药" }
++    },
++    {
++      "effectId": "wargear_mucus_exit",
++      "label": "排毒口（3\"内敌方激活时 D3=3 挂 POISON / 已有则 D3 伤）",
++      "source": "wargear:mucusExit",
++      "trigger": { "point": "ON_ACTIVATION_START" },
++      "pipelineStep": "ACTIVATION_PRE",
++      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "mucus-exit-d3", "prompt": "D3=3 挂指示物 / 已有则 D3 伤（需 dieFaceEquals+范围，留 3.2 AQ-3）" } },
++      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
++      "rulesRef": { "doc": "merged_kt_plague_marines_zh.md", "section": "装备-排毒口" }
++    }
++  ],
++  "stratagems": [
++    { "id": "contagion", "name": "传染", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
++    { "id": "walkDeath", "name": "慢步死亡", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
++    { "id": "cloudOfFlies", "name": "飞蝇云", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
++    { "id": "nurgling", "name": "纳垢灵", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "STRATEGY" },
++    { "id": "disgustingResilience", "name": "恶心韧性", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" },
++    { "id": "lethalToxin", "name": "致命毒素", "cp": 1, "useLimit": { "perTurningPoint": 1 }, "phase": "ENGAGEMENT" },
++    { "id": "virulentBlight", "name": "剧毒破灭", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" },
++    { "id": "rotCurse", "name": "腐烂诅咒", "cp": 1, "useLimit": { "perBattle": 1 }, "phase": "ENGAGEMENT" }
++  ],
++  "wargear": [
++    { "id": "plagueBell", "name": "瘟疫之钟" },
++    { "id": "blightGrenade", "name": "疫病手雷" },
++    { "id": "plagueAmmo", "name": "瘟疫弹药" },
++    { "id": "mucusExit", "name": "排毒口" }
++  ],
++  "buildConstraints": {
++    "operatives": { "min": 6, "max": 6 },
++    "leaderFrom": ["plg_champion"],
++    "maxPerTypeExcept": ["plg_troop"],
++    "equipmentLimitScope": "weaponId",
++    "equipmentLimits": {
++      "plg_plague_spewer": 1,
++      "plg_blght_grenade": 1,
++      "plg_corrosive_flail": 1,
++      "plg_putrescent_spell": 1,
++      "plg_plague_wind": 1
++    },
++    "notes": "瘟疫战士 v1：1 名勇士（队长，leaderFrom）+ 5 名其他；除士兵外每类限 1（maxPerTypeExcept）；无 subFactionSelector（全员纳垢背景，非 per-operative 印记）；无点数（D-30）。"
++  }
++}
+diff --git a/src/rules/index.ts b/src/rules/index.ts
+index ec14b6d..e047fd6 100644
+--- a/src/rules/index.ts
++++ b/src/rules/index.ts
+@@ -3,3 +3,4 @@ export * from './version'
+ export { loadPack, PackValidationError, RulesetVersionMismatchError } from './packLoader'
+ export type { PackValidationIssue } from './packLoader'
+ export * from './legality'
++export * from './predicates'
+diff --git a/src/rules/predicates.ts b/src/rules/predicates.ts
+new file mode 100644
+index 0000000..c227e75
+--- /dev/null
++++ b/src/rules/predicates.ts
+@@ -0,0 +1,88 @@
++// 声明式条件谓词库（架构 §2.5，AQ-3 封闭集）。纯函数 + 有限封闭，不引入通用 JS eval
++// （安全 + CSP + 可审计）。Story 3.2 落地——3 阵营全编后的 AQ-3 收口。
++//
++// 状态：谓词纯函数 + evalPredicate 分派器已实现 + 单测覆盖。
++// 引擎接线（待独立任务）：enforcer CONDITIONAL 的 evalCondition 注入点接 evalPredicate，
++// + pipeline ctx 携带 marker 状态/阵营/dealtDamage/dieFace。接线前 CONDITIONAL 透传（不拒不验）。
++
++import type { ConditionPredicate } from './types'
++
++/** 谓词求值上下文（pipeline 接线时由引擎注入；此处纯数据）。 */
++export interface PredicateContext {
++  attackerKeywords?: string[]
++  attackerFaction?: string
++  targetKeywords?: string[]
++  targetFaction?: string
++  targetMarkers?: string[] // 目标身上的指示物 marker
++  weaponKind?: 'RANGED' | 'MELEE'
++  rangeInches?: number
++  /** 激活/受 effect 的特工自身状态（operativeHasMarker/operativeIsInjured 用） */
++  operativeMarkers?: string[]
++  operativeInjured?: boolean
++  dealtAnyDamage?: boolean // 本流水线是否已造成任何伤害
++  dieFace?: number // 某枚骰面值（dieFaceEquals 用）
++}
++
++type Op = string
++
++/** 求值单条原子谓词（op + args）。未知 op → false（穷尽保护，NFR-5 不静默猜）。 */
++function evalAtom(op: Op, args: (string | number)[], ctx: PredicateContext): boolean {
++  switch (op) {
++    case 'weaponKindIs':
++      return ctx.weaponKind !== undefined && args.includes(ctx.weaponKind)
++    case 'rangeBucket': {
++      // args = [桶名...]：WITHIN_6IN(≤6) / BEYOND_6IN(>6) 等
++      const r = ctx.rangeInches ?? Infinity
++      return args.some((b) => {
++        const s = String(b)
++        if (s === 'WITHIN_6IN') return r <= 6
++        if (s === 'BEYOND_6IN') return r > 6
++        if (s === 'WITHIN_12IN') return r <= 12
++        return false
++      })
++    }
++    case 'attackerHasKeyword':
++      return ctx.attackerKeywords !== undefined && args.some((k) => ctx.attackerKeywords!.includes(String(k)))
++    case 'targetHasKeyword':
++      return ctx.targetKeywords !== undefined && args.some((k) => ctx.targetKeywords!.includes(String(k)))
++    case 'targetHasMarker':
++      return ctx.targetMarkers !== undefined && args.some((m) => ctx.targetMarkers!.includes(String(m)))
++    case 'operativeHasMarker':
++      return ctx.operativeMarkers !== undefined && args.some((m) => ctx.operativeMarkers!.includes(String(m)))
++    case 'operativeIsInjured':
++      return Boolean(ctx.operativeInjured)
++    case 'dealtAnyDamageThisPipeline':
++      return Boolean(ctx.dealtAnyDamage)
++    case 'dieFaceEquals':
++      return ctx.dieFace !== undefined && args.includes(ctx.dieFace)
++    case 'notSameFaction':
++      return ctx.attackerFaction !== undefined && ctx.targetFaction !== undefined && ctx.attackerFaction !== ctx.targetFaction
++    case 'always':
++      return true
++    default:
++      return false // 未知谓词 → false（穷尽保护）
++  }
++}
++
++/** 求值 ConditionPredicate（支持 all/any 组合 + 原子 op）。 */
++export function evalPredicate(p: ConditionPredicate, ctx: PredicateContext): boolean {
++  if (p.all) return p.all.every((sub) => evalPredicate(sub, ctx))
++  if (p.any) return p.any.some((sub) => evalPredicate(sub, ctx))
++  return evalAtom(p.op, p.args ?? [], ctx)
++}
++
++/** 谓词封闭集清单（文档化，§2.5）。 */
++export const PREDICATE_OPS = [
++  'weaponKindIs',
++  'rangeBucket',
++  'attackerHasKeyword',
++  'targetHasKeyword',
++  'targetHasMarker',
++  'operativeHasMarker',
++  'operativeIsInjured',
++  'dealtAnyDamageThisPipeline',
++  'dieFaceEquals',
++  'notSameFaction',
++  'always',
++] as const
++export type PredicateOp = (typeof PREDICATE_OPS)[number]
+diff --git a/tests/data/plague-golden.test.ts b/tests/data/plague-golden.test.ts
+new file mode 100644
+index 0000000..ca652b5
+--- /dev/null
++++ b/tests/data/plague-golden.test.ts
+@@ -0,0 +1,132 @@
++import { describe, it, expect } from 'vitest'
++import { loadPack, runShooting, runMelee } from '../../src'
++import type { Effect, Weapon } from '../../src/rules'
++import { ManualDiceSource } from '../../src/dice'
++import plague from '../../src/data/packs/plague_marines.v1.json'
++
++const pack = loadPack(plague)
++
++function effect(id: string): Effect {
++  const e = pack.effects.find((x) => x.effectId === id)
++  if (!e) throw new Error(`effect ${id} not found`)
++  return e as Effect
++}
++function weapon(id: string): Weapon {
++  const w = pack.weapons.find((x) => x.weaponId === id)
++  if (!w) throw new Error(`weapon ${id} not found`)
++  return w as Weapon
++}
++
++// 4 攻击骰（hit3+：4,5,3 普通×3，2 失败）+ 3 防御骰（全 1）→ 基线造伤 3×2=6
++const SEQ = [4, 5, 2, 3, 1, 1, 1]
++function shoot(effects: Effect[], seq = SEQ) {
++  const dice = new ManualDiceSource()
++  dice.provide(seq)
++  return runShooting({
++    attacker: { operativeId: 'a', weapon: weapon('plg_boltgun') },
++    defender: { operativeId: 'd', save: 6, wounds: 20 },
++    effects, dice, hasCover: false,
++  })
++}
++
++describe('瘟疫战士数据包加载（AC1）', () => {
++  it('pack 合法、阵营/特工/武器/计谋齐；无 subFactionSelector', () => {
++    expect(pack.packId).toBe('plague_marines')
++    expect(pack.rulesetVersion).toBe('kt-lite-1.0')
++    expect(pack.faction.id).toBe('plague_marines')
++    expect(pack.faction.subFactionSelector).toBeUndefined() // 无印记
++    expect(pack.operatives.length).toBe(7)
++    expect(pack.stratagems?.length).toBe(8)
++    expect(pack.wargear?.length).toBe(4)
++    // 毒素/剧毒武器规则标签存在（描述性）
++    expect(weapon('plg_plague_sword').profile.weaponRules).toContain('TOXIN')
++    expect(weapon('plg_plague_sword').profile.weaponRules).toContain('VIRULENT')
++  })
++})
++
++describe('golden：瘟疫机制经引擎结算（AC6）', () => {
++  it('基线：4 普通成功 × 2 = 造伤 6', () => {
++    expect(shoot([]).woundsDealt).toBe(6)
++  })
++
++  it('1. 毒素时序：当次伤害无加成（剧毒 weaponRule 不当次生效）+ 流程结束挂 POISON', () => {
++    const r = shoot([effect('plg_toxin_grant_marker')])
++    // 剧毒是 weaponRule（描述性，引擎不消费）→ 当次无 +1 加成，造伤=基线 6
++    expect(r.woundsDealt).toBe(6)
++    // 指示物在 AT_PIPELINE_END / WOUNDS_APPLY_AND_AFTER 挂上（GRANT_MARKER 引擎消费）
++    const end = r.traces.find((t) => t.stepId === 'WOUNDS_APPLY_AND_AFTER')!
++    expect(end.appliedEffectIds).toContain('plg_toxin_grant_marker')
++  })
++
++  it('2. 恼人韧性减伤（DAMAGE_MITIGATION 每枚上限 1 → 减 1）', () => {
++    const base = shoot([])
++    const withRes = shoot([effect('plg_devastating_resilience')])
++    expect(withRes.woundsDealt).toBe(base.woundsDealt - 1)
++  })
++
++  it('3. 恶心韧性 vs 恼人韧性互斥（同组 defensive-mitigation → 仅减 1，非 2）', () => {
++    const base = shoot([])
++    const both = shoot([effect('plg_devastating_resilience'), effect('plg_disgusting_resilience')])
++    expect(both.woundsDealt).toBe(base.woundsDealt - 1)
++    const mit = both.traces.find((t) => t.stepId === 'DAMAGE_TOTAL_MITIGATE')!
++    expect(mit.appliedEffectIds.length).toBe(1)
++    expect(mit.rejectedEffectIds.length).toBe(1)
++  })
++
++  it('5. 飞蝇云：GRANT_MARKER FLY_CLOUD 路由到流程结束（遮挡几何留 3.2）', () => {
++    const r = shoot([effect('plg_cloud_of_flies')])
++    const end = r.traces.find((t) => t.stepId === 'WOUNDS_APPLY_AND_AFTER')!
++    expect(end.appliedEffectIds).toContain('plg_cloud_of_flies')
++  })
++
++  it('8. 慈父的祝福：HEAL_OPERATIVE 路由到近战 MELEE_AFTER（数值回复条件留 3.2）', () => {
++    const dice = new ManualDiceSource()
++    dice.provide([3, 3, 3, 3, 3, 1, 1, 1, 1, 1]) // 攻方 5 普通，防方 0
++    const r = runMelee({
++      attacker: { operativeId: 'champion', weapon: weapon('plg_plague_sword'), save: 3, wounds: 15 },
++      defender: { operativeId: 'd', weapon: weapon('plg_plague_sword'), save: 6, wounds: 20 },
++      effects: [effect('plg_fathers_blessing')], dice,
++    })
++    const after = r.traces.find((t) => t.stepId === 'MELEE_AFTER')!
++    expect(after.appliedEffectIds).toContain('plg_fathers_blessing')
++  })
++})
++
++// 4/6/7/9：需谓词（operativeHasMarker/targetHasMarker/dieFaceEquals）或激活/移动层，
++// 按 Story 3.1「不新增引擎谓词、缺口留 3.2」约定，作数据层 golden（四问字段齐全）。
++describe('golden（数据层，引擎谓词留 Story 3.2 AQ-3）', () => {
++  it('4. 毒素激活伤 descriptor（ON_ACTIVATION_START + operativeHasMarker(POISON)）', () => {
++    const e = effect('plg_toxin_activation_damage')
++    expect(e.trigger.point).toBe('ON_ACTIVATION_START')
++    expect(e.modifier.kind).toBe('DAMAGE_MINUS')
++    expect(e.pipelineStep).toBe('ACTIVATION_PRE')
++  })
++
++  it('6. 传染 descriptor（MUTUALLY_EXCLUSIVE_WITH injured，命中-1+移动-2 需谓词）', () => {
++    const e = effect('plg_contagion')
++    expect(e.stacking.policy).toBe('MUTUALLY_EXCLUSIVE_WITH')
++    expect(e.stacking.groupKeys).toContain('injured')
++  })
++
++  it('7. 腐烂诅咒 descriptor（掷出 3 即伤，需 dieFaceEquals 谓词 + DAMAGE_PER_DIE_FACE）', () => {
++    const e = effect('plg_rot_curse')
++    expect(e.modifier.kind).toBe('CUSTOM_HOOK')
++    expect((e.modifier.payload as { hookId: string }).hookId).toBe('rot-curse-die-face-3')
++  })
++
++  it('9. 剧毒武器 vs 有 POISON 目标 +1（VIRULENT weaponRule + targetHasMarker 谓词）', () => {
++    const sword = weapon('plg_plague_sword')
++    expect(sword.profile.weaponRules).toContain('VIRULENT')
++    // VIRULENT 语义：对已有 POISON 目标该武器两伤害属性 +1（条件 targetHasMarker(POISON)，谓词留 3.2）
++  })
++})
++
++describe('AC3 buildConstraints（结构性）', () => {
++  it('队长=勇士 + 每类限 1（除士兵）+ 无 subFactionSelector', () => {
++    const c = pack.buildConstraints!
++    expect(c.leaderFrom).toEqual(['plg_champion'])
++    expect(c.maxPerTypeExcept).toEqual(['plg_troop'])
++    expect(c.operatives?.min).toBe(6)
++    expect(c.equipmentLimits?.plg_plague_spewer).toBe(1)
++  })
++})
+diff --git a/tests/rules/predicate-closure.test.ts b/tests/rules/predicate-closure.test.ts
+index 01332e2..d445324 100644
+--- a/tests/rules/predicate-closure.test.ts
++++ b/tests/rules/predicate-closure.test.ts
+@@ -3,6 +3,7 @@ import { loadPack } from '../../src/rules'
+ import { MODIFIER_KINDS, STACKING_POLICIES, TRIGGER_POINTS, PIPELINE_STEPS } from '../../src/rules/types'
+ import angels from '../../src/data/packs/angels_of_death.v1.json'
+ import legionaries from '../../src/data/packs/legionaries.v1.json'
++import plague from '../../src/data/packs/plague_marines.v1.json'
+ 
+ // Story 2.2 护栏（AQ-3 封闭性）：每个数据包的 effect 必须只用枚举内的 modifier.kind
+ // 与 stacking.policy。引入未枚举项 → 红，强制回盘点（加阵营=加数据，不改枚举除非证明必要）。
+@@ -10,6 +11,7 @@ import legionaries from '../../src/data/packs/legionaries.v1.json'
+ const PACKS = [
+   { name: 'angels_of_death', raw: angels },
+   { name: 'legionaries', raw: legionaries },
++  { name: 'plague_marines', raw: plague },
+ ]
+ 
+ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
+diff --git a/tests/rules/predicates.test.ts b/tests/rules/predicates.test.ts
+new file mode 100644
+index 0000000..a887e59
+--- /dev/null
++++ b/tests/rules/predicates.test.ts
+@@ -0,0 +1,53 @@
++import { describe, it, expect } from 'vitest'
++import { evalPredicate, PREDICATE_OPS, type PredicateContext } from '../../src/rules/predicates'
++
++const c = (over: Partial<PredicateContext> = {}): PredicateContext => over
++
++describe('谓词库 evalPredicate（Story 3.2 AQ-3）', () => {
++  it('weaponKindIs / rangeBucket', () => {
++    expect(evalPredicate({ op: 'weaponKindIs', args: ['MELEE'] }, c({ weaponKind: 'MELEE' }))).toBe(true)
++    expect(evalPredicate({ op: 'weaponKindIs', args: ['RANGED'] }, c({ weaponKind: 'MELEE' }))).toBe(false)
++    expect(evalPredicate({ op: 'rangeBucket', args: ['WITHIN_6IN'] }, c({ rangeInches: 4 }))).toBe(true)
++    expect(evalPredicate({ op: 'rangeBucket', args: ['WITHIN_6IN'] }, c({ rangeInches: 8 }))).toBe(false)
++  })
++
++  it('attackerHasKeyword / targetHasMarker / operativeHasMarker', () => {
++    expect(evalPredicate({ op: 'attackerHasKeyword', args: ['NURGLE'] }, c({ attackerKeywords: ['CHAOS', 'NURGLE'] }))).toBe(true)
++    expect(evalPredicate({ op: 'targetHasMarker', args: ['POISON'] }, c({ targetMarkers: ['POISON'] }))).toBe(true)
++    expect(evalPredicate({ op: 'operativeHasMarker', args: ['POISON'] }, c({ operativeMarkers: [] }))).toBe(false)
++  })
++
++  it('operativeIsInjured / dealtAnyDamageThisPipeline', () => {
++    expect(evalPredicate({ op: 'operativeIsInjured' }, c({ operativeInjured: true }))).toBe(true)
++    expect(evalPredicate({ op: 'dealtAnyDamageThisPipeline' }, c({ dealtAnyDamage: true }))).toBe(true)
++    expect(evalPredicate({ op: 'dealtAnyDamageThisPipeline' }, c({}))).toBe(false)
++  })
++
++  it('dieFaceEquals（腐烂诅咒：掷出 3）', () => {
++    expect(evalPredicate({ op: 'dieFaceEquals', args: [3] }, c({ dieFace: 3 }))).toBe(true)
++    expect(evalPredicate({ op: 'dieFaceEquals', args: [3] }, c({ dieFace: 5 }))).toBe(false)
++  })
++
++  it('notSameFaction（毒素不挂己方瘟疫）', () => {
++    expect(evalPredicate({ op: 'notSameFaction' }, c({ attackerFaction: 'plague_marines', targetFaction: 'angels_of_death' }))).toBe(true)
++    expect(evalPredicate({ op: 'notSameFaction' }, c({ attackerFaction: 'plague_marines', targetFaction: 'plague_marines' }))).toBe(false)
++  })
++
++  it('all / any 组合', () => {
++    const p = { op: 'all', all: [{ op: 'targetHasMarker', args: ['POISON'] }, { op: 'notSameFaction' }] }
++    expect(evalPredicate(p, c({ targetMarkers: ['POISON'], attackerFaction: 'a', targetFaction: 'b' }))).toBe(true)
++    expect(evalPredicate(p, c({ targetMarkers: [], attackerFaction: 'a', targetFaction: 'b' }))).toBe(false)
++    const any = { op: 'any', any: [{ op: 'operativeIsInjured' }, { op: 'always' }] }
++    expect(evalPredicate(any, c({}))).toBe(true) // always 命中
++  })
++
++  it('未知 op → false（穷尽保护，不静默猜）', () => {
++    expect(evalPredicate({ op: 'nonexistentPredicate' }, c({}))).toBe(false)
++  })
++
++  it('PREDICATE_OPS 封闭集（11 项）', () => {
++    expect(PREDICATE_OPS).toContain('dieFaceEquals')
++    expect(PREDICATE_OPS).toContain('notSameFaction')
++    expect(PREDICATE_OPS.length).toBe(11)
++  })
++})
