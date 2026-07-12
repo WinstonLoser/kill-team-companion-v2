@@ -277,6 +277,8 @@ export interface ValidateTargetOptions {
   friendlyPositions?: Point[]
   /** 咨询式翻转覆盖（DN7/D-24）：玩家终裁覆盖引擎某项 finding 的 finalValue */
   findingOverrides?: FindingOverride[]
+  /** 判定类型：射击或近战 */
+  kind?: 'SHOOT' | 'MELEE'
 }
 
 /** 玩家终裁覆盖（DN7）：强制某项 finding 的最终值。 */
@@ -312,19 +314,26 @@ export function validateTarget(
   const engaged = applyOverride(engagementFinding(attacker, target, los.finalValue), overrides)
 
   const missing: string[] = []
-  if (!los.finalValue) missing.push('LOS 不可见')
-  if (obscured.finalValue) missing.push('目标被遮挡')
-  if (!rangeF.finalValue) missing.push('超出射程')
-  if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
-  // P13：目标隐匿命令不可射击
-  if (options?.targetOrder === 'CONCEALED') missing.push('目标隐匿命令（不可射击）')
-  // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
-  const friendlies = options?.friendlyPositions ?? []
-  const friendlyEngaged = friendlies.some((fp) => {
-    const center = Math.hypot(target.pos.x - fp.x, target.pos.y - fp.y)
-    return Math.max(0, center - target.baseRadius) <= 1
-  })
-  if (friendlyEngaged) missing.push('目标控制范围内有己方（近战纠缠，避免误伤）')
+  const kind = options?.kind ?? 'SHOOT'
+  
+  if (kind === 'SHOOT') {
+    if (!los.finalValue) missing.push('LOS 不可见')
+    if (obscured.finalValue) missing.push('目标被遮挡')
+    if (!rangeF.finalValue) missing.push('超出射程')
+    if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
+    // P13：目标隐匿命令不可射击
+    if (options?.targetOrder === 'CONCEALED') missing.push('目标隐匿命令（不可射击）')
+    // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
+    const friendlies = options?.friendlyPositions ?? []
+    const friendlyEngaged = friendlies.some((fp) => {
+      const center = Math.hypot(target.pos.x - fp.x, target.pos.y - fp.y)
+      return Math.max(0, center - target.baseRadius) <= 1
+    })
+    if (friendlyEngaged) missing.push('目标控制范围内有己方（近战纠缠，避免误伤）')
+  } else {
+    // MELEE
+    if (!engaged.finalValue) missing.push('近战必须在目标控制范围内')
+  }
 
   return {
     ok: missing.length === 0,

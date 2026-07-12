@@ -9,8 +9,11 @@ import { UnitPanel } from './UnitPanel'
 import { PipelineDrawer } from './PipelineDrawer'
 import { LogPanel } from './LogPanel'
 import { InterceptorCard } from './InterceptorCard'
-import { ManualDiceEntry } from './ManualDiceEntry'
+import { CombatResolver } from '../components/Combat/CombatResolver'
+import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { StratagemPanel } from './StratagemPanel'
+import { packOfOp, weaponOfPack } from '../../state/matchStore'
+import { type RollContext } from '../../dice/source'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -76,10 +79,23 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const lastShot = useMatchStore((s) => s.lastShot)
   const attackViz = useMatchStore((s) => s.attackViz)
   const engagementOf = useMatchStore((s) => s.engagementOf)
-  const manualDiceNeeded = useMatchStore((s) => s.manualDiceNeeded)
 
   const [pendingAsk, setPendingAsk] = useState<{ attacker: MatchToken; target: MatchToken } | null>(null)
-  const [manualCollect, setManualCollect] = useState<{ attacker: MatchToken; target: MatchToken; kind: 'SHOOT' | 'MELEE'; needed: number } | null>(null)
+  const [combatCollect, setCombatCollect] = useState<{
+    attacker: MatchToken;
+    target: MatchToken;
+    kind: 'SHOOT' | 'MELEE';
+    atkCount: number;
+    atkContext: any
+    atkTheme: any
+    atkDamage?: { normal: number, critical: number }
+    defCount: number;
+    defContext: any;
+    defTheme: any
+    defDamage?: { normal: number, critical: number }
+    defSave: number;
+    defWounds: number;
+  } | null>(null)
   const [hoverInch, setHoverInch] = useState<string | null>(null)
   const [pendingMove, setPendingMove] = useState<ActionType | null>(null)
   const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
@@ -166,13 +182,44 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     // 行动消费 AP（SHOOT→SHOOT，MELEE→FIGHT）；不通过则拦截
     const actR = doAction(attacker.uid, kind === 'SHOOT' ? 'SHOOT' : 'FIGHT')
     if (!actR.ok) { setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
-    if (diceSource === 'manual') {
-      setManualCollect({ attacker, target, kind, needed: manualDiceNeeded(kind) })
-      return
+
+    // 获取攻击者的武器和属性，唤出 DiceInterface
+    const atkPack = packOfOp(attacker.opId)
+    const weapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+    if (!weapon) { setIntercept({ title: '无武器', reasons: [`阵营包缺 ${kind} 武器`] }); return }
+
+    const lethalRule = weapon.profile.weaponRules?.find((r: string) => r.startsWith('Lethal '))
+    const critTarget = lethalRule ? parseInt(lethalRule.replace('Lethal ', '')) || 6 : 6;
+    const context: RollContext = { hitTarget: weapon.profile.hit, critTarget }
+
+    const defPack = packOfOp(target.opId)
+    const defWeapon = weaponOfPack(defPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+
+    // 防御方数据准备 (近战时使用其武器；射击时防御方使用 save 值作为目标，防守骰数固定3或根据规则)
+    const defCount = kind === 'SHOOT' ? 3 : (defWeapon?.profile.attacks ?? 0)
+    let defContext: any = { hitTarget: 3, critTarget: 6 }
+    if (kind === 'MELEE' && defWeapon) {
+      const defLethal = defWeapon.profile.weaponRules?.find((r: string) => r.startsWith('Lethal '))
+      const defCritTarget = defLethal ? parseInt(defLethal.replace('Lethal ', '')) || 6 : 6
+      defContext = { hitTarget: defWeapon.profile.hit, critTarget: defCritTarget }
+    } else if (kind === 'SHOOT') {
+      defContext = { hitTarget: 3, critTarget: 6 } // Simplified default save target
     }
-    const r = resolveAttack({ attackerUid: attacker.uid, targetUid: target.uid, kind })
-    if (!r.ok) setIntercept({ title: '不可攻击', reasons: r.missing ?? [] })
-    else setPendingAsk(null)
+
+    setPendingAsk(null)
+    setCombatCollect({
+      attacker, target, kind,
+      atkCount: weapon.profile.attacks,
+      atkContext: context,
+      atkTheme: atkPack.faction.theme?.dice || { baseColor: '#1e1e1e', pipColor: '#e0e0e0' },
+      atkDamage: { normal: weapon.profile.normalDamage, critical: weapon.profile.criticalDamage },
+      defCount,
+      defContext,
+      defTheme: defPack.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
+      defDamage: defWeapon ? { normal: defWeapon.profile.normalDamage, critical: defWeapon.profile.criticalDamage } : { normal: 0, critical: 0 },
+      defSave: 3, // DEFENDER_SAVE
+      defWounds: target.wounds
+    })
   }
 
   function rewindLast() {
@@ -287,41 +334,52 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
             onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
           >
-          <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
-          <Board
-            mapPack={mapPack}
-            terrain={mapPack.terrain}
-            tokens={tokens}
-            objectives={mapPack.objectives}
-            phase="play"
-            selected={selected}
-            rangeRing={rangeRing}
-            controlRing={controlRing}
-            ownCover={ownCover}
-            losLines={losLines}
-            objControl={objControl}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={onPointerUp}
-            onTokenPointerDown={(t) => {
-              if (t.side !== turn.activePlayer) return
-              setSelected(t.uid)
-              setIntercept(null)
-              // #4：移动需先激活；#7：需先在行动菜单选移动行动
-              if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
-              if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
-              setDragging(t.uid, t.pos)
-            }}
-            onTokenDoubleClick={(t) => rotateToken(t.uid)}
-            onTokenClick={onClickToken}
-          />
-          </div>
+            <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
+              <Board
+                mapPack={mapPack}
+                terrain={mapPack.terrain}
+                tokens={tokens}
+                objectives={mapPack.objectives}
+                phase="play"
+                selected={selected}
+                rangeRing={rangeRing}
+                controlRing={controlRing}
+                ownCover={ownCover}
+                losLines={losLines}
+                objControl={objControl}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerLeave={onPointerUp}
+                onTokenPointerDown={(t) => {
+                  if (t.side !== turn.activePlayer) return
+                  setSelected(t.uid)
+                  setIntercept(null)
+                  // #4：移动需先激活；#7：需先在行动菜单选移动行动
+                  if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
+                  if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
+                  setDragging(t.uid, t.pos)
+                }}
+                onTokenDoubleClick={(t) => rotateToken(t.uid)}
+                onTokenClick={onClickToken}
+              />
+            </div>
           </div>
           {hoverInch && <div className="inch-readout">{hoverInch}</div>}
           <p className="muted">激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
         </div>
 
         <div className="play-mid-col">
+          {active && (
+            <div style={{ marginBottom: '16px' }}>
+              <UnitPortrait
+                name={active.name}
+                maxWounds={active.maxWounds}
+                currentWounds={active.wounds}
+                statuses={active.markers}
+                themeColor={active.side === 'a' ? '#ff5a00' : '#5cff8c'}
+              />
+            </div>
+          )}
           <ActionBar
             active={turn.activePlayer}
             selectedName={active?.name ?? null}
@@ -377,19 +435,57 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
           <button onClick={() => setPendingAsk(null)}>取消</button>
         </div>
       )}
-
-      {manualCollect && (
-        <ManualDiceEntry
-          needed={manualCollect.needed}
-          label={`${manualCollect.kind === 'SHOOT' ? '射击' : '近战'}：攻击+防御骰共 ${manualCollect.needed} 枚`}
-          onClose={() => setManualCollect(null)}
-          onConfirm={(nats) => {
-            const { attacker, target, kind } = manualCollect
-            setManualCollect(null)
-            const r = resolveAttack({ attackerUid: attacker.uid, targetUid: target.uid, kind, manualNats: nats })
-            if (!r.ok) setIntercept({ title: '不可攻击', reasons: r.missing ?? [] })
-          }}
-        />
+      {combatCollect && (
+        <div className="overlay-backdrop" style={{ zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '2vh' }}>
+          <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', height: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <CombatResolver
+              mode={combatCollect.kind}
+              attackerName={combatCollect.attacker.name}
+              attackerPortrait={{
+                name: combatCollect.attacker.name,
+                maxWounds: combatCollect.attacker.maxWounds,
+                currentWounds: combatCollect.attacker.wounds,
+                statuses: combatCollect.attacker.markers,
+                themeColor: combatCollect.attacker.side === 'a' ? '#ff5a00' : '#5cff8c',
+                scale: 2
+              }}
+              attackerCount={combatCollect.atkCount}
+              attackerContext={combatCollect.atkContext}
+              attackerTheme={combatCollect.atkTheme}
+              attackerDamage={(combatCollect as any).atkDamage}
+              defenderName={combatCollect.target.name}
+              defenderPortrait={{
+                name: combatCollect.target.name,
+                maxWounds: combatCollect.target.maxWounds,
+                currentWounds: combatCollect.target.wounds,
+                statuses: combatCollect.target.markers,
+                themeColor: combatCollect.target.side === 'a' ? '#ff5a00' : '#5cff8c',
+                scale: 2
+              }}
+              defenderCount={combatCollect.defCount}
+              defenderContext={combatCollect.defContext}
+              defenderTheme={combatCollect.defTheme}
+              defenderDamage={(combatCollect as any).defDamage}
+              rollMode={diceSource === 'electronic' ? 'AUTO' : 'MANUAL'}
+              onComplete={(result) => {
+                const { attacker, target, kind } = combatCollect
+                setCombatCollect(null)
+                const r = resolveAttack({
+                  attackerUid: attacker.uid,
+                  targetUid: target.uid,
+                  kind,
+                  manualNats: [...result.atkNats, ...(result.defNats || [])],
+                  manualAllocation: result.manualAllocation
+                })
+                if (!r.ok) setIntercept({ title: '结算失败', reasons: r.missing ?? [] })
+              }}
+              onCancel={() => {
+                undoAction()
+                setCombatCollect(null)
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

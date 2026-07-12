@@ -2,14 +2,14 @@
   background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 90, 0, 0.3);
+  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.3);
   border-radius: 12px;
   padding: 24px;
   color: #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 90, 0, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.05);
   height: 100%;
   overflow-y: auto;
   font-family: 'Inter', 'Roboto', sans-serif;
@@ -34,7 +34,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid rgba(255, 90, 0, 0.2);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
   padding-bottom: 16px;
 }
 
@@ -49,13 +49,13 @@
   height: 72px;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 1px solid rgba(255, 90, 0, 0.4);
+  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
   background: rgba(0, 0, 0, 0.4);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 90, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.1);
   position: relative;
 }
 
@@ -93,7 +93,7 @@
   color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 10px rgba(255, 90, 0, 0.4);
+  text-shadow: 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
 }
 
 .op-keywords {
@@ -103,9 +103,9 @@
 }
 
 .keyword-tag {
-  background: rgba(255, 90, 0, 0.15);
-  border: 1px solid rgba(255, 90, 0, 0.4);
-  color: #ffaa77;
+  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15);
+  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
+  color: var(--theme-text-highlight, #ffaa77);
   padding: 4px 8px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -126,10 +126,10 @@
   justify-content: center;
   width: 56px;
   height: 64px;
-  background: linear-gradient(135deg, rgba(255, 90, 0, 0.2), rgba(200, 50, 0, 0.05));
+  background: linear-gradient(135deg, rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2), rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15));
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  border: 1px solid rgba(255, 90, 0, 0.5);
-  box-shadow: 0 0 10px rgba(255, 90, 0, 0.2);
+  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.5);
+  box-shadow: 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
 }
 
 .stat-value {
@@ -141,7 +141,7 @@
 
 .stat-label {
   font-size: 0.65rem;
-  color: #ffaa77;
+  color: var(--theme-text-highlight, #ffaa77);
   font-weight: 600;
   margin-top: 2px;
 }
@@ -167,16 +167,16 @@
 }
 
 .weapon-table-header {
-  background: rgba(255, 90, 0, 0.15);
+  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15);
   padding: 8px 12px;
   font-size: 0.9rem;
   font-weight: 700;
-  color: #ffaa77;
+  color: var(--theme-text-highlight, #ffaa77);
   letter-spacing: 1px;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid rgba(255, 90, 0, 0.2);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
 }
 
 .weapon-icon {
@@ -205,7 +205,7 @@
 }
 
 .weapon-row:hover td {
-  background: rgba(255, 90, 0, 0.05);
+  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.05);
 }
 
 .weapon-row:last-child td {
@@ -227,7 +227,7 @@
 }
 
 .w-rules {
-  color: #ffaa77;
+  color: var(--theme-text-highlight, #ffaa77);
   font-style: italic;
 }
 
@@ -247,10 +247,10 @@
 .rule-header {
   margin: 0 0 12px 0;
   font-size: 0.9rem;
-  color: #ffaa77;
+  color: var(--theme-text-highlight, #ffaa77);
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 1px solid rgba(255, 90, 0, 0.2);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
   padding-bottom: 8px;
 }
 
@@ -279,7 +279,7 @@
 }
 
 .w-rule-clickable {
-  color: #ffaa77;
+  color: var(--theme-text-highlight, #ffaa77);
   cursor: pointer;
   text-decoration: underline;
   text-decoration-style: dotted;
@@ -301,5 +301,5 @@
 }
 
 .rule-item.clickable:hover {
-  background: rgba(255, 90, 0, 0.1);
+  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.1);
 }

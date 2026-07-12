@@ -5,7 +5,17 @@
   "faction": {
     "id": "angels_of_death",
     "name": "死亡天使",
-    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"]
+    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"],
+    "theme": {
+      "ui": {
+        "primaryRgb": "30, 64, 175",
+        "textHighlight": "#93c5fd"
+      },
+      "dice": {
+        "baseColor": "#172554",
+        "pipColor": "#bfdbfe"
+      }
+    }
   },
   "factionRules": [
     {

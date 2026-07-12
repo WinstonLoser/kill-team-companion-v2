@@ -5,7 +5,7 @@ import type { ObjectiveMarker, MapPack } from '../data/maps'
 import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effectiveMove, canDoAction, ACTION_AP, type ActionType } from './turnStateMachine'
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
-import { ElectronicDiceSource, ManualDiceSource, hashSeed } from '../dice'
+import { ElectronicDiceSource, hashSeed, type DiceSource } from '../dice'
 import { loadPack, type FactionPack, type Effect } from '../rules'
 import type { PredicateContext } from '../rules/predicates'
 import { useRosterStore } from './rosterStore'
@@ -23,10 +23,10 @@ const ACTION_LABEL_ZH: Record<ActionType, string> = {
 }
 // 多阵营注册表：按 opId 前缀解析特工阵营包（angels_/leg_/plg_）。
 const PACKS: FactionPack[] = [MATCH_PACK, loadPack(legionariesPack), loadPack(plaguePack)]
-function packOfOp(opId: string): FactionPack {
+export function packOfOp(opId: string): FactionPack {
   return PACKS.find((p) => p.operatives.some((o) => o.operativeId === opId)) ?? MATCH_PACK
 }
-function weaponOfPack(pack: FactionPack, kind: 'RANGED' | 'MELEE') {
+export function weaponOfPack(pack: FactionPack, kind: 'RANGED' | 'MELEE') {
   return pack.weapons.find((w) => w.kind === kind)
 }
 // P4：武器查找为可选（缺类不致导入期崩溃，多阵营安全）；结算时再 guard。
@@ -134,6 +134,7 @@ export interface LastShot {
   prevWounds: number
   attackerUid: string
   kind: 'shoot' | 'melee'
+  attackerWoundsDealt?: number
 }
 
 /** 几何 finding 翻转覆盖键：`${attackerUid}>${targetUid}>${kind}`。 */
@@ -260,7 +261,7 @@ interface MatchState {
   /** 检查行动合法性（AP/约束），返回 {ok, reason}。 */
   checkAction: (uid: string, action: ActionType) => { ok: boolean; reason?: string }
   /** AR-9 intent：一击结算。UI 只 dispatch 此（+ confirmCasualties），不直接调引擎。 */
-  resolveAttack: (input: { attackerUid: string; targetUid: string; kind: 'SHOOT' | 'MELEE'; manualNats?: number[] }) => { ok: boolean; missing?: string[] }
+  resolveAttack: (input: { attackerUid: string; targetUid: string; kind: 'SHOOT' | 'MELEE'; manualNats?: number[]; manualAllocation?: { atkStrike: { normal: number, critical: number }, defStrike: { normal: number, critical: number } } }) => { ok: boolean; missing?: string[] }
   /** 唯一强制确认：应用伤亡（单一数据源=store），清 lastShot/currentLog。 */
   confirmCasualties: () => void
   /** 确认前撤销待结算（清 lastShot/currentLog）。 */
@@ -664,7 +665,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     })
   },
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====
-  resolveAttack: ({ attackerUid, targetUid, kind, manualNats }) => {
+  resolveAttack: ({ attackerUid, targetUid, kind, manualNats, manualAllocation }) => {
     const s = get()
     const attacker = s.tokens.find((t) => t.uid === attackerUid)
     const target = s.tokens.find((t) => t.uid === targetUid)
@@ -683,7 +684,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const atkRanged = weaponOfPack(atkPack, 'RANGED')
     // P3/D-24：注入玩家终裁 findingOverrides 到资格判定
     const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
-    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides })
+    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind })
     if (!elig.ok) return { ok: false, missing: elig.missing }
 
     // 攻击方 effect 栈 = 全量（factionRule + chapterTactic/markOfChaos + ability + wargear + activeStratagem）
@@ -699,11 +700,27 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       weaponKind: kind === 'SHOOT' ? 'RANGED' : 'MELEE',
       rangeInches: Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y),
     }
-    const dice = manualNats
-      ? (() => { const m = new ManualDiceSource(); m.provide(manualNats); return m })()
-      : new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, kind, s.nextShotSeq()))
+    const baseDice = new ElectronicDiceSource(hashSeed(`${attacker.uid}>${target.uid}`, kind, s.nextShotSeq()))
+    const dice: DiceSource = {
+      roll: (n: number, ctx: any) => {
+        if (manualNats && manualNats.length > 0) {
+          const take = manualNats.splice(0, n)
+          return take.map((d) => {
+            let grade: 'FAIL' | 'NORMAL' | 'CRITICAL' = 'FAIL'
+            if (ctx) {
+              if (d >= ctx.critTarget) grade = 'CRITICAL'
+              else if (d >= ctx.hitTarget) grade = 'NORMAL'
+            }
+            if (d === 1) grade = 'FAIL'
+            return { nat: d as any, grade, seed: 0 }
+          })
+        }
+        return baseDice.roll(n, ctx)
+      }
+    }
 
     let woundsDealt: number
+    let attackerWoundsDealt: number = 0
     let log: ResolutionLog
     if (kind === 'SHOOT') {
       const cover = elig.findings.find((f) => f.kind === 'COVER')?.finalValue ?? false
@@ -720,15 +737,17 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         attacker: { operativeId: attacker.uid, weapon: useWeapon, save: DEFENDER_SAVE, wounds: attacker.wounds },
         defender: { operativeId: target.uid, weapon: DEFENDER_WEAPON_FALLBACK ?? useWeapon, save: DEFENDER_SAVE, wounds: target.wounds },
         effects, defenderEffects: buildEffectStack(target.opId, target.side, s.activeStratagems[target.side]), dice, predicate,
+        manualAllocation, // Pass down to engine
       }
       const r = runMelee(input)
       woundsDealt = r.woundsToDefender
+      attackerWoundsDealt = r.woundsToAttacker
       log = buildMeleeLog(`${attacker.uid}>${target.uid}`, input, r)
     }
     // 待确认伤亡：lastShot 持 prevWounds，damage 不在此应用（confirmCasualties 才写回）。
     const logKind: LogKind = kind === 'SHOOT' ? 'shoot' : 'melee'
     set({
-      lastShot: { targetUid: target.uid, targetName: target.name, woundsDealt, prevWounds: target.wounds, attackerUid: attacker.uid, kind: logKind },
+      lastShot: { targetUid: target.uid, targetName: target.name, woundsDealt, prevWounds: target.wounds, attackerUid: attacker.uid, kind: logKind, attackerWoundsDealt },
       currentLog: log,
       log: [{ id: nextLogId(), kind: logKind, text: `${attacker.name} → ${target.name}：待确认伤亡 ${woundsDealt}` }, ...s.log].slice(0, 80),
     })
@@ -745,6 +764,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const prevW = target?.wounds ?? 0
     get().applyDamage(ls.targetUid, ls.woundsDealt)
     const newW = Math.max(0, prevW - ls.woundsDealt)
+    
+    if (ls.attackerWoundsDealt && ls.attackerWoundsDealt > 0) {
+      get().applyDamage(ls.attackerUid, ls.attackerWoundsDealt)
+    }
     // 流程结束挂的指示物（POISON 等）应用到对应 token——下次攻击该目标时谓词 targetHasMarker 命中
     const granted = grantedMarkersOf(log)
     const markerLog: string[] = []
@@ -762,7 +785,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       lastShot: null,
       currentLog: null,
       replayLog: log,
-      log: [{ id: nextLogId(), kind: ls.kind, text: `${ls.targetName} 确认伤亡 ${ls.woundsDealt}${newW <= 0 ? '（残废）' : `（剩 ${newW}）`}${markerLog.length ? `；挂指示物 ${markerLog.join(',')}` : ''}` }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: ls.kind, text: `${ls.targetName} 确认伤亡 ${ls.woundsDealt}${newW <= 0 ? '（残废）' : `（剩 ${newW}）`}${ls.attackerWoundsDealt ? `；攻击方受伤 ${ls.attackerWoundsDealt}` : ''}${markerLog.length ? `；挂指示物 ${markerLog.join(',')}` : ''}` }, ...s.log].slice(0, 80),
     }))
   },
   undoPending: () => set({ lastShot: null, currentLog: null }),

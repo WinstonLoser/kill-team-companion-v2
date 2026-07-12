@@ -5,7 +5,17 @@
   "faction": {
     "id": "legionaries",
     "name": "军团 / Legionaries",
-    "keywords": ["CHAOS", "HERETIC ASTARTES", "LEGIONARY"]
+    "keywords": ["CHAOS", "HERETIC ASTARTES", "LEGIONARY"],
+    "theme": {
+      "ui": {
+        "primaryRgb": "185, 28, 28",
+        "textHighlight": "#fca5a5"
+      },
+      "dice": {
+        "baseColor": "#7f1d1d",
+        "pipColor": "#fca5a5"
+      }
+    }
   },
   "factionRules": [
     {

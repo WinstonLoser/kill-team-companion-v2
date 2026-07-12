@@ -29,6 +29,7 @@ export interface MeleeResolutionContext {
   predicate?: PredicateContext
   pipelineId: string
   attempt: number
+  manualAllocation?: { atkStrike: Pool; defStrike: Pool } // Added for Phase 2 interactivity
 }
 
 /** 近战累积状态：step 间线程传递。 */
@@ -129,7 +130,22 @@ const MELEE_SIMULTANEOUS_ROLL: MeleeStep = {
 
 const MELEE_ALTERNATING_RESOLVE: MeleeStep = {
   stepId: 'MELEE_ALTERNATING_RESOLVE',
-  run: (state) => {
+  run: (state, ctx) => {
+    if (ctx.manualAllocation) {
+      // DN6: Phase 2 interactivity. UI passed down the manual strike allocation.
+      return {
+        state: { 
+          ...state, 
+          attackerStrike: ctx.manualAllocation.atkStrike, 
+          defenderStrike: ctx.manualAllocation.defStrike, 
+          parryLog: ['(Manual Allocation via UI)'] 
+        },
+        summary: `手动交替格挡后 攻方出击 普通${ctx.manualAllocation.atkStrike.normal}/关键${ctx.manualAllocation.atkStrike.critical}；防方出击 普通${ctx.manualAllocation.defStrike.normal}/关键${ctx.manualAllocation.defStrike.critical}`,
+        applied: [],
+        rejected: [],
+      }
+    }
+
     const a = state.attackerPool
     const d = state.defenderPool
     // DN3 真交替（修 P3 双重计数）：

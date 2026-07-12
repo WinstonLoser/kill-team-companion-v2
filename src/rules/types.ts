@@ -165,11 +165,20 @@ export interface BuildConstraints {
   notes?: string
 }
 
+export interface ThemeConfig {
+  ui?: Record<string, string>
+  dice?: {
+    baseColor: string
+    pipColor: string
+  }
+}
+
 export interface Faction {
   id: string
   name: string
   keywords: string[]
   subFactionSelector?: SubFactionSelector
+  theme?: ThemeConfig
 }
 
 export interface FactionPack {

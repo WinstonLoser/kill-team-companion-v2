@@ -8,8 +8,13 @@ export interface DiceRoll {
   seed?: number // 电子骰的源 seed，入日志供回放复现（FR-17）；物理骰无
 }
 
+export interface RollContext {
+  hitTarget: number
+  critTarget: number
+}
+
 export interface DiceSource {
-  roll(n: number): DiceRoll[]
+  roll(n: number, context?: RollContext): DiceRoll[]
 }
 
 /**
@@ -23,11 +28,15 @@ export class ElectronicDiceSource implements DiceSource {
     this.seed = seed >>> 0
     this.seedable = mulberry32(this.seed)
   }
-  roll(n: number): DiceRoll[] {
+  roll(n: number, context: RollContext = { hitTarget: 3, critTarget: 6 }): DiceRoll[] {
     const out: DiceRoll[] = []
     for (let i = 0; i < n; i++) {
       const nat = d6(this.seedable)
-      out.push({ nat, grade: nat === 6 ? 'CRITICAL' : nat === 1 ? 'FAIL' : 'NORMAL', seed: this.seed })
+      let grade: DiceGrade = 'FAIL'
+      if (nat >= context.critTarget) grade = 'CRITICAL'
+      else if (nat >= context.hitTarget) grade = 'NORMAL'
+      if (nat === 1) grade = 'FAIL' // 1 is always a fail
+      out.push({ nat, grade, seed: this.seed })
     }
     return out
   }
@@ -40,7 +49,7 @@ export class ManualDiceSource implements DiceSource {
     if (nats.some((d) => d < 1 || d > 6)) throw new Error('ManualDiceSource: dice must be 1..6')
     this.provided = nats
   }
-  roll(n: number): DiceRoll[] {
+  roll(n: number, context: RollContext = { hitTarget: 3, critTarget: 6 }): DiceRoll[] {
     if (this.provided.length < n) {
       throw new Error(`ManualDiceSource: need ${n} dice, ${this.provided.length} provided`)
     }
@@ -48,7 +57,11 @@ export class ManualDiceSource implements DiceSource {
     this.provided = this.provided.slice(n)
     return take.map((nat) => {
       const d = clamp6(nat)
-      return { nat: d, grade: d === 6 ? 'CRITICAL' : d === 1 ? 'FAIL' : 'NORMAL' }
+      let grade: DiceGrade = 'FAIL'
+      if (d >= context.critTarget) grade = 'CRITICAL'
+      else if (d >= context.hitTarget) grade = 'NORMAL'
+      if (d === 1) grade = 'FAIL'
+      return { nat: d, grade }
     })
   }
 }

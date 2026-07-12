@@ -5,7 +5,17 @@
   "faction": {
     "id": "plague_marines",
     "name": "瘟疫战士 / Plague Marines",
-    "keywords": ["CHAOS", "HERETIC ASTARTES", "PLAGUE MARINE", "NURGLE"]
+    "keywords": ["CHAOS", "HERETIC ASTARTES", "PLAGUE MARINE", "NURGLE"],
+    "theme": {
+      "ui": {
+        "primaryRgb": "21, 128, 61",
+        "textHighlight": "#86efac"
+      },
+      "dice": {
+        "baseColor": "#14532d",
+        "pipColor": "#bbf7d0"
+      }
+    }
   },
   "factionRules": [
     {
