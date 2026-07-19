@@ -16,8 +16,6 @@ const ATTACK_ACTIONS: { a: ActionType; label: string; k: 'SHOOT' | 'FIGHT' }[] =
 
 export function ActionBar({
   active,
-  selectedName,
-  selectedSide,
   activated,
   order,
   apl,
@@ -35,10 +33,11 @@ export function ActionBar({
   onEndActivation,
   onEndTP,
   onUndo,
+  movePreview,
+  onConfirmMove,
+  onCancelMove,
 }: {
   active: Side
-  selectedName: string | null
-  selectedSide: Side | null
   activated: boolean
   order: Order | null
   apl: number
@@ -48,40 +47,28 @@ export function ActionBar({
   pendingAttack: 'SHOOT' | 'FIGHT' | null
   hasLastShot: boolean
   canUndoAction: boolean
+  movePreview?: boolean
   onActivate: () => void
   onSelectOrder: (order: Order) => void
   onPickMove: (a: ActionType) => void
+  onConfirmMove?: () => void
+  onCancelMove?: () => void
   onPickAttack: (k: 'SHOOT' | 'FIGHT') => void
   onUndoAction: () => void
   onEndActivation: () => void
   onEndTP: () => void
   onUndo: () => void
 }) {
-  const canSelect = selectedSide === active
   const apLeft = apl - apUsed
-  const push = !selectedName
-    ? `轮到 ${active.toUpperCase()}：点一名己方特工`
-    : !canSelect
-      ? `选中了${selectedSide === 'a' ? 'A' : 'B'}方特工（仅查看）；请激活 ${active.toUpperCase()} 方`
-      : !activated
-        ? `${selectedName}：先激活才能行动`
-        : pendingMove
-          ? `${selectedName} · ${pendingMove === 'MOVE' ? '转移' : pendingMove === 'DASH' ? '冲刺' : pendingMove === 'FALL_BACK' ? '后撤' : '冲锋'} 已选：拖拽特工移动（再点取消）`
-          : pendingAttack
-            ? `${selectedName} · ${pendingAttack === 'SHOOT' ? '射击' : '近战'} 已选：点敌方目标（再点取消）`
-            : `${selectedName} 已激活：选命令 + 选行动`
 
   return (
-    <div className={`action-bar ${active}`}>
-      <div className="push-text">{push}</div>
+    <div className={`action-bar ${active}`} style={{ background: 'transparent', padding: 0, boxShadow: 'none' }}>
       {!activated ? (
-        <div className="action-row">
-          <button className={`primary main-btn ${active}`} disabled={!canSelect} onClick={onActivate} title={!canSelect ? '请先选己方特工' : '激活选中特工'}>
-            激活选中 ▶
-          </button>
-          <button className="primary" onClick={onEndTP} title="结束转折点 → 计分 + effect 到期结算">结束转折点</button>
-          {hasLastShot && <button onClick={onUndo} className="rollback-btn" title="撤销上次结算">↶ 回滚上次结算</button>}
-        </div>
+        hasLastShot && (
+          <div className="action-row">
+            <button onClick={onUndo} className="rollback-btn" style={{ width: '100%' }} title="撤销上次结算">↶ 回滚上次结算</button>
+          </div>
+        )
       ) : (
         <>
           <div className="ab-orders">
@@ -115,10 +102,18 @@ export function ActionBar({
             ))}
           </div>
           <div className="action-row">
-            <button className={`main-btn ${active}`} onClick={onEndActivation} title="结束后该特工本回合不能再行动">结束激活</button>
-            <button className="primary" onClick={onEndTP} title="结束转折点">结束转折点</button>
-            <button className="rollback-btn" disabled={!canUndoAction} onClick={onUndoAction} title="撤销当前特工的上一步行动（恢复 AP/位置）">↶ 回退上步</button>
-            {hasLastShot && <button onClick={onUndo} className="rollback-btn">↶ 回滚结算</button>}
+            {movePreview ? (
+              <>
+                <button className="main-btn" style={{ background: '#39d98a', color: '#111' }} onClick={onConfirmMove} title="确认移动到目标位置">确认移动 ▶</button>
+                <button className="rollback-btn" onClick={onCancelMove} title="取消移动并恢复位置">取消（回退）</button>
+              </>
+            ) : (
+              <>
+                <button className={`main-btn ${active}`} onClick={onEndActivation} title="结束后该特工本回合不能再行动">结束激活</button>
+                <button className="rollback-btn" disabled={!canUndoAction} onClick={onUndoAction} title="撤销当前特工的上一步行动（恢复 AP/位置）">↶ 回退上步</button>
+                {hasLastShot && <button onClick={onUndo} className="rollback-btn">↶ 回滚结算</button>}
+              </>
+            )}
           </div>
         </>
       )}

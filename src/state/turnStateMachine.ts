@@ -34,6 +34,7 @@ export interface TurnState {
   cp: { a: number; b: number }
   ployUses: Record<string, { used: number; perBattle?: number; perTurningPoint?: number }>
   operatives: Record<string, OperativeActivation>
+  activeOpId?: string | null
 }
 
 export interface ActionContext {
@@ -168,6 +169,7 @@ export function createInitialTurnState(): TurnState {
     cp: { a: 2, b: 2 },
     ployUses: {},
     operatives: {},
+    activeOpId: null,
   }
 }
 
@@ -184,6 +186,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return {
         ...state,
         activePlayer: event.player,
+        activeOpId: event.opId,
         operatives: {
           ...state.operatives,
           [event.opId]: {
@@ -222,7 +225,12 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     case 'END_ACTIVATION': {
       const op = state.operatives[event.opId]
       if (!op) return state
-      return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } }
+      return { 
+        ...state, 
+        activePlayer: state.activePlayer === 'a' ? 'b' : 'a',
+        activeOpId: null,
+        operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } 
+      }
     }
     case 'USE_PLOY': {
       // DN6：内嵌 guard（计谋次数上限先验）+ CP clamp 防负（补丁 #10）。
@@ -256,6 +264,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         ...state,
         turningPoint: next,
         phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
+        activeOpId: null,
         cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
         operatives: ops,
         ployUses,

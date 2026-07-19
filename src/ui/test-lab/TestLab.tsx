@@ -5,6 +5,7 @@ import { t } from '../../utils/i18n';
 import './TestLab.css';
 import { useSettingsStore } from '../../state/settingsStore';
 import { CombatResolver } from '../components/Combat/CombatResolver';
+import { getAvatarUrl } from '../../utils/avatars';
 
 export function TestLab({ packs }: { packs: { id: string; name: string; pack: any }[] }) {
   const [packId, setPackId] = useState<string>(packs[0]?.id ?? '')
@@ -211,7 +212,17 @@ export function TestLab({ packs }: { packs: { id: string; name: string; pack: an
 
         {activeTab === 'card' && (
           <div className="ipad-canvas">
-            {selectedOp ? <OperativeCard operative={selectedOp} pack={pack} selectedWeaponIds={selectedWeaponIds} factionRuleSelections={factionRuleSelections} /> : <div className="no-selection">Select an operative</div>}
+            {selectedOp ? (
+              <OperativeCard 
+                operative={selectedOp} 
+                pack={pack} 
+                selectedWeaponIds={selectedWeaponIds} 
+                factionRuleSelections={factionRuleSelections} 
+                avatarUrl={getAvatarUrl(pack.faction.id, selectedOp.operativeId)}
+              />
+            ) : (
+              <div className="no-selection">Select an operative</div>
+            )}
           </div>
         )}
 

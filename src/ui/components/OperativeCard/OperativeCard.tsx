@@ -8,6 +8,7 @@ import './OperativeCard.css';
 export function OperativeCard({ operative, pack, selectedWeaponIds, factionRuleSelections, avatarUrl }: { operative: any, pack: any, selectedWeaponIds: string[], factionRuleSelections?: Record<string, string[]>, avatarUrl?: string }) {
   const locale = useLocaleStore((s) => s.locale);
   const [activeInfo, setActiveInfo] = useState<{ title: string, content: string } | null>(null);
+  const [imgError, setImgError] = useState(false);
   
   if (!operative) return null;
 
@@ -24,8 +25,8 @@ export function OperativeCard({ operative, pack, selectedWeaponIds, factionRuleS
       <div className="op-card-header">
         <div className="op-header-left">
           <div className="op-avatar-wrapper" id={`avatar-${operative.operativeId}`}>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={operative.name} className="op-avatar-image" />
+            {avatarUrl && !imgError ? (
+              <img src={avatarUrl} alt={operative.name} className="op-avatar-image" onError={() => setImgError(true)} />
             ) : (
               <div className="op-avatar-placeholder">
                 <span className="avatar-icon">👤</span>

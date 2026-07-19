@@ -8,9 +8,13 @@ export interface UnitPortraitProps {
   maxWounds: number
   statuses?: string[]
   themeColor?: string
+  themeColorRgb?: string
   avatarUrl?: string
   locale?: any
   scale?: number
+  selected?: boolean
+  onClick?: () => void
+  onAvatarClick?: () => void
 }
 
 export function UnitPortrait({
@@ -19,10 +23,16 @@ export function UnitPortrait({
   maxWounds,
   statuses = [],
   themeColor = '#ff5a00',
+  themeColorRgb = '255, 90, 0',
   avatarUrl,
   locale = 'zh',
-  scale = 1
+  scale = 1,
+  selected = false,
+  onClick,
+  onAvatarClick
 }: UnitPortraitProps) {
+  const [imgError, setImgError] = React.useState(false)
+  
   if (!name) return null
 
   const hpPercent = Math.max(0, Math.min(100, (currentWounds / maxWounds) * 100))
@@ -37,15 +47,30 @@ export function UnitPortrait({
 
   const style = {
     '--portrait-theme': themeColor,
+    '--portrait-theme-rgb': themeColorRgb,
     '--portrait-hp': hpColor,
-    'font-size': `${16 * scale}px`
+    'font-size': `${16 * scale}px`,
+    ...(selected ? {
+      boxShadow: `0 0 15px ${themeColor}, inset 0 0 10px ${themeColor}`,
+      borderColor: themeColor
+    } : {})
   } as React.CSSProperties
 
   return (
-    <div className="unit-portrait-container" style={style}>
-      <div className="up-avatar-wrapper">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="up-avatar-image" />
+    <div className={`unit-portrait-container ${selected ? 'selected' : ''}`} style={style} onClick={onClick}>
+      <div 
+        className="up-avatar-wrapper" 
+        onClick={(e) => {
+          if (onAvatarClick) {
+            e.stopPropagation();
+            if (onClick) onClick();
+            onAvatarClick();
+          }
+        }}
+        style={{ cursor: onAvatarClick ? 'pointer' : 'inherit' }}
+      >
+        {avatarUrl && !imgError ? (
+          <img src={avatarUrl} alt={name} className="up-avatar-image" onError={() => setImgError(true)} />
         ) : (
           <div className="up-avatar-placeholder">
             <span className="avatar-icon">👤</span>

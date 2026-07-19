@@ -23,6 +23,9 @@ const ACTION_LABEL_ZH: Record<ActionType, string> = {
 }
 // 多阵营注册表：按 opId 前缀解析特工阵营包（angels_/leg_/plg_）。
 const PACKS: FactionPack[] = [MATCH_PACK, loadPack(legionariesPack), loadPack(plaguePack)]
+export function packOfFaction(factionId: string): FactionPack {
+  return PACKS.find((p) => p.faction.id === factionId) ?? MATCH_PACK
+}
 export function packOfOp(opId: string): FactionPack {
   return PACKS.find((p) => p.operatives.some((o) => o.operativeId === opId)) ?? MATCH_PACK
 }
@@ -35,8 +38,8 @@ const MELEE = MATCH_PACK.weapons.find((w) => w.kind === 'MELEE')
 const DEFENDER_SAVE = 3
 const DEFENDER_WEAPON_FALLBACK = MELEE ?? RANGED // 近战防御方也需武器；缺则降级
 /** 攻击方阵营「常驻」effect（source 以 factionRule: 开头）：瘟疫毒素挂指示物 + 剧毒 +1 等。 */
-function factionRuleEffectsFor(opId: string): Effect[] {
-  return packOfOp(opId).effects.filter((e) => e.source.startsWith('factionRule:'))
+function factionRuleEffectsFor(opId: string, factionId: string): Effect[] {
+  return packOfFaction(factionId).effects.filter((e) => e.source.startsWith('factionRule:'))
 }
 
 /**
@@ -47,8 +50,8 @@ function factionRuleEffectsFor(opId: string): Effect[] {
 - wargear: 装备（常驻，v1 全装）
 - stratagem: 仅 activeStratagams 列表内的
  */
-function buildEffectStack(opId: string, _side: Side, activeStratagems: string[]): Effect[] {
-  const pack = packOfOp(opId)
+function buildEffectStack(opId: string, factionId: string, _side: Side, activeStratagems: string[]): Effect[] {
+  const pack = packOfFaction(factionId)
   const out: Effect[] = []
   for (const e of pack.effects) {
     const cat = e.source.split(':')[0]
@@ -89,6 +92,7 @@ export type DiceSourceKind = 'electronic' | 'manual'
 export interface MatchToken {
   uid: string
   side: Side
+  factionId: string
   opId: string
   name: string
   pos: Point
@@ -101,6 +105,8 @@ export interface MatchToken {
   placed: boolean
   /** 命令（部署即隐匿 D-部署规则；激活时再选交战/隐匿）。 */
   order: 'CONCEAL' | 'ENGAGE'
+  /** 该特工配备的武器ID列表（自 Roster 导入） */
+  weapons: string[]
 }
 
 export type LogKind = 'turn' | 'shoot' | 'melee' | 'ploy' | 'score' | 'deploy' | 'system'
@@ -261,6 +267,8 @@ interface MatchState {
   /** 检查行动合法性（AP/约束），返回 {ok, reason}。 */
   checkAction: (uid: string, action: ActionType) => { ok: boolean; reason?: string }
   /** AR-9 intent：一击结算。UI 只 dispatch 此（+ confirmCasualties），不直接调引擎。 */
+  /** 执行前校验攻击合法性（距离、LOS等），用于 UI 前置拦截 */
+  checkAttackLegality: (input: { attackerUid: string; targetUid: string; kind: 'SHOOT' | 'MELEE' }) => { ok: boolean; missing?: string[] }
   resolveAttack: (input: { attackerUid: string; targetUid: string; kind: 'SHOOT' | 'MELEE'; manualNats?: number[]; manualAllocation?: { atkStrike: { normal: number, critical: number }, defStrike: { normal: number, critical: number } } }) => { ok: boolean; missing?: string[] }
   /** 唯一强制确认：应用伤亡（单一数据源=store），清 lastShot/currentLog。 */
   confirmCasualties: () => void
@@ -623,20 +631,20 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const s = get()
     const t = s.tokens.find((x) => x.uid === uid)
     if (!t) return 0
-    const pack = packOfOp(t.opId)
+    const pack = packOfFaction(t.factionId)
     const op = pack.operatives.find((o) => o.operativeId === t.opId)
     const baseApl = op?.stats.apl ?? 3
-    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
     return effectiveApl(baseApl, effects)
   },
   effectiveMoveOf: (uid) => {
     const s = get()
     const t = s.tokens.find((x) => x.uid === uid)
     if (!t) return 0
-    const pack = packOfOp(t.opId)
+    const pack = packOfFaction(t.factionId)
     const op = pack.operatives.find((o) => o.operativeId === t.opId)
     const baseMove = op?.stats.move ?? 6
-    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
     return effectiveMove(baseMove, effects)
   },
   checkAction: (uid, action) => {
@@ -645,10 +653,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!op || !op.ready) return { ok: false, reason: '特工未就绪' }
     const t = s.tokens.find((x) => x.uid === uid)
     if (!t) return { ok: false, reason: '特工不存在' }
-    const pack = packOfOp(t.opId)
+    const pack = packOfFaction(t.factionId)
     const opData = pack.operatives.find((o) => o.operativeId === t.opId)
     const baseApl = opData?.stats.apl ?? 3
-    const effects = buildEffectStack(t.opId, t.side, s.activeStratagems[t.side])
+    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
     const apl = effectiveApl(baseApl, effects)
     // effectiveActionAp 已在 canDoAction 内消费（ACTION_AP_MOD delta → ACTION_AP 调整）
     const isAstartes = pack.faction.keywords.includes('ASTARTES')
@@ -665,6 +673,28 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     })
   },
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====
+  checkAttackLegality: ({ attackerUid, targetUid, kind }) => {
+    const s = get()
+    const attacker = s.tokens.find((t) => t.uid === attackerUid)
+    const target = s.tokens.find((t) => t.uid === targetUid)
+    const map = s.mapPack
+    if (!attacker || !target || !map) return { ok: false, missing: ['无效攻击方/目标/地图'] }
+    
+    const aPl: OperativePlacement = { operativeId: attacker.uid, pos: attacker.pos, baseRadius: attacker.baseRadius }
+    const dPl: OperativePlacement = { operativeId: target.uid, pos: target.pos, baseRadius: target.baseRadius }
+    const board: BoardT = {
+      terrain: map.terrain,
+      operatives: s.tokens.filter((t) => t.alive && t.placed).map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })),
+    }
+    const others = s.tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
+    
+    const atkPack = packOfFaction(attacker.factionId)
+    const atkRanged = weaponOfPack(atkPack, 'RANGED')
+    const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
+    
+    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind })
+    return { ok: elig.ok, missing: elig.missing }
+  },
   resolveAttack: ({ attackerUid, targetUid, kind, manualNats, manualAllocation }) => {
     const s = get()
     const attacker = s.tokens.find((t) => t.uid === attackerUid)
@@ -679,8 +709,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }
     const others = s.tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
     // 多阵营：解析攻击方阵营包（武器/effect/谓词 ctx）
-    const atkPack = packOfOp(attacker.opId)
-    const tgtPack = packOfOp(target.opId)
+    const atkPack = packOfFaction(attacker.factionId)
+    const tgtPack = packOfFaction(target.factionId)
     const atkRanged = weaponOfPack(atkPack, 'RANGED')
     // P3/D-24：注入玩家终裁 findingOverrides 到资格判定
     const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
@@ -689,7 +719,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
     // 攻击方 effect 栈 = 全量（factionRule + chapterTactic/markOfChaos + ability + wargear + activeStratagem）
     const atkStrats = s.activeStratagems[attacker.side]
-    const effects = buildEffectStack(attacker.opId, attacker.side, atkStrats)
+    const effects = buildEffectStack(attacker.opId, attacker.factionId, attacker.side, atkStrats)
     const useWeapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE') ?? (kind === 'SHOOT' ? RANGED : MELEE)
     if (!useWeapon) return { ok: false, missing: [`阵营包缺 ${kind} 武器`] }
     // 谓词 ctx（W3 接线）：目标指示物 + 双方阵营 + 武器类 + 距离 → 剧毒(+1 vs POISON)等条件门控生效
@@ -727,7 +757,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon },
         defender: { operativeId: target.uid, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, defenderEffects: buildEffectStack(target.opId, target.side, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
+        effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
       }
       const r = runShooting(input)
       woundsDealt = r.woundsDealt
@@ -736,7 +766,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon, save: DEFENDER_SAVE, wounds: attacker.wounds },
         defender: { operativeId: target.uid, weapon: DEFENDER_WEAPON_FALLBACK ?? useWeapon, save: DEFENDER_SAVE, wounds: target.wounds },
-        effects, defenderEffects: buildEffectStack(target.opId, target.side, s.activeStratagems[target.side]), dice, predicate,
+        effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, predicate,
         manualAllocation, // Pass down to engine
       }
       const r = runMelee(input)

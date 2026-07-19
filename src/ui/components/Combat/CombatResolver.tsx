@@ -108,27 +108,27 @@ export function CombatResolver({
   const currentConfirm = isAttacker ? handleAttackerConfirm : handleDefenderConfirm
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '4vh' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1vh' }}>
       {isRolling && (
         <div key={phase} style={{ 
-          width: '100%', maxWidth: '900px', flex: 1, 
-          background: '#1e1e1e', padding: '24px', 
+          width: '100%', maxWidth: '900px', flex: 1, minHeight: 0,
+          background: '#1e1e1e', padding: '16px', 
           borderRadius: '12px', border: `1px solid ${currentTheme?.baseColor || '#444'}`, 
           display: 'flex', flexDirection: 'column', overflowY: 'auto',
           boxShadow: `0 0 20px ${currentTheme?.baseColor || '#444'}33`
         }}>
-          <div style={{ borderBottom: '1px solid #555', paddingBottom: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px', justifyContent: 'center' }}>
+          <div style={{ borderBottom: '1px solid #555', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
             {currentPortrait && (
-              <UnitPortrait {...currentPortrait} scale={1.1} />
+              <UnitPortrait {...currentPortrait} scale={0.85} />
             )}
             <div style={{ textAlign: 'left' }}>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: '2rem' }}>{currentName}</h2>
-              <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px', marginTop: '4px', fontWeight: 'bold' }}>
+              <h2 style={{ margin: 0, color: '#fff', fontSize: '1.5rem' }}>{currentName}</h2>
+              <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
                 {currentRole} Roll
               </div>
             </div>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <DiceInterface
               count={currentCount}
               theme={currentTheme}
@@ -141,7 +141,7 @@ export function CombatResolver({
       )}
 
       {phase === 'ALLOCATION' && (
-        <div style={{ width: '100%', maxWidth: '900px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ width: '100%', maxWidth: '900px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <MeleeAllocationPanel
             attackerName={attackerName}
             attackerPortrait={attackerPortrait}

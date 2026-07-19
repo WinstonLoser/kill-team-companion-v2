@@ -1,6 +1,7 @@
 import type { Point, TerrainFeature } from '../../geometry'
 import type { ObjectiveMarker, MapPack } from '../../data/maps'
 import type { MatchToken, Side } from '../../state/matchStore'
+import { getAvatarUrl } from '../../utils/avatars'
 
 export const SCALE = 20 // 像素/英寸
 
@@ -214,7 +215,17 @@ export function Board({
                   transform={`rotate(${t.facing} ${r} ${r})`}
                 />
               </svg>
-              <span className="token-label">{t.side.toUpperCase()}</span>
+              {getAvatarUrl(t.factionId, t.opId) ? (
+                <img 
+                  src={getAvatarUrl(t.factionId, t.opId)} 
+                  alt={t.name} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', pointerEvents: 'none' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling!.setAttribute('style', ''); }}
+                />
+              ) : null}
+              <span className="token-label" style={{ display: getAvatarUrl(t.factionId, t.opId) ? 'none' : '' }}>
+                {t.side.toUpperCase()}
+              </span>
               {t.order && <span className={`token-order ${t.order === 'CONCEAL' ? 'conceal' : 'engage'}`} title={t.order === 'CONCEAL' ? '隐匿命令' : '交战命令'}>{t.order === 'CONCEAL' ? '隐' : '交'}</span>}
             </button>
           )

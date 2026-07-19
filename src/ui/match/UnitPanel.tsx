@@ -1,56 +1,145 @@
-import { useMatchStore, type MatchToken } from '../../state/matchStore'
+import { useMatchStore, type MatchToken, packOfFaction } from '../../state/matchStore'
+import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
+import { ActionBar } from './ActionBar'
+import { getAvatarUrl } from '../../utils/avatars'
 
 // 1.13 单位面板 + 1.15 T4 状态反馈。
-// 特工卡：耐伤阈值视觉（黄<起始 / 橙<一半=受创 / 灰阶=残废）+ 激活态。
-// effect 剩余 TP / 受创自动修正由引擎两层属性模型产出（FR-2），本面板读引擎结果（v1 显示耐伤态）。
-function woundClass(t: MatchToken, startWounds: number): string {
-  if (!t.alive) return 'dead'
-  if (t.wounds < startWounds / 2) return 'injured'
-  if (t.wounds < startWounds) return 'hurt'
-  return 'fresh'
-}
-
-export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => number }) {
+export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBarProps }: { startWoundsOf: (uid: string) => number, sideFilter?: 'a' | 'b', onPortraitClick?: (uid: string) => void, actionBarProps?: any }) {
   const tokens = useMatchStore((s) => s.tokens)
   const turn = useMatchStore((s) => s.turn)
   const selected = useMatchStore((s) => s.selected)
   const setSelected = useMatchStore((s) => s.setSelected)
   const setIntercept = useMatchStore((s) => s.setIntercept)
-  const activeEffects = useMatchStore((s) => s.activeEffects) // D4：单位卡 effect 列表
 
-  const sides: ('a' | 'b')[] = ['a', 'b']
+  const sides: ('a' | 'b')[] = sideFilter ? [sideFilter] : ['a', 'b']
   return (
-    <div className="unit-panel">
-      {sides.map((side) => (
-        <div key={side} className={`unit-side ${side}`}>
-          <h4>{side.toUpperCase()} 方</h4>
-          <ul className="unit-list">
-            {tokens.filter((t) => t.side === side).map((t) => {
-              const cls = woundClass(t, startWoundsOf(t.uid))
-              const ready = Boolean(turn.operatives[t.uid]?.ready)
-              const effs = activeEffects[t.uid] ?? []
+    <div className="unit-panel" style={sideFilter ? { flexDirection: 'column' } : {}}>
+      {sides.map((side) => {
+        const sideTokens = tokens.filter((t) => t.side === side)
+        const hasActivating = Boolean(turn.activeOpId && tokens.find(t => t.uid === turn.activeOpId)?.side === side)
+        
+        // Sorting: Activating (activeOpId) -> Unactivated/Ready -> Finished (ready:false)
+        const sortedTokens = [...sideTokens].sort((a, b) => {
+          const aOp = turn.operatives[a.uid]
+          const bOp = turn.operatives[b.uid]
+          const aState = turn.activeOpId === a.uid ? 0 : (!aOp || aOp.ready === true ? 1 : 2)
+          const bState = turn.activeOpId === b.uid ? 0 : (!bOp || bOp.ready === true ? 1 : 2)
+          return aState - bState
+        })
+
+        const selOp = selected ? turn.operatives[selected] : undefined
+        const isSelFinished = selOp && !selOp.ready
+        
+        const firstToken = sideTokens[0]
+        const sidePack = firstToken ? packOfFaction(firstToken.factionId) : null
+        const sideThemeRgb = sidePack?.faction.theme?.ui?.primaryRgb || '255, 255, 255'
+        const isActiveSide = side === turn.activePlayer
+
+        return (
+        <div key={side} className={`unit-side ${side}`} style={{ 
+          display: 'flex', flexDirection: 'column', gap: '8px',
+          padding: '12px',
+          borderRadius: '8px',
+          border: `2px solid ${isActiveSide ? `rgb(${sideThemeRgb})` : 'rgba(255,255,255,0.1)'}`,
+          boxShadow: isActiveSide ? `0 0 15px rgba(${sideThemeRgb}, 0.5), inset 0 0 10px rgba(${sideThemeRgb}, 0.2)` : 'none',
+          backgroundColor: isActiveSide ? `rgba(${sideThemeRgb}, 0.05)` : 'transparent',
+          transition: 'all 0.3s ease',
+          clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' // High-tech chamfered corners
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', paddingBottom: '8px', borderBottom: `1px solid ${isActiveSide ? `rgba(${sideThemeRgb}, 0.5)` : 'rgba(255,255,255,0.1)'}` }}>
+            <h4 style={{ margin: 0, color: isActiveSide ? `rgb(${sideThemeRgb})` : '#ccc', textShadow: isActiveSide ? `0 0 8px rgba(${sideThemeRgb}, 0.5)` : 'none' }}>
+              {side.toUpperCase()} 方阵容
+            </h4>
+            {isActiveSide && selected && tokens.find(t => t.uid === selected)?.side === side && !isSelFinished && (
+              <button 
+                className="primary" 
+                style={{ padding: '4px 8px', fontSize: '0.8rem', opacity: hasActivating ? 0.5 : 1, backgroundColor: `rgba(${sideThemeRgb}, 0.8)`, border: `1px solid rgb(${sideThemeRgb})` }}
+                disabled={hasActivating}
+                title={hasActivating ? "请先结束当前特工的激活" : "激活选中特工"}
+                onClick={() => {
+                  const t = tokens.find(tok => tok.uid === selected)
+                  if (t) {
+                    useMatchStore.getState().activate(t.uid, t.side)
+                    useMatchStore.getState().pushLog('turn', `${t.name} 激活（APL ${useMatchStore.getState().effectiveAplOf(t.uid)}）`)
+                  }
+                }}
+              >
+                激活选中 ▶
+              </button>
+            )}
+          </div>
+          <div className="unit-list" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
+            {sortedTokens.map((t) => {
+              const maxWounds = startWoundsOf(t.uid)
+              const isActivating = turn.activeOpId === t.uid
+              const isFinished = turn.operatives[t.uid] && !turn.operatives[t.uid].ready
+              const pack = packOfFaction(t.factionId)
+              const uiTheme = pack?.faction.theme?.ui || { primaryRgb: '255, 90, 0' }
+              const themeColor = `rgb(${uiTheme.primaryRgb})`
+              const isSelected = selected === t.uid
+              
+              let filterStyle = 'none'
+              if (!t.alive || isFinished) {
+                filterStyle = 'grayscale(1) opacity(0.4)'
+              } else if (!isActiveSide) {
+                filterStyle = 'brightness(0.5) saturate(0.6)'
+              } else if (hasActivating && !isActivating) {
+                filterStyle = 'brightness(0.7)'
+              }
+
+              const avatarUrl = getAvatarUrl(t.factionId, t.opId)
+
               return (
-                <li
-                  key={t.uid}
-                  className={`unit-card ${cls} ${selected === t.uid ? 'sel' : ''} ${ready ? 'ready' : ''}`}
-                  onClick={() => { setSelected(t.uid); setIntercept(null) }}
+                <div 
+                  key={t.uid} 
+                  style={{ 
+                    transform: 'scale(0.9)', 
+                    transformOrigin: 'top center',
+                    marginBottom: '-8px',
+                    filter: filterStyle,
+                    position: 'relative',
+                    transition: 'all 0.3s ease',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                  }}
                 >
-                  <span className="uc-name">{t.name}</span>
-                  <span className="uc-wounds">耐伤 {t.wounds}{!t.alive && ' ✕'}</span>
-                  {t.markers.map((m) => (
-                    <span key={m} className={`uc-marker uc-marker--${m.toLowerCase()}`} title={`指示物：${m}`}>{m}</span>
-                  ))}
-                  {ready && <span className="uc-tag">激活中</span>}
-                  {cls === 'injured' && <span className="uc-tag warn">受创</span>}
-                  {effs.map((e) => (
-                    <span key={e.id} className="uc-effect" title={`${e.label}（剩余 ${e.remainingTP}TP）`}>{e.label} ×{e.remainingTP}TP</span>
-                  ))}
-                </li>
+                  <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                    <UnitPortrait
+                      name={t.name}
+                      maxWounds={maxWounds}
+                      currentWounds={t.wounds}
+                      statuses={t.markers}
+                      themeColor={themeColor}
+                      themeColorRgb={uiTheme.primaryRgb}
+                      avatarUrl={avatarUrl}
+                      selected={isSelected}
+                      onClick={() => { 
+                        setSelected(t.uid)
+                        setIntercept(null)
+                      }}
+                      onAvatarClick={() => {
+                        if (onPortraitClick) onPortraitClick(t.uid)
+                      }}
+                    />
+                    {isActivating && (
+                      <div style={{ position: 'absolute', top: '-6px', right: '-6px', background: themeColor, color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                        激活中
+                      </div>
+                    )}
+                  </div>
+                  {isActivating && actionBarProps && (
+                    <div style={{ marginTop: '12px' }}>
+                      <ActionBar {...actionBarProps} />
+                    </div>
+                  )}
+                </div>
               )
             })}
-          </ul>
+          </div>
         </div>
-      ))}
+      )})}
     </div>
   )
 }

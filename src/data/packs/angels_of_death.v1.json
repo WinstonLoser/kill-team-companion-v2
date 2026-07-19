@@ -634,6 +634,9 @@
     }
   ],
   "buildConstraints": {
+    "operatives": { "max": 6, "min": 6 },
+    "leaderFrom": ["space_marine_captain", "assault_intercessor_sergeant", "intercessor_sergeant"],
+    "maxPerTypeExcept": ["assault_intercessor_warrior", "intercessor_warrior"],
     "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；部分 chapterTactic effect 映射为占位 modifier，引擎 effect-hooking 随 AQ-3 扩展。"
   }
 }

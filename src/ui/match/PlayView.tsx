@@ -4,15 +4,16 @@ import type { ActionType } from '../../state/turnStateMachine'
 import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
-import { ActionBar } from './ActionBar'
 import { UnitPanel } from './UnitPanel'
 import { PipelineDrawer } from './PipelineDrawer'
 import { LogPanel } from './LogPanel'
 import { InterceptorCard } from './InterceptorCard'
 import { CombatResolver } from '../components/Combat/CombatResolver'
 import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
+import { OperativeCard } from '../components/OperativeCard/OperativeCard'
 import { StratagemPanel } from './StratagemPanel'
-import { packOfOp, weaponOfPack } from '../../state/matchStore'
+import { packOfOp, packOfFaction, weaponOfPack } from '../../state/matchStore'
+import { getAvatarUrl } from '../../utils/avatars'
 import { type RollContext } from '../../dice/source'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
@@ -59,18 +60,29 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const lastPinchDist = useRef(0)
   const viewportRef = useRef<HTMLDivElement>(null)
 
-  // P1：React onWheel 是 passive → preventDefault 失效。用 useEffect + addEventListener {passive:false}。
+  // Removed wheel zooming logic per user request.
+
+  // P1.5：容器尺寸变化时，自动缩放以填满水平空间
   useEffect(() => {
     const el = viewportRef.current
     if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const r = el.getBoundingClientRect()
-      zoomAt(e.deltaY < 0 ? 1.1 : 0.9, e.clientX - r.left, e.clientY - r.top)
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [zoomAt])
+    let lastScale = -1
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      const width = entry.contentRect.width
+      const defaultW = (mapPack?.bounds.w ?? 30) * 20
+      if (width > 0 && defaultW > 0) {
+        const newScale = width / defaultW
+        if (Math.abs(lastScale - newScale) > 0.001) {
+          lastScale = newScale
+          setViewport({ scale: newScale, offsetX: 0, offsetY: 0 })
+        }
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [mapPack, setViewport])
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -101,10 +113,28 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
   const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
   const [movePreview, setMovePreview] = useState<boolean>(false) // 拖动后待确认
+  const [showDataCardUid, setShowDataCardUid] = useState<string | null>(null)
+  const [showFullLog, setShowFullLog] = useState<boolean>(false)
 
   const active = tokens.find((t) => t.uid === selected) ?? null
   const selectedOp = active ? turn.operatives[active.uid] : undefined
-  const activated = active ? Boolean(selectedOp?.ready) : false
+  const activated = active ? turn.activeOpId === active.uid : false
+  const canSelect = active ? active.side === turn.activePlayer : false
+
+  const promptStr = intercept
+    ? `⚠️ ${intercept.title}：${intercept.reasons.join(', ')}`
+    : !active
+      ? `轮到 ${turn.activePlayer.toUpperCase()}：点一名己方特工`
+      : !canSelect
+        ? `选中了${active.side === 'a' ? 'A' : 'B'}方特工（仅查看）；请激活 ${turn.activePlayer.toUpperCase()} 方`
+        : !activated
+          ? `${active.name}：先激活才能行动`
+          : pendingMove
+            ? `${active.name} · ${pendingMove === 'MOVE' ? '转移' : pendingMove === 'DASH' ? '冲刺' : pendingMove === 'FALL_BACK' ? '后撤' : '冲锋'} 已选：拖拽特工移动（再点取消）`
+            : pendingAttack
+              ? `${active.name} · ${pendingAttack === 'SHOOT' ? '射击' : '近战'} 已选：点敌方目标（再点取消）`
+              : `${active.name} 已激活：选命令 + 选行动`
+
   const apl = active ? effectiveAplOf(active.uid) : 0
   // 各行动合法性（激活后才需算）
   const canDo = (() => {
@@ -112,6 +142,49 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (active && activated) (['MOVE', 'DASH', 'FALL_BACK', 'CHARGE', 'SHOOT', 'FIGHT'] as ActionType[]).forEach((a) => { z[a] = checkAction(active.uid, a).ok })
     return z
   })()
+  const log = useMatchStore((s) => s.log)
+  const latestLog = log.length > 0 ? log[0] : null
+
+  const actionBarProps = {
+    active: turn.activePlayer,
+    selectedName: active?.name ?? null,
+    selectedSide: active?.side ?? null,
+    activated,
+    order: selectedOp?.order ?? null,
+    apl,
+    apUsed: selectedOp?.apUsed ?? 0,
+    canDo,
+    pendingMove,
+    pendingAttack,
+    hasLastShot: Boolean(lastShot),
+    movePreview: movePreview && active && moveOrigin !== null,
+    onActivate: () => {
+      if (active) {
+        activate(active.uid, active.side)
+        pushLog('turn', `${active.name} 激活（APL ${effectiveAplOf(active.uid)}）`)
+      }
+    },
+    onSelectOrder: (o: any) => { if (active) selectOrder(active.uid, o) },
+    onPickMove: pickMove,
+    onConfirmMove: confirmMove,
+    onCancelMove: cancelMove,
+    onPickAttack: (k: 'SHOOT' | 'FIGHT') => {
+      if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
+      setPendingAttack((prev) => (prev === k ? null : k))
+      setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+    },
+    onUndoAction: () => undoAction(),
+    canUndoAction: activationUndo.length > 0,
+    onEndActivation: () => { 
+      if (active) { 
+        endActivation(active.uid); 
+        pushLog('turn', `${active.name} 结束激活`); 
+        setSelected(null); setPendingMove(null); setPendingAttack(null); setMoveOrigin(null); setMovePreview(false) 
+      } 
+    },
+    onEndTP: () => scoreAndEndTP(),
+    onUndo: undoPending
+  }
 
   /** 行动最大移动距离（英寸）。 */
   function actionMaxDist(uid: string, action: ActionType): number {
@@ -179,12 +252,19 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   }
 
   function runKind(attacker: MatchToken, target: MatchToken, kind: 'SHOOT' | 'MELEE') {
+    // 预校验射程和LOS，如果超出射程，不弹骰子界面直接提示且不扣除AP
+    const legality = useMatchStore.getState().checkAttackLegality({ attackerUid: attacker.uid, targetUid: target.uid, kind })
+    if (!legality.ok) {
+      setIntercept({ title: '无法攻击', reasons: legality.missing ?? [] })
+      return
+    }
+
     // 行动消费 AP（SHOOT→SHOOT，MELEE→FIGHT）；不通过则拦截
     const actR = doAction(attacker.uid, kind === 'SHOOT' ? 'SHOOT' : 'FIGHT')
     if (!actR.ok) { setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
 
     // 获取攻击者的武器和属性，唤出 DiceInterface
-    const atkPack = packOfOp(attacker.opId)
+    const atkPack = packOfFaction(attacker.factionId)
     const weapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
     if (!weapon) { setIntercept({ title: '无武器', reasons: [`阵营包缺 ${kind} 武器`] }); return }
 
@@ -192,7 +272,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     const critTarget = lethalRule ? parseInt(lethalRule.replace('Lethal ', '')) || 6 : 6;
     const context: RollContext = { hitTarget: weapon.profile.hit, critTarget }
 
-    const defPack = packOfOp(target.opId)
+    const defPack = packOfFaction(target.factionId)
     const defWeapon = weaponOfPack(defPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
 
     // 防御方数据准备 (近战时使用其武器；射击时防御方使用 save 值作为目标，防守骰数固定3或根据规则)
@@ -211,11 +291,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       attacker, target, kind,
       atkCount: weapon.profile.attacks,
       atkContext: context,
-      atkTheme: atkPack.faction.theme?.dice || { baseColor: '#1e1e1e', pipColor: '#e0e0e0' },
+      atkTheme: atkPack?.faction.theme?.dice || { baseColor: '#1e1e1e', pipColor: '#e0e0e0' },
       atkDamage: { normal: weapon.profile.normalDamage, critical: weapon.profile.criticalDamage },
       defCount,
       defContext,
-      defTheme: defPack.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
+      defTheme: defPack?.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
       defDamage: defWeapon ? { normal: defWeapon.profile.normalDamage, critical: defWeapon.profile.criticalDamage } : { normal: 0, critical: 0 },
       defSave: 3, // DEFENDER_SAVE
       defWounds: target.wounds
@@ -287,20 +367,34 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
   return (
     <div className="play-view">
-      <StatusStrip />
+      <StatusStrip prompt={promptStr} isError={!!intercept} onConfirm={confirmCasualties} onQueryRule={onQueryRule} onEndTP={() => scoreAndEndTP()} />
       {showViz && <FindingStrip active={active!} targets={viz.targets} />}
-      {movePreview && active && moveOrigin && (
-        <div className="pending-banner">
-          🎯 {active.name} 移动至 {active.pos.x.toFixed(1)},{active.pos.y.toFixed(1)}（{Math.hypot(active.pos.x - moveOrigin.x, active.pos.y - moveOrigin.y).toFixed(1)}"）
-          <button className="primary" onClick={confirmMove}>确认移动 ▶</button>
-          <button onClick={cancelMove}>取消（回退）</button>
-        </div>
-      )}
       {lastShot && (
-        <div className="pending-banner">
-          ⏳ 待确认伤亡：{lastShot.targetName} −{lastShot.woundsDealt}
-          <button className="primary" onClick={confirmCasualties}>确认伤亡 ▶</button>
-          <button onClick={undoPending}>取消</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ width: '90vw', maxWidth: '400px', backgroundColor: '#1e1e1e', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #444', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ margin: 0, color: '#ffaa77', textAlign: 'center' }}>待确认伤亡</h2>
+            <div style={{ background: '#2a2a2a', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
+                <strong>{lastShot.targetName}</strong> 将受到 <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>{lastShot.woundsDealt}</span> 点伤害。
+              </div>
+              {lastShot.attackerWoundsDealt ? (
+                <div style={{ fontSize: '1rem', color: '#ffaa77' }}>
+                  反伤：攻击方也会受到 <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>{lastShot.attackerWoundsDealt}</span> 点伤害。
+                </div>
+              ) : null}
+              <div style={{ marginTop: '12px', color: '#888', fontSize: '0.9rem' }}>
+                （未来将在此处扩展属性与血量修改功能）
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button className="primary" style={{ flex: 1, padding: '12px', fontSize: '1.1rem' }} onClick={confirmCasualties}>
+                确认伤亡 ▶
+              </button>
+              <button className="secondary" style={{ padding: '12px' }} onClick={undoPending}>
+                回滚上步
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {pushMsg && (
@@ -311,119 +405,106 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       )}
 
       <div className="play-main">
-        <div className="play-board-col">
-          <button className="reset-view-btn" onClick={() => setViewport({ scale: 1, offsetX: 0, offsetY: 0 })} title="重置视口缩放/平移">⟳ 重置视图</button>
-          <div
-            ref={viewportRef}
-            className="board-viewport"
-            onTouchStart={(e) => {
-              if (e.touches.length >= 2) { setInteracting(true); setDragging(null) /* P4：双指取消 token 拖 */ }
-            }}
-            onTouchMove={(e) => {
-              if (e.touches.length >= 2) {
-                e.preventDefault()
-                const t1 = e.touches[0]!, t2 = e.touches[1]!
-                const r = e.currentTarget.getBoundingClientRect()
-                const cx = ((t1.clientX + t2.clientX) / 2) - r.left
-                const cy = ((t1.clientY + t2.clientY) / 2) - r.top
-                const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
-                if (lastPinchDist.current > 0) zoomAt(dist / lastPinchDist.current, cx, cy)
-                lastPinchDist.current = dist
-              }
-            }}
-            onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
-            onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
-          >
-            <div style={{ transform: `translate(${viewport.offsetX}px, ${viewport.offsetY}px) scale(${viewport.scale})`, transformOrigin: '0 0' }}>
-              <Board
-                mapPack={mapPack}
-                terrain={mapPack.terrain}
-                tokens={tokens}
-                objectives={mapPack.objectives}
-                phase="play"
-                selected={selected}
-                rangeRing={rangeRing}
-                controlRing={controlRing}
-                ownCover={ownCover}
-                losLines={losLines}
-                objControl={objControl}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerLeave={onPointerUp}
-                onTokenPointerDown={(t) => {
-                  if (t.side !== turn.activePlayer) return
-                  setSelected(t.uid)
-                  setIntercept(null)
-                  // #4：移动需先激活；#7：需先在行动菜单选移动行动
-                  if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
-                  if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
-                  setDragging(t.uid, t.pos)
-                }}
-                onTokenDoubleClick={(t) => rotateToken(t.uid)}
-                onTokenClick={onClickToken}
-              />
+        {/* Left Column: Team A */}
+        <div className="play-left-col">
+          <UnitPanel sideFilter="a" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={turn.activePlayer === 'a' ? actionBarProps : undefined} />
+        </div>
+
+        {/* Center Column: Board, Actions, Logs */}
+        <div className="play-center-col" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          
+          {/* TOP AREA: Active Op & Stratagems */}
+          <div className="play-mid-col" style={{ flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <StratagemPanel />
+              </div>
             </div>
           </div>
-          {hoverInch && <div className="inch-readout">{hoverInch}</div>}
-          <p className="muted">激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
-        </div>
 
-        <div className="play-mid-col">
-          {active && (
-            <div style={{ marginBottom: '16px' }}>
-              <UnitPortrait
-                name={active.name}
-                maxWounds={active.maxWounds}
-                currentWounds={active.wounds}
-                statuses={active.markers}
-                themeColor={active.side === 'a' ? '#ff5a00' : '#5cff8c'}
-              />
+          {/* MID AREA: Board */}
+          <div className="play-board-col" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+            <div
+              ref={viewportRef}
+              className="board-viewport"
+              style={{ flex: 1 }}
+              onTouchStart={(e) => {
+                if (e.touches.length >= 2) { setInteracting(true); setDragging(null) /* P4：双指取消 token 拖 */ }
+              }}
+              onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
+              onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
+            >
+              <div style={{ transform: `scale(${viewport.scale})`, transformOrigin: '0 0' }}>
+                <Board
+                  mapPack={mapPack}
+                  terrain={mapPack.terrain}
+                  tokens={tokens}
+                  objectives={mapPack.objectives}
+                  phase="play"
+                  selected={selected}
+                  rangeRing={rangeRing}
+                  controlRing={controlRing}
+                  ownCover={ownCover}
+                  losLines={losLines}
+                  objControl={objControl}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp}
+                  onPointerLeave={onPointerUp}
+                  onTokenPointerDown={(t) => {
+                    if (t.side !== turn.activePlayer) return
+                    setSelected(t.uid)
+                    setIntercept(null)
+                    // #4：移动需先激活；#7：需先在行动菜单选移动行动
+                    if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
+                    if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
+                    setDragging(t.uid, t.pos)
+                  }}
+                  onTokenDoubleClick={(t) => rotateToken(t.uid)}
+                  onTokenClick={onClickToken}
+                />
+              </div>
             </div>
-          )}
-          <ActionBar
-            active={turn.activePlayer}
-            selectedName={active?.name ?? null}
-            selectedSide={active?.side ?? null}
-            activated={activated}
-            order={selectedOp?.order ?? null}
-            apl={apl}
-            apUsed={selectedOp?.apUsed ?? 0}
-            canDo={canDo}
-            pendingMove={pendingMove}
-            pendingAttack={pendingAttack}
-            hasLastShot={Boolean(lastShot)}
-            onActivate={() => {
-              if (active) {
-                activate(active.uid, active.side)
-                pushLog('turn', `${active.name} 激活（APL ${effectiveAplOf(active.uid)}）`)
-              }
-            }}
-            onSelectOrder={(o) => { if (active) selectOrder(active.uid, o) }}
-            onPickMove={pickMove}
-            onPickAttack={(k) => {
-              if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
-              setPendingAttack((prev) => (prev === k ? null : k))
-              setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
-            }}
-            onUndoAction={() => undoAction()}
-            canUndoAction={activationUndo.length > 0}
-            onEndActivation={() => { if (active) { endActivation(active.uid); pushLog('turn', `${active.name} 结束激活`); setSelected(null); setPendingMove(null); setPendingAttack(null); setMoveOrigin(null); setMovePreview(false) } }}
-            onEndTP={() => scoreAndEndTP()}
-            onUndo={undoPending}
-          />
-          <UnitPanel startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} />
-          <StratagemPanel />
+            {hoverInch && <div className="inch-readout">{hoverInch}</div>}
+            <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
+          </div>
+          {/* BOT AREA: Logs (Mini View) */}
+          <div 
+            style={{ flexShrink: 0, background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }}
+            onClick={() => setShowFullLog(true)}
+            title="点击查看完整历史"
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>最近历史记录 (点击展开)</span>
+              <span style={{ fontSize: '0.8rem', color: '#666' }}>▴</span>
+            </div>
+            {latestLog ? (
+              <div style={{ fontSize: '0.9rem', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span className={`log-kind ${latestLog.kind}`} style={{ marginRight: '8px' }}>{latestLog.kind}</span>
+                {latestLog.text}
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>暂无记录</div>
+            )}
+          </div>
         </div>
 
+        {/* Right Column: Team B */}
         <div className="play-right-col">
-          <PipelineDrawer onConfirm={confirmCasualties} onQueryRule={onQueryRule} />
-          <LogPanel onReplay={replayLast} onRollbackToHere={rewindLast} />
+          <UnitPanel sideFilter="b" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={turn.activePlayer === 'b' ? actionBarProps : undefined} />
         </div>
       </div>
 
-      {intercept && (
-        <div className="intercept-floating">
-          <InterceptorCard title={intercept.title} reasons={intercept.reasons} onClose={() => setIntercept(null)} onQueryRule={() => onQueryRule(intercept.title)} />
+      {showFullLog && (
+        <div className="overlay-backdrop" style={{ zIndex: 9000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowFullLog(false)}>
+          <div style={{ background: '#1e1e1e', padding: '16px', borderRadius: '8px', width: '90%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0 }}>完整历史记录</h3>
+              <button className="link-btn" onClick={() => setShowFullLog(false)} style={{ fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <LogPanel onReplay={replayLast} onRollbackToHere={rewindLast} />
+            </div>
+          </div>
         </div>
       )}
 
@@ -436,8 +517,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         </div>
       )}
       {combatCollect && (
-        <div className="overlay-backdrop" style={{ zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '2vh' }}>
-          <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', height: '85vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="overlay-backdrop" style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', maxWidth: '1000px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column' }}>
             <CombatResolver
               mode={combatCollect.kind}
               attackerName={combatCollect.attacker.name}
@@ -446,8 +527,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 maxWounds: combatCollect.attacker.maxWounds,
                 currentWounds: combatCollect.attacker.wounds,
                 statuses: combatCollect.attacker.markers,
-                themeColor: combatCollect.attacker.side === 'a' ? '#ff5a00' : '#5cff8c',
-                scale: 2
+                themeColor: `rgb(${packOfFaction(combatCollect.attacker.factionId)?.faction.theme?.ui?.primaryRgb || '255, 90, 0'})`,
+                themeColorRgb: packOfFaction(combatCollect.attacker.factionId)?.faction.theme?.ui?.primaryRgb || '255, 90, 0',
+                avatarUrl: getAvatarUrl(combatCollect.attacker.factionId, combatCollect.attacker.opId),
+                scale: 2,
+                onClick: () => setShowDataCardUid(combatCollect.attacker.uid)
               }}
               attackerCount={combatCollect.atkCount}
               attackerContext={combatCollect.atkContext}
@@ -459,8 +543,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 maxWounds: combatCollect.target.maxWounds,
                 currentWounds: combatCollect.target.wounds,
                 statuses: combatCollect.target.markers,
-                themeColor: combatCollect.target.side === 'a' ? '#ff5a00' : '#5cff8c',
-                scale: 2
+                themeColor: `rgb(${packOfFaction(combatCollect.target.factionId)?.faction.theme?.ui?.primaryRgb || '92, 255, 140'})`,
+                themeColorRgb: packOfFaction(combatCollect.target.factionId)?.faction.theme?.ui?.primaryRgb || '92, 255, 140',
+                avatarUrl: getAvatarUrl(combatCollect.target.factionId, combatCollect.target.opId),
+                scale: 2,
+                onClick: () => setShowDataCardUid(combatCollect.target.uid)
               }}
               defenderCount={combatCollect.defCount}
               defenderContext={combatCollect.defContext}
@@ -484,6 +571,38 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 setCombatCollect(null)
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Operative Card Modal */}
+      {showDataCardUid && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowDataCardUid(null)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '95vw', maxWidth: '900px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column', borderRadius: '12px' }}>
+            {(() => {
+              const opToken = tokens.find(t => t.uid === showDataCardUid)
+              const opPack = opToken ? packOfFaction(opToken.factionId) : null
+              if (!opToken || !opPack) return null
+              // Extract the base operative data from the pack
+              const baseOp = opPack.operatives.find(o => o.operativeId === opToken.opId)
+              if (!baseOp) return null
+              
+              const uiTheme = opPack.faction.theme?.ui || { primaryRgb: '255, 90, 0', textHighlight: '#ffaa77' }
+              
+              // Use equipped weapons
+              const avatarUrl = getAvatarUrl(opPack.faction.id, opToken.opId)
+              return (
+                <div style={{ height: '100%', '--theme-primary-rgb': uiTheme.primaryRgb, '--theme-text-highlight': uiTheme.textHighlight } as React.CSSProperties}>
+                  <OperativeCard 
+                    operative={baseOp} 
+                    pack={opPack} 
+                    selectedWeaponIds={opToken.weapons || []} 
+                    factionRuleSelections={{}} 
+                    avatarUrl={avatarUrl}
+                  />
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

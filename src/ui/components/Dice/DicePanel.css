@@ -11,8 +11,9 @@
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.05);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
   flex: 1;
+  min-height: 0;
   width: 100%;
   justify-content: center;
 }

@@ -282,17 +282,20 @@ export function computeDefaultRoster(pack: FactionPack): { operativeIds: string[
 
   const firstLeader = pack.operatives.find((o) => leaders.has(o.operativeId))
   if (firstLeader) add(firstLeader.operativeId)
-  // 一轮：每个非队长类型各一名
+  
+  // 一轮：优先选用非队长且非“除外”（即非普通战士）的特工
   for (const op of pack.operatives) {
     if (leaders.has(op.operativeId)) continue
+    if (except.has(op.operativeId)) continue
     if (count(op.operativeId) < cap(op.operativeId)) add(op.operativeId)
   }
-  // 不足 min：用可复选类型补足
-  const reps = pack.operatives.filter((o) => except.has(o.operativeId))
+  
+  // 填补空位：用可复选类型（普通战士）补足到 maxTotal
+  const reps = pack.operatives.filter((o) => except.has(o.operativeId) && !leaders.has(o.operativeId))
   let guard = 0
-  while (ids.length < minTotal && reps.length && guard < maxTotal * reps.length) {
+  while (ids.length < maxTotal && reps.length > 0 && guard < maxTotal * reps.length) {
     for (const op of reps) {
-      if (ids.length >= minTotal) break
+      if (ids.length >= maxTotal) break
       if (count(op.operativeId) < cap(op.operativeId)) add(op.operativeId)
     }
     guard++

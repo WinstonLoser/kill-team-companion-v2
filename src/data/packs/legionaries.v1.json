@@ -571,6 +571,9 @@
     }
   ],
   "buildConstraints": {
+    "operatives": { "max": 6, "min": 6 },
+    "leaderFrom": ["aspiring_champion", "chosen"],
+    "maxPerTypeExcept": ["warrior"],
     "notes": "1 Leader (Aspiring Champion or Chosen). 5 other operatives."
   }
 }
