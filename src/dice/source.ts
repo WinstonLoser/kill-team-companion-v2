@@ -6,6 +6,7 @@ export interface DiceRoll {
   nat: 1 | 2 | 3 | 4 | 5 | 6 // 自然点
   grade: DiceGrade // 由命中属性判定，或关键(6)/必败(1)预设
   seed?: number // 电子骰的源 seed，入日志供回放复现（FR-17）；物理骰无
+  isRetained?: boolean
 }
 
 export interface RollContext {

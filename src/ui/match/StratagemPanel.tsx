@@ -1,16 +1,7 @@
 import { useState } from 'react'
-import { useMatchStore, type Side } from '../../state/matchStore'
+import { useMatchStore, packOfOp, packOfFaction, type Side } from '../../state/matchStore'
 import { loadPack, type FactionPack, type Stratagem } from '../..'
-import angelsData from '../../data/packs/angels_of_death.v1.json'
-import legionariesData from '../../data/packs/legionaries.v1.json'
-import plagueData from '../../data/packs/plague_marines.v1.json'
-
-const PACKS: Record<string, FactionPack> = {
-  angels_of_death: loadPack(angelsData),
-  legionaries: loadPack(legionariesData),
-  plague_marines: loadPack(plagueData),
-}
-
+import { useRosterStore } from '../../state/rosterStore'
 // 计谋面板：显示当前激活方的阵营计谋（战略/交战），点击激活/取消。
 // 激活后 effectId 进 activeStratagems → buildEffectStack 自动包含。
 
@@ -24,15 +15,12 @@ export function StratagemPanel() {
   const side: Side = turn.activePlayer
   const active = activeStratagems[side]
 
-  // 从 token 前缀解析阵营包
+  // 从 token 解析阵营包
   const sampleOp = tokens.find((t) => t.side === side && t.alive)
   if (!sampleOp) return null
-  const prefix = sampleOp.opId.split('_')[0]
-  const packKey = prefix === 'angels' ? 'angels_of_death' : prefix === 'leg' ? 'legionaries' : prefix === 'plg' ? 'plague_marines' : null
-  if (!packKey || !PACKS[packKey]) return null
-  const pack = PACKS[packKey]
+  const roster = side === 'a' ? useRosterStore.getState().rosterA : useRosterStore.getState().rosterB
+  const pack = roster.factionId ? packOfFaction(roster.factionId) : packOfOp(sampleOp.opId)
   const stratagems = pack.stratagems ?? []
-  if (stratagems.length === 0) return null
 
   // 映射 stratagem id → effectIds
   function effectIdsOf(stratId: string): string[] {

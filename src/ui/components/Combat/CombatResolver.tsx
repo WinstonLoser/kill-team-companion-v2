@@ -4,6 +4,15 @@ import { type DiceRoll, type RollContext } from '../../../dice/source'
 import { type Pool } from '../../../engine/parry'
 import { MeleeAllocationPanel } from './MeleeAllocationPanel'
 import { UnitPortrait, type UnitPortraitProps } from '../UnitPortrait/UnitPortrait'
+import { type Stratagem } from '../../../rules/types'
+
+export interface CombatAction {
+  id: string
+  name: string
+  cp: number
+  description: string
+  sourceType: 'FACTION' | 'OPERATIVE'
+}
 
 interface CombatResolverProps {
   mode: 'SHOOT' | 'MELEE'
@@ -13,14 +22,28 @@ interface CombatResolverProps {
   attackerContext: RollContext
   attackerTheme: any
   attackerDamage?: { normal: number, critical: number }
+  attackerModifiers?: string[]
+  attackerRetainedDice?: DiceRoll[]
   defenderName: string
   defenderPortrait?: UnitPortraitProps
-  defenderCount: number // Melee attacks or Shoot defense base
+  defenderCount: number
   defenderContext: RollContext
   defenderTheme: any
   defenderDamage?: { normal: number, critical: number }
+  defenderModifiers?: string[]
+  defenderRetainedDice?: DiceRoll[]
+  attackerActions?: CombatAction[]
+  defenderActions?: CombatAction[]
+  onActionActivated?: (action: CombatAction) => void
   rollMode?: 'AUTO' | 'MANUAL'
-  onComplete?: (result: { atkNats: number[]; defNats?: number[]; manualAllocation?: { atkStrike: Pool; defStrike: Pool } }) => void
+  onComplete?: (result: { 
+    atkNats: number[]; 
+    defNats?: number[]; 
+    atkRolls?: {nat: number, grade: string}[]; 
+    defRolls?: {nat: number, grade: string}[]; 
+    manualAllocation?: { atkStrike: Pool; defStrike: Pool }; 
+    damageDealt?: { normal: number, critical: number } 
+  }) => void
   onCancel?: () => void
 }
 
@@ -34,14 +57,22 @@ export function CombatResolver({
   attackerContext,
   attackerTheme,
   attackerDamage,
+  attackerModifiers,
+  attackerRetainedDice,
   defenderName,
   defenderPortrait,
   defenderCount,
   defenderContext,
   defenderTheme,
   defenderDamage,
+  defenderModifiers,
+  defenderRetainedDice,
+  attackerActions,
+  defenderActions,
+  onActionActivated,
   rollMode,
   onComplete,
+  onCancel
 }: CombatResolverProps) {
   const [phase, setPhase] = useState<Phase>('ATTACKER_ROLL')
   const [atkRolls, setAtkRolls] = useState<DiceRoll[]>([])
@@ -78,8 +109,18 @@ export function CombatResolver({
       while (defNormal > 0 && atkNormal > 0) { defNormal--; atkNormal--; }
 
       // In shooting, no allocation. Complete immediately!
+      let normalDmg = (atkNormal * (attackerDamage?.normal || 3))
+      let critDmg = (atkCrit * (attackerDamage?.critical || 4))
+      let totalDmg = normalDmg + critDmg
+
       if (onComplete) {
-        onComplete({ atkNats: atkRolls.map(r => r.nat), defNats: rolls.map(r => r.nat) })
+        onComplete({ 
+          atkNats: atkRolls.map(r => r.nat), 
+          defNats: rolls.map(r => r.nat),
+          atkRolls,
+          defRolls: rolls,
+          damageDealt: { normal: totalDmg, critical: 0 }
+        })
       }
     } else {
       setPhase('ALLOCATION')
@@ -91,6 +132,8 @@ export function CombatResolver({
       onComplete({
         atkNats: atkRolls.map(r => r.nat),
         defNats: defRolls.map(r => r.nat),
+        atkRolls,
+        defRolls,
         manualAllocation: { atkStrike, defStrike }
       })
     }
@@ -106,6 +149,12 @@ export function CombatResolver({
   const currentTheme = isAttacker ? attackerTheme : defenderTheme
   const currentContext = isAttacker ? attackerContext : defenderContext
   const currentConfirm = isAttacker ? handleAttackerConfirm : handleDefenderConfirm
+  const currentRetainedDice = isAttacker ? attackerRetainedDice : defenderRetainedDice
+  const currentActions = isAttacker ? attackerActions : defenderActions
+  
+  // Modifiers like Cover and Vantage are relevant to the whole combat context,
+  // so we combine them and show them in both phases.
+  const allModifiers = [...(attackerModifiers || []), ...(defenderModifiers || [])]
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1vh' }}>
@@ -115,28 +164,59 @@ export function CombatResolver({
           background: '#1e1e1e', padding: '16px', 
           borderRadius: '12px', border: `1px solid ${currentTheme?.baseColor || '#444'}`, 
           display: 'flex', flexDirection: 'column', overflowY: 'auto',
-          boxShadow: `0 0 20px ${currentTheme?.baseColor || '#444'}33`
+          boxShadow: `0 8px 32px rgba(${currentTheme?.baseColor ? currentTheme.baseColor.replace('rgb(','').replace(')','') : '0,0,0'}, 0.4)`
         }}>
-          <div style={{ borderBottom: '1px solid #555', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'center' }}>
-            {currentPortrait && (
-              <UnitPortrait {...currentPortrait} scale={0.85} />
-            )}
-            <div style={{ textAlign: 'left' }}>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: '1.5rem' }}>{currentName}</h2>
-              <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
-                {currentRole} Roll
+          <div style={{ borderBottom: '1px solid #555', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', paddingLeft: '16px', paddingRight: '16px' }}>
+            {/* Left side: Portrait + Role info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {currentPortrait && (
+                <UnitPortrait {...currentPortrait} scale={0.85} />
+              )}
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
+                  {currentRole} Roll (Need {currentCount})
+                </div>
               </div>
             </div>
+
+            {/* Right side: Firefight Ploys / Abilities */}
+            {currentActions && currentActions.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
+                {currentActions.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => onActionActivated && onActionActivated(p)}
+                    style={{
+                      background: p.sourceType === 'FACTION' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.2)',
+                      color: p.sourceType === 'FACTION' ? '#fca5a5' : '#e879f9', 
+                      padding: '6px 12px', borderRadius: '4px', 
+                      border: `1px solid ${p.sourceType === 'FACTION' ? '#ef4444' : '#a855f7'}`, 
+                      cursor: 'pointer',
+                      fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center'
+                    }}
+                    title={p.description}
+                  >
+                    <span style={{ fontWeight: 'bold' }}>
+                      {p.sourceType === 'FACTION' ? '[阵营]' : '[特工]'} ⚡ {p.name} ({p.cp}CP)
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <DiceInterface
               count={currentCount}
               theme={currentTheme}
               rollContext={currentContext}
               mode={rollMode}
+              modifiers={allModifiers}
+              retainedDice={currentRetainedDice}
               onConfirm={currentConfirm}
             />
           </div>
+
         </div>
       )}
 

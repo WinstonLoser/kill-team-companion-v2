@@ -10,6 +10,8 @@ export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBa
   const selected = useMatchStore((s) => s.selected)
   const setSelected = useMatchStore((s) => s.setSelected)
   const setIntercept = useMatchStore((s) => s.setIntercept)
+  const vp = useMatchStore((s) => s.vp)
+  const setResource = useMatchStore((s) => s.setResource)
 
   const sides: ('a' | 'b')[] = sideFilter ? [sideFilter] : ['a', 'b']
   return (
@@ -50,23 +52,24 @@ export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBa
             <h4 style={{ margin: 0, color: isActiveSide ? `rgb(${sideThemeRgb})` : '#ccc', textShadow: isActiveSide ? `0 0 8px rgba(${sideThemeRgb}, 0.5)` : 'none' }}>
               {side.toUpperCase()} 方阵容
             </h4>
-            {isActiveSide && selected && tokens.find(t => t.uid === selected)?.side === side && !isSelFinished && (
-              <button 
-                className="primary" 
-                style={{ padding: '4px 8px', fontSize: '0.8rem', opacity: hasActivating ? 0.5 : 1, backgroundColor: `rgba(${sideThemeRgb}, 0.8)`, border: `1px solid rgb(${sideThemeRgb})` }}
-                disabled={hasActivating}
-                title={hasActivating ? "请先结束当前特工的激活" : "激活选中特工"}
-                onClick={() => {
-                  const t = tokens.find(tok => tok.uid === selected)
-                  if (t) {
-                    useMatchStore.getState().activate(t.uid, t.side)
-                    useMatchStore.getState().pushLog('turn', `${t.name} 激活（APL ${useMatchStore.getState().effectiveAplOf(t.uid)}）`)
-                  }
-                }}
-              >
-                激活选中 ▶
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>CP</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button onClick={() => setResource(side, 'cp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
+                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{turn.cp[side]}</span>
+                  <button onClick={() => setResource(side, 'cp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>VP</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button onClick={() => setResource(side, 'vp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
+                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{vp[side]}</span>
+                  <button onClick={() => setResource(side, 'vp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="unit-list" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
             {sortedTokens.map((t) => {
@@ -129,9 +132,26 @@ export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBa
                       </div>
                     )}
                   </div>
+                  
+                  {isSelected && isActiveSide && !isFinished && !isActivating && (
+                    <div style={{ marginTop: '12px', width: '80%' }}>
+                      <button 
+                        className="primary" 
+                        style={{ width: '100%', padding: '8px', fontSize: '0.9rem', opacity: hasActivating ? 0.5 : 1, backgroundColor: `rgba(${uiTheme.primaryRgb}, 0.8)`, border: `1px solid rgb(${uiTheme.primaryRgb})`, borderRadius: '4px', cursor: hasActivating ? 'not-allowed' : 'pointer', color: '#fff' }}
+                        disabled={hasActivating}
+                        title={hasActivating ? "请先结束当前特工的激活" : "激活该特工"}
+                        onClick={() => {
+                          useMatchStore.getState().activate(t.uid, t.side)
+                          useMatchStore.getState().pushLog('turn', `${t.name} 激活（APL ${useMatchStore.getState().effectiveAplOf(t.uid)}）`)
+                        }}
+                      >
+                        激活该特工 ▶
+                      </button>
+                    </div>
+                  )}
                   {isActivating && actionBarProps && (
                     <div style={{ marginTop: '12px' }}>
-                      <ActionBar {...actionBarProps} />
+                      <ActionBar {...actionBarProps} themeColor={themeColor} />
                     </div>
                   )}
                 </div>

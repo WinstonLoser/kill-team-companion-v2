@@ -17,6 +17,72 @@
       }
     }
   },
+  "stratagems": [
+    {
+      "id": "combat_doctrines",
+      "name": "Combat Doctrines / 战斗条令",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Select a combat doctrine (Devastator, Tactical, or Assault). / 选择一个战斗条令（毁灭、战术、突击）。"
+    },
+    {
+      "id": "indomitable",
+      "name": "Indomitable / 不屈不挠",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "When shooting at a friendly operative, if you roll two or more fails, you can discard one and retain another fail as a normal success. / 每当一名特工对一名己方死亡天使特工进行射击时，如果您掷出了两次或更多失败，那么您可以将其中一次舍弃，并将另一次失败作为一次普通成功进行保留。"
+    },
+    {
+      "id": "they_shall_know_no_fear",
+      "name": "They Shall Know No Fear / 他们无所畏惧",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Ignore any changes to the operative's characteristics due to being injured. / 您可以忽略任何己方死亡天使特工因受创而导致的属性变化（包括武器数据）。"
+    },
+    {
+      "id": "flexible_tactics",
+      "name": "Flexible Tactics / 灵活战术",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Change your secondary Chapter Tactic until the end of the turning point. / 更改您的次要战团战术。这个计谋的效果将持续至转折点结束。"
+    },
+    {
+      "id": "adaptive_tactics",
+      "name": "Adaptive Tactics / 调整条令",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Change your previously selected Combat Doctrine. / 当一名己方特工在激活期间执行一次行动之前或之后使用。更改之前选择的战斗条令。"
+    },
+    {
+      "id": "transhuman_physiology",
+      "name": "Transhuman Physiology / 超人体格",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Retain one normal save as a critical save. / 在对己方特工进行射击时，您可以在掷防御骰步骤中使用，将一次普通成功作为关键成功进行保留。"
+    },
+    {
+      "id": "wrath_of_vengeance",
+      "name": "Wrath of Vengeance / 复仇之怒",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Perform an additional 1 AP action during counteraction without spending AP. / 在一名己方特工进行反应时使用，可以在那次反应期间无消耗额外执行一次 1AP 的行动（两次行动必须不同）。"
+    },
+    {
+      "id": "shock_assault",
+      "name": "Shock Assault / 震慑突袭",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Melee weapons gain Stun, and the first strike inflicts 1 extra damage. / 在执行了冲锋行动的转折点中执行近战行动时，近战武器拥有“震荡”规则，且首次出击造成额外 1 点伤害。"
+    }
+  ],
   "factionRules": [
     {
       "ruleId": "chapter_tactics",
@@ -617,22 +683,7 @@
       "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战斗条令" }
     }
   ],
-  "stratagems": [
-    {
-      "id": "ironHalo",
-      "name": "钢铁光环（忽略一次普通伤害）",
-      "cp": 1,
-      "useLimit": { "perBattle": 1 },
-      "phase": "ENGAGEMENT"
-    },
-    {
-      "id": "combatDoctrine",
-      "name": "战斗条令",
-      "cp": 1,
-      "useLimit": { "perTurningPoint": 1 },
-      "phase": "STRATEGY"
-    }
-  ],
+
   "buildConstraints": {
     "operatives": { "max": 6, "min": 6 },
     "leaderFrom": ["space_marine_captain", "assault_intercessor_sergeant", "intercessor_sergeant"],

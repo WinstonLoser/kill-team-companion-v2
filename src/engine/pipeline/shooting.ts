@@ -252,7 +252,7 @@ const DEFENCE_UPGRADE: StepFn<ShootingState> = {
 const PARRY_ALLOCATE: StepFn<ShootingState> = {
   stepId: 'PARRY_ALLOCATE',
   run: (state) => {
-    // P4/DN3：防御方用共用 parryAllocation 格挡攻击方成功（关键抵关键→2普通抵关键→关键抵普通→普通抵普通）。
+    // P4/DN3：防御方用共用 parryAllocation 格挡攻击方成功（关键抵关键→关键抵普通→普通抵普通）。
     const alloc = parryAllocation(
       { normal: state.defNormal, critical: state.defCritical },
       { normal: state.normalSuccess, critical: state.criticalSuccess },

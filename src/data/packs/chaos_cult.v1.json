@@ -1,0 +1,726 @@
+{
+  "packId": "chaos_cult",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "chaos_cult",
+    "name": "混沌教派 / Chaos Cult",
+    "keywords": [
+      "CHAOS",
+      "CHAOS CULT"
+    ],
+    "theme": {
+      "ui": {
+        "primaryRgb": "185, 28, 28",
+        "textHighlight": "#fca5a5"
+      },
+      "dice": {
+        "baseColor": "#7f1d1d",
+        "pipColor": "#fca5a5"
+      }
+    }
+  },
+  "factionRules": [
+    {
+      "ruleId": "mutation",
+      "name": "Mutation / 变异",
+      "description": "During the battle, friendly CHAOS CULT operatives can mutate. As a strategic ploy, you can mutate a certain number of operatives: 2 in TP1, 2 in TP2, 3 in TP3, 4 from TP4 onwards. Devotees can mutate when they incapacitate an enemy. A Devotee mutates into a Mutant. A Mutant mutates into a Torment (max 2 per TP). Heal D3+1 lost wounds when mutating. Max 5 Mutants and 3 Torments. / 在战斗期间，己方混沌教派特工可以通过以下方式进行变异：作为一个战略计划，您可以将一定数量的己方特工进行变异（第一转折点2个，第二2个，第三3个，第四及之后4个）。每当虔信者残废敌方时也可变异。虔信者变异为变异者，变异者变异为受难者（每个转折点最多两次）。变异时回复D3+1点耐伤。最多拥有5名变异者和3名受难者。",
+      "type": "PASSIVE",
+      "options": []
+    },
+    {
+      "ruleId": "gifts_of_mutation",
+      "name": "Gifts of Mutation / 诅咒之礼",
+      "description": "When the first Devotee mutates into a Mutant, choose the first Gift. When the first Mutant mutates into a Torment, choose the second Gift. All Mutants get the first gift, all Torments get both gifts. / 当首次有虔信者变异为变异者时选择第一诅咒之礼，首次有变异者变异为受难者时选择第二诅咒之礼。所有变异者拥有第一诅咒之礼，受难者拥有两个。",
+      "type": "SELECTION",
+      "selectionLimit": 2,
+      "options": [
+        {
+          "id": "gift_winged",
+          "name": "Winged / 生翼",
+          "description": "When climbing, treat vertical distance as 2\". Ignore vertical distance when dropping. / 向上攀爬时垂直距离视作 2\"。跳落时无视垂直距离。"
+        },
+        {
+          "id": "gift_fleet",
+          "name": "Fleet / 迅捷",
+          "description": "Add 1\" to Move stat. / 移动属性增加 1\"。"
+        },
+        {
+          "id": "gift_carapace",
+          "name": "Carapace / 甲壳",
+          "description": "Improve Save stat by 1. / 豁免属性提升 1 点。"
+        },
+        {
+          "id": "gift_horns",
+          "name": "Horns / 犄角",
+          "description": "At the end of a Charge, inflict 1 damage (D3 if Torment) to an enemy in engagement range. / 冲锋结束时，对控制范围内的一名敌方造成 1 点伤害（受难者则为 D3 点）。"
+        },
+        {
+          "id": "gift_sinew",
+          "name": "Sinew / 强肌",
+          "description": "Ignore modifiers to melee Hit stat. Melee weapons gain Brutal. / 忽略近战武器命中的减益修正。近战武器拥有“残暴”规则。"
+        },
+        {
+          "id": "gift_barbed",
+          "name": "Barbed / 带刺",
+          "description": "Enemy cannot assist in combat. When striking first, inflict 1 damage (D3 if Torment) to every other enemy in engagement range. / 敌方不能协助。首次出击时，对控制范围内的每个其他敌方造成 1 点伤害（受难者则为 D3 点）。"
+        }
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "lure_to_kill",
+      "name": "Lure to Kill / 诱使杀戮",
+      "description": "Another friendly CHAOS CULT operative visible and within 9\" can immediately perform a free Fight action. / 位于 9\" 内且可见的另一名己方特工可立即执行一次无消耗的近战行动。"
+    },
+    {
+      "abilityId": "incited_urgency",
+      "name": "Incited Urgency / 煽动紧迫性",
+      "description": "Another friendly CHAOS CULT operative visible and within 9\" can immediately perform a free Dash or Charge action (max 3\" movement if Charge). / 位于 9\" 内且可见的另一名己方特工可立即执行一次无消耗的冲刺或冲锋行动（冲锋不能超过 3\"）。"
+    },
+    {
+      "abilityId": "cut_down_the_enemy",
+      "name": "Cut Down the Enemy / 斩杀敌人",
+      "description": "When an enemy in engagement range Falls Back, inflict D3+1 damage before it moves (2D3+2 if in range of two Blessed Blades). / 敌方特工在控制范围内执行后撤时，移动前对其造成 D3+1 伤害（若在两名该特工范围内则 2D3+2）。"
+    },
+    {
+      "abilityId": "synchronised_execution",
+      "name": "Synchronised Execution / 同步执行",
+      "description": "When activated, can activate another ready Blessed Blade within 6\" and interleave their actions. / 激活时，可同时激活 6\" 内的另一名就绪的祝福战刃特工，以任意顺序完成他们的行动。"
+    },
+    {
+      "abilityId": "icon_of_ruin",
+      "name": "Icon of Ruin / 毁灭徽记",
+      "description": "Psychic action. Choose Invigorate (reduce damage taken by friendlies within 4\" by 1 if 4+) or Enervate (increase damage taken by enemies within 4\" by 1). Lasts until next activation or incapacitated. / 灵能。选择激励（4\" 内友方受到的 4+ 伤害减 1）或恶化（4\" 内敌方受到伤害加 1）。"
+    },
+    {
+      "abilityId": "torrent_of_malice",
+      "name": "Torrent of Malice / 恶毒之洪",
+      "description": "Psychic action. Reduce APL of a valid enemy target by 1 until end of its next activation. / 灵能。减少一名有效敌方目标的 APL 1 点，直到其下次激活结束。"
+    },
+    {
+      "abilityId": "vile_vortex",
+      "name": "Vile Vortex / 凶恶漩涡",
+      "description": "Psychic action. Place Vile Vortex token. Inflicts 1 damage to enemies within 2\" when placed and in every Ready step. / 灵能。放置凶恶漩涡标识，放置时和每个就绪步骤对 2\" 内敌方造成 1 伤害。"
+    },
+    {
+      "abilityId": "group_activation",
+      "name": "Group Activation / 群体激活",
+      "description": "Must activate another ready Devotee after this one if able. / 待机时必须连续激活另一名虔信者。"
+    },
+    {
+      "abilityId": "cursed_mutant",
+      "name": "Cursed Mutant / 被诅咒的变异者",
+      "description": "Cannot perform unique actions. Must spend 1 extra AP to Pick Up or perform mission actions. / 不能执行独特行动。拾取或任务行动需额外消耗 1AP。"
+    },
+    {
+      "abilityId": "supernatural_regeneration",
+      "name": "Supernatural Regeneration / 超自然再生",
+      "description": "When an attack dice inflicts 3+ damage, roll a D6. On 5+, reduce damage by 1. / 受到大于等于 3 点伤害时掷 D6，5+ 减伤 1 点。"
+    },
+    {
+      "abilityId": "cursed_torment",
+      "name": "Cursed Torment / 被诅咒的受难者",
+      "description": "Cannot use unlisted weapons, unique actions, Pick Up, or mission actions. / 不能使用数据卡外的武器、独特行动、拾取或任务行动。"
+    },
+    {
+      "abilityId": "cumbersome",
+      "name": "Cumbersome / 笨重",
+      "description": "Cannot gain cover from light terrain if it has a Conceal order. / 隐匿命令时无法从轻型地形获得掩护。"
+    }
+  ],
+  "stratagems": [
+    {
+      "id": "nightmarish_entities",
+      "name": "Nightmarish Entities / 噩梦生物",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY",
+      "description": "When determining control of a marker, enemies within 2\" of a Mutant or Torment count their total APL as 1 less. / 争夺标识时，位于变异者或受难者 2\" 内的敌方 APL 总和视作减 1。"
+    },
+    {
+      "id": "sickening_aura",
+      "name": "Sickening Aura / 恶心气场",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY",
+      "description": "Enemies within 2\" of a Mutant or Torment worsen their weapons' Hit stat by 1. / 位于变异者或受难者 2\" 内的敌方武器命中属性弱化 1。"
+    },
+    {
+      "id": "joy_in_anguish",
+      "name": "Joy in Anguish / 痛苦之乐",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY",
+      "description": "Ignore injured modifiers to Hit stat for CHAOS CULT. Re-roll one defence die when shooting at an injured CHAOS CULT operative. / 忽略受创导致的命中属性修改。被射击时若受伤可重投一枚防御骰。"
+    },
+    {
+      "id": "frenzied_onslaught",
+      "name": "Frenzied Onslaught / 狂热猛攻",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "STRATEGY",
+      "description": "Melee weapons gain Accurate 1. If Mutant or Torment, gain Accurate 2 instead. / 近战武器获得精准 1。变异者或受难者则获得精准 2。"
+    },
+    {
+      "id": "devoted_followers",
+      "name": "Devoted Followers / 忠诚追随者",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "FIREFIGHT",
+      "description": "When Iconarch is targeted, choose another CHAOS CULT operative (except Iconarch) within 3\" to become the target instead. / 徽记头领被攻击时，可由 3\" 内的其他己方特工代为承受。"
+    },
+    {
+      "id": "abominable_mutation",
+      "name": "Abominable Mutation / 憎恶突变",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "FIREFIGHT",
+      "description": "Choose a Gift of Mutation for a friendly operative (except Iconarch) upon activation. / 激活时为一名特工（徽记除外）选择一项诅咒之礼生效。"
+    },
+    {
+      "id": "zealous_demise",
+      "name": "Zealous Demise / 狂热死亡",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "FIREFIGHT",
+      "description": "When a Mutant or Torment is incapacitated, inflict D3 damage (D6 if Torment) to one visible enemy within 2\". / 变异者或受难者残废时，对 2\" 内一名可见敌方造成 D3（受难者 D6）点伤害。"
+    },
+    {
+      "id": "unleash_the_daemon",
+      "name": "Unleash the Daemon / 释放恶魔",
+      "cp": 1,
+      "useLimit": {
+        "perTurningPoint": 1
+      },
+      "phase": "FIREFIGHT",
+      "description": "During a Mutant or Torment's activation, it can perform two Fight actions, one of which can be free. / 变异者或受难者激活时，可执行两次近战行动，且其中一次可以无消耗。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "cult_demagogue",
+      "name": "Cult Demagogue / 教派煽动家",
+      "type": "cult_demagogue",
+      "keywords": [
+        "LEADER",
+        "DARK COMMUNE"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 8,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "vile_staff_ranged"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "autopistol"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "vile_staff_melee"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "lure_to_kill",
+        "incited_urgency"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "blessed_blade",
+      "name": "Blessed Blade / 祝福战刃",
+      "type": "blessed_blade",
+      "keywords": [
+        "DARK COMMUNE"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 8,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "commune_blade"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "cut_down_the_enemy",
+        "synchronised_execution"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "iconarch",
+      "name": "Iconarch / 徽记头领",
+      "type": "iconarch",
+      "keywords": [
+        "PSYKER",
+        "DARK COMMUNE"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 8,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "blazing_censer"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "autopistol"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "brutal_melee_weapon"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "icon_of_ruin"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "mindwitch",
+      "name": "Mindwitch / 头脑巫师",
+      "type": "mindwitch",
+      "keywords": [
+        "PSYKER",
+        "DARK COMMUNE"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 8,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "hellish_gaze"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "fists"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "torrent_of_malice",
+        "vile_vortex"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "chaos_devotee",
+      "name": "Chaos Devotee / 混沌虔信者",
+      "type": "chaos_devotee",
+      "keywords": [
+        "DEVOTEE"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 7,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "autopistol"
+            ]
+          ]
+        },
+        {
+          "description": "Default",
+          "options": [
+            [
+              "brutal_melee_weapon"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "group_activation"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "chaos_mutant",
+      "name": "Chaos Mutant / 混沌变异者",
+      "type": "chaos_mutant",
+      "keywords": [
+        "MUTANT"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 7,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "blasphemous_appendages"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "cursed_mutant",
+        "supernatural_regeneration"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    },
+    {
+      "operativeId": "chaos_torment",
+      "name": "Chaos Torment / 混沌受难者",
+      "type": "chaos_torment",
+      "keywords": [
+        "TORMENT"
+      ],
+      "stats": {
+        "apl": 2,
+        "save": 5,
+        "wounds": 13,
+        "move": 6
+      },
+      "base": {
+        "diameterMm": 28
+      },
+      "loadouts": [
+        {
+          "description": "Default",
+          "options": [
+            [
+              "hideous_mutations"
+            ]
+          ]
+        }
+      ],
+      "abilityRefs": [
+        "cursed_torment",
+        "supernatural_regeneration",
+        "cumbersome"
+      ],
+      "factionRuleRefs": [
+        "mutation",
+        "gifts_of_mutation"
+      ]
+    }
+  ],
+  "buildConstraints": {
+    "operatives": {
+      "max": 14,
+      "min": 14
+    },
+    "leaderFrom": [
+      "cult_demagogue"
+    ],
+    "maxPerTypeExcept": [
+      "chaos_devotee"
+    ],
+    "notes": "1 Leader. 2 Blessed Blades, 1 Iconarch, 1 Mindwitch. 9 Chaos Devotees."
+  },
+  "weapons": [
+    {
+      "weaponId": "vile_staff_ranged",
+      "name": "Vile staff (Ranged) / 恶毒杖 (远程)",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 3,
+        "criticalDamage": 6,
+        "weaponRules": [
+          "Range 2\"",
+          "Stun"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "autopistol",
+      "name": "Autopistol / 手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "weaponRules": [
+          "Range 8\""
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "vile_staff_melee",
+      "name": "Vile staff (Melee) / 恶毒杖 (近战)",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 3,
+        "criticalDamage": 6,
+        "weaponRules": [
+          "Shock",
+          "Stun"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "commune_blade",
+      "name": "Commune blade / 秘社之刃",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 4,
+        "criticalDamage": 6,
+        "weaponRules": [
+          "Lethal 5+"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "blazing_censer",
+      "name": "Blazing censer / 燃烧香炉",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 2,
+        "normalDamage": 4,
+        "criticalDamage": 4,
+        "weaponRules": [
+          "Range 5\"",
+          "Concentrate",
+          "Torrent 2\""
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "autopistol",
+      "name": "Autopistol / 手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "weaponRules": [
+          "Range 8\""
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "brutal_melee_weapon",
+      "name": "Brutal melee weapon / 粗制近战武器",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 3,
+        "hit": 4,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "weaponRules": []
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "hellish_gaze",
+      "name": "Hellish gaze / 地狱凝视",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 5,
+        "hit": 3,
+        "normalDamage": 0,
+        "criticalDamage": 0,
+        "weaponRules": [
+          "Range 6\"",
+          "Devastating 2",
+          "Lethal 3+",
+          "Psychic"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "fists",
+      "name": "Fists / 双拳",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 3,
+        "hit": 5,
+        "normalDamage": 1,
+        "criticalDamage": 2,
+        "weaponRules": []
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "autopistol",
+      "name": "Autopistol / 手枪",
+      "kind": "RANGED",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "weaponRules": [
+          "Range 8\""
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "brutal_melee_weapon",
+      "name": "Brutal melee weapon / 粗制近战武器",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 2,
+        "criticalDamage": 3,
+        "weaponRules": []
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "blasphemous_appendages",
+      "name": "Blasphemous appendages / 渎神附肢",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 4,
+        "hit": 4,
+        "normalDamage": 3,
+        "criticalDamage": 4,
+        "weaponRules": [
+          "Relentless",
+          "Rending"
+        ]
+      },
+      "keywords": []
+    },
+    {
+      "weaponId": "hideous_mutations",
+      "name": "Hideous mutations / 骇人变异",
+      "kind": "MELEE",
+      "profile": {
+        "attacks": 5,
+        "hit": 4,
+        "normalDamage": 4,
+        "criticalDamage": 5,
+        "weaponRules": [
+          "Relentless",
+          "Rending"
+        ]
+      },
+      "keywords": []
+    }
+  ],
+  "effects": []
+}

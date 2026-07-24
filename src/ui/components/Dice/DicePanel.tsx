@@ -15,12 +15,15 @@ export interface DicePanelProps {
   // Optional sound hook for external audio engines
   onSoundEvent?: (event: 'roll_start' | 'dice_stop' | 'roll_end', diceIndex?: number) => void
   onConfirm?: () => void
+  onDieClick?: (index: number) => void
+  animatingIndices?: number[]
 }
 
-export function DicePanel({ dice, theme, animate = false, statuses = {}, onSoundEvent, onConfirm }: DicePanelProps) {
+export function DicePanel({ dice, theme, animate = false, statuses = {}, onSoundEvent, onConfirm, onDieClick, animatingIndices }: DicePanelProps) {
   // Array of boolean indicating if each die is currently rolling
+  const getActiveIndices = () => animatingIndices ?? dice.map((d, i) => d.isRetained ? -1 : i).filter(i => i !== -1);
   const [rollingStates, setRollingStates] = useState<boolean[]>(
-    new Array(dice.length).fill(animate)
+    dice.map((d, i) => animate ? getActiveIndices().includes(i) : false)
   )
 
   // Reveal states for sequential display
@@ -46,33 +49,43 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
 
   useEffect(() => {
     if (animate) {
-      setRollingStates(new Array(dice.length).fill(true))
+      const activeIndices = getActiveIndices()
+      setRollingStates(dice.map((d, i) => activeIndices.includes(i) ? true : false))
       onSoundEvent?.('roll_start')
       
       const BASE_DELAY = 150
       const INTERVAL = 100
       
-      // Stop rolling one by one with a delay
-      dice.forEach((_, index) => {
-        setTimeout(() => {
-          setRollingStates(prev => {
-            const next = [...prev]
-            next[index] = false
-            return next
-          })
-          onSoundEvent?.('dice_stop', index)
+      const lastAnimatedIndex = activeIndices.length > 0 ? activeIndices[activeIndices.length - 1] : -1
+
+      if (activeIndices.length === 0) {
+        onSoundEvent?.('roll_end')
+        setTimeout(() => setShowCrits(true), 200)
+        setTimeout(() => setShowHits(true), 350)
+        setTimeout(() => setShowFails(true), 500)
+        setTimeout(() => setShowConfirm(true), 700)
+      } else {
+        dice.forEach((d, index) => {
+          if (!activeIndices.includes(index)) return
           
-          if (index === dice.length - 1) {
-            onSoundEvent?.('roll_end')
+          setTimeout(() => {
+            setRollingStates(prev => {
+              const next = [...prev]
+              next[index] = false
+              return next
+            })
+            onSoundEvent?.('dice_stop', index)
             
-            // Sequence reveal stats
-            setTimeout(() => setShowCrits(true), 200)
-            setTimeout(() => setShowHits(true), 350)
-            setTimeout(() => setShowFails(true), 500)
-            setTimeout(() => setShowConfirm(true), 700)
-          }
-        }, BASE_DELAY + index * INTERVAL) // Faster staggered interval
-      })
+            if (index === lastAnimatedIndex) {
+              onSoundEvent?.('roll_end')
+              setTimeout(() => setShowCrits(true), 200)
+              setTimeout(() => setShowHits(true), 350)
+              setTimeout(() => setShowFails(true), 500)
+              setTimeout(() => setShowConfirm(true), 700)
+            }
+          }, BASE_DELAY + activeIndices.indexOf(index) * INTERVAL)
+        })
+      }
     } else {
       setRollingStates(new Array(dice.length).fill(false))
     }
@@ -90,20 +103,26 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
         {showFails && fails > 0 && <div className="stat-badge stat-fail stat-reveal">Fails <span className="stat-badge-val">{fails}</span></div>}
       </div>
       <div className="dice-container">
-        {dice.map((d, i) => (
-          <div 
-            key={`${d.seed || 'dice'}-${i}`} 
-            className={`dice-entrance ${animate ? 'animated' : ''}`}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <DiceIcon
-              dice={d}
-              theme={theme}
-              status={statuses[i]}
-              isRolling={rollingStates[i]}
-            />
-          </div>
-        ))}
+        {dice.map((d, i) => {
+          const activeIndices = getActiveIndices()
+          const delayIndex = activeIndices.indexOf(i)
+          
+          return (
+            <div 
+              key={`${d.seed || 'dice'}-${i}`} 
+              className={`dice-entrance ${animate && activeIndices.includes(i) ? 'animated' : ''}`}
+              style={(animate && activeIndices.includes(i)) ? { animationDelay: `${delayIndex * 50}ms`, cursor: onDieClick ? 'pointer' : 'default' } : { cursor: onDieClick ? 'pointer' : 'default' }}
+              onClick={() => onDieClick?.(i)}
+            >
+              <DiceIcon
+                dice={d}
+                theme={theme}
+                status={statuses[i] || (d.isRetained ? 'RETAINED' : undefined)}
+                isRolling={rollingStates[i]}
+              />
+            </div>
+          )
+        })}
       </div>
       {onConfirm && showConfirm && (
         <div className="dice-action-area button-reveal">

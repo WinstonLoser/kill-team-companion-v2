@@ -5,23 +5,32 @@ import { useMatchStore } from './state/matchStore'
 import { useLocaleStore } from './state/localeStore'
 import { loadPack } from '.'
 import { MatchView } from './ui/MatchView'
+import { SimpleMatchView } from './ui/SimpleMatchView'
 import { RosterView } from './ui/RosterView'
 import { TestLab } from './ui/test-lab/TestLab'
+import { AbilityLab } from './ui/test-lab/AbilityLab'
+import { AnimationLab } from './ui/test-lab/AnimationLab'
 import { RulesSearch } from './ui/match/RulesQuery'
+import { AnimationEngine } from './ui/components/Animation/AnimationEngine'
 import angelsPack from './data/packs/angels_of_death.v1.json'
 import legionariesPack from './data/packs/legionaries.v1.json'
 import plaguePack from './data/packs/plague_marines.v1.json'
+import chaosCultPack from './data/packs/chaos_cult.v1.json'
 
 const TESTLAB_PACKS = [
   { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack as any) },
   { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack as any) },
   { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack as any) },
+  { id: 'chaos_cult', name: '混沌教派', pack: loadPack(chaosCultPack as any) },
 ]
 
 const VIEWS: { key: View; label: string }[] = [
-  { key: 'testLab', label: 'UI 测试实验室' },
   { key: 'roster', label: '建队' },
   { key: 'match', label: '对局' },
+  { key: 'simpleMatch', label: '简化对局' },
+  { key: 'abilityLab', label: '技能实验室' },
+  { key: 'testLab', label: 'UI 测试实验室' },
+  { key: 'animationLab', label: '动画实验室' },
   { key: 'rules', label: '规则查询' },
 ]
 
@@ -33,6 +42,7 @@ export function App() {
 
   return (
     <div className="app">
+      <AnimationEngine />
       <header className="topbar">
         <h1>Kill Team 战棋助手</h1>
         <div style={{ marginLeft: '1rem' }}>
@@ -65,16 +75,14 @@ export function App() {
           ⟳ 重置
         </button>
       </header>
-      <main className="content">
+      <main className="main-content">
         {currentView === 'roster' && <RosterView />}
         {currentView === 'match' && <MatchView />}
+        {currentView === 'simpleMatch' && <SimpleMatchView />}
+        {currentView === 'abilityLab' && <AbilityLab />}
         {currentView === 'testLab' && <TestLab packs={TESTLAB_PACKS} />}
-        {currentView === 'rules' && (
-          <section>
-            <h2>规则查询（引擎参数化要点，不显示 GW 原文 D-29）</h2>
-            <RulesSearch />
-          </section>
-        )}
+        {currentView === 'animationLab' && <AnimationLab packs={TESTLAB_PACKS} />}
+        {currentView === 'rules' && <RulesSearch />}
       </main>
       <PortraitLockHint />
     </div>

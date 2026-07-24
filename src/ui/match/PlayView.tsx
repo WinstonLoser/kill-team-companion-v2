@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { useMatchStore, type MatchToken } from '../../state/matchStore'
+import { RulesQuery, useRulesQuery } from './RulesQuery'
+import { DungeonMasterOverlay } from '../components/DungeonMaster/DungeonMasterOverlay'
+import { useMatchStore, getMatchOperativeData, type MatchToken } from '../../state/matchStore'
 import type { ActionType } from '../../state/turnStateMachine'
 import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
@@ -11,9 +13,11 @@ import { InterceptorCard } from './InterceptorCard'
 import { CombatResolver } from '../components/Combat/CombatResolver'
 import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { OperativeCard } from '../components/OperativeCard/OperativeCard'
+import { TargetSelectionModal } from './TargetSelectionModal'
 import { StratagemPanel } from './StratagemPanel'
 import { packOfOp, packOfFaction, weaponOfPack } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
+import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPanel'
 import { type RollContext } from '../../dice/source'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
@@ -25,7 +29,8 @@ function clampPos(p: Point): Point {
 }
 
 export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void }) {
-  const mapPack = useMatchStore((s) => s.mapPack)!
+  const mapPack = useMatchStore((s) => s.mapPack)
+  const maplessMode = useMatchStore((s) => s.maplessMode)
   const tokens = useMatchStore((s) => s.tokens)
   const turn = useMatchStore((s) => s.turn)
   const selected = useMatchStore((s) => s.selected)
@@ -114,6 +119,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
   const [movePreview, setMovePreview] = useState<boolean>(false) // 拖动后待确认
   const [showDataCardUid, setShowDataCardUid] = useState<string | null>(null)
+  const [showDungeonMaster, setShowDungeonMaster] = useState(false)
   const [showFullLog, setShowFullLog] = useState<boolean>(false)
 
   const active = tokens.find((t) => t.uid === selected) ?? null
@@ -195,11 +201,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   }
 
   // ===== 目标控制（1.16）— 读 store.controlOf（P7：store 当下 tokens） =====
-  const objControl: ObjControl[] = mapPack.objectives.map((o) => {
+  const objControl: ObjControl[] = mapPack ? mapPack.objectives.map((o) => {
     const nA = tokens.filter((t) => t.alive && t.placed && t.side === 'a' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
     const nB = tokens.filter((t) => t.alive && t.placed && t.side === 'b' && Math.hypot(t.pos.x - o.pos.x, t.pos.y - o.pos.y) <= o.controlRange).length
     return { id: o.id, ctrl: controlOf(o), nA, nB }
-  })
+  }) : []
 
   // ===== 几何可视化（1.14）— 读 store.attackViz（AR-9：不在 UI 调 geometry） =====
   const showViz = active && activated && active.side === turn.activePlayer && !interacting
@@ -283,7 +289,38 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       const defCritTarget = defLethal ? parseInt(defLethal.replace('Lethal ', '')) || 6 : 6
       defContext = { hitTarget: defWeapon.profile.hit, critTarget: defCritTarget }
     } else if (kind === 'SHOOT') {
-      defContext = { hitTarget: 3, critTarget: 6 } // Simplified default save target
+      const defOp = defPack.operatives.find(o => o.operativeId === target.opId)
+      defContext = { hitTarget: defOp?.stats.save || 3, critTarget: 6 }
+    }
+
+    let defModifiers: string[] = []
+    let defRetainedDice: any[] = [] // Using any[] to bypass import DiceRoll issues if not imported, or just cast
+
+    if (kind === 'SHOOT') {
+      const coverType = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'COVER_TYPE')
+      const isVantage = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'VANTAGE')
+      const isObscured = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'OBSCURED')
+      const atkFloor = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'ATTACKER_FLOOR') as number || 0
+      const defFloor = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'DEFENDER_FLOOR') as number || 0
+
+      if (isVantage) {
+        const diff = atkFloor - defFloor
+        const heightText = diff === 1 ? '1层/2"' : `${diff}层/${diff * 2}"`
+        if (coverType === 'HEAVY') {
+          defModifiers.push(`制高点 (高出 ${heightText}): 目标处于重型掩体中，制高点无法抵消掩护豁免和隐蔽(Conceal)状态。`)
+        } else {
+          defModifiers.push(`制高点 (高出 ${heightText}): 目标未受重型掩体保护，忽略其掩护豁免及隐蔽(Conceal)状态。`)
+        }
+      }
+      
+      const retainsCover = (coverType === 'HEAVY') || (coverType === 'LIGHT' && !isVantage)
+      if (retainsCover) {
+        defRetainedDice.push({ nat: defContext.hitTarget, grade: 'NORMAL', isRetained: true })
+      }
+
+      if (coverType === 'LIGHT') defModifiers.push(`轻微掩体 (Light Cover): 投骰前或投骰后，可保留1个普通掩护豁免。${retainsCover ? '已自动保留。' : '但被制高点抵消。'}`)
+      if (coverType === 'HEAVY') defModifiers.push(`重型掩体 (Heavy Cover): 可保留1个普通掩护豁免。提供掩体同时能阻挡视线(Obscuring)。${retainsCover ? '已自动保留。' : ''}`)
+      if (isObscured) defModifiers.push("遮挡 (Obscured): 目标通常不可被射击 (简化模式下强制允许)。")
     }
 
     setPendingAsk(null)
@@ -298,7 +335,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       defTheme: defPack?.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
       defDamage: defWeapon ? { normal: defWeapon.profile.normalDamage, critical: defWeapon.profile.criticalDamage } : { normal: 0, critical: 0 },
       defSave: 3, // DEFENDER_SAVE
-      defWounds: target.wounds
+      defWounds: target.wounds,
+      defModifiers,
+      defRetainedDice
     })
   }
 
@@ -334,16 +373,21 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   function confirmMove() {
     if (!active || !pendingMove || !moveOrigin) return
     const t = active
-    if (pendingMove === 'CHARGE') {
-      const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
-      if (!inEng) { setIntercept({ title: '冲锋非法', reasons: ['冲锋须结束在敌方 1" 控制范围内'] }); return }
+    const isMapless = useMatchStore.getState().maplessMode
+    
+    if (!isMapless) {
+      if (pendingMove === 'CHARGE') {
+        const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
+        if (!inEng) { setIntercept({ title: '冲锋非法', reasons: ['冲锋须结束在敌方 1" 控制范围内'] }); return }
+      }
+      const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
+      const wall = mapPack ? circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain) : false
+      if (overlap || wall) {
+        setIntercept({ title: overlap ? '与特工重叠' : '与墙体重叠', reasons: [`${t.name} ${overlap ? `与 ${overlap.name} 底座重叠` : '压在阻拦地形上'}`] })
+        return
+      }
     }
-    const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
-    const wall = circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain)
-    if (overlap || wall) {
-      setIntercept({ title: overlap ? '与特工重叠' : '与墙体重叠', reasons: [`${t.name} ${overlap ? `与 ${overlap.name} 底座重叠` : '压在阻拦地形上'}`] })
-      return
-    }
+
     const r = doAction(t.uid, pendingMove)
     if (!r.ok) { setIntercept({ title: '行动不可用', reasons: [r.reason ?? '未知'] }); return }
     setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
@@ -362,41 +406,61 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       return
     }
     if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin) // 切换：回退旧预览
-    setMoveOrigin(truePos); setMovePreview(false); setPendingMove(a)
+    const isMapless = useMatchStore.getState().maplessMode
+    setMoveOrigin(truePos); setMovePreview(isMapless); setPendingMove(a)
   }
 
   return (
     <div className="play-view">
       <StatusStrip prompt={promptStr} isError={!!intercept} onConfirm={confirmCasualties} onQueryRule={onQueryRule} onEndTP={() => scoreAndEndTP()} />
       {showViz && <FindingStrip active={active!} targets={viz.targets} />}
-      {lastShot && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ width: '90vw', maxWidth: '400px', backgroundColor: '#1e1e1e', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #444', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ margin: 0, color: '#ffaa77', textAlign: 'center' }}>待确认伤亡</h2>
-            <div style={{ background: '#2a2a2a', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
-                <strong>{lastShot.targetName}</strong> 将受到 <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>{lastShot.woundsDealt}</span> 点伤害。
-              </div>
-              {lastShot.attackerWoundsDealt ? (
-                <div style={{ fontSize: '1rem', color: '#ffaa77' }}>
-                  反伤：攻击方也会受到 <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>{lastShot.attackerWoundsDealt}</span> 点伤害。
-                </div>
-              ) : null}
-              <div style={{ marginTop: '12px', color: '#888', fontSize: '0.9rem' }}>
-                （未来将在此处扩展属性与血量修改功能）
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-              <button className="primary" style={{ flex: 1, padding: '12px', fontSize: '1.1rem' }} onClick={confirmCasualties}>
-                确认伤亡 ▶
-              </button>
-              <button className="secondary" style={{ padding: '12px' }} onClick={undoPending}>
-                回滚上步
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {lastShot && (() => {
+        const attacker = tokens.find(t => t.uid === lastShot.attackerUid)
+        const defender = tokens.find(t => t.uid === lastShot.targetUid)
+        if (!attacker || !defender) return null
+
+        const atkPortrait = {
+          name: attacker.name,
+          maxWounds: attacker.maxWounds,
+          currentWounds: attacker.wounds,
+          statuses: attacker.markers,
+          themeColorRgb: packOfFaction(attacker.factionId)?.faction.theme?.ui?.primaryRgb || '255, 90, 0',
+          avatarUrl: getAvatarUrl(attacker.factionId, attacker.opId),
+          onClick: () => setShowDataCardUid(attacker.uid)
+        }
+
+        const defPortrait = {
+          name: defender.name,
+          maxWounds: defender.maxWounds,
+          currentWounds: defender.wounds,
+          statuses: defender.markers,
+          themeColorRgb: packOfFaction(defender.factionId)?.faction.theme?.ui?.primaryRgb || '92, 255, 140',
+          avatarUrl: getAvatarUrl(defender.factionId, defender.opId),
+          onClick: () => setShowDataCardUid(defender.uid)
+        }
+
+        return (
+          <DamageResolutionPanel
+            attackerPortrait={atkPortrait}
+            defenderPortrait={defPortrait}
+            atkNats={lastShot.atkNats}
+            defNats={lastShot.defNats}
+            atkRolls={lastShot.atkRolls}
+            defRolls={lastShot.defRolls}
+            initialAtkDamage={lastShot.attackerWoundsDealt || 0}
+            initialDefDamage={lastShot.woundsDealt}
+            onConfirm={(res) => {
+              useMatchStore.getState().confirmCasualties({
+                targetWoundsDealt: res.defDamage,
+                attackerWoundsDealt: res.atkDamage,
+                targetMarkers: res.defMarkers,
+                attackerMarkers: res.atkMarkers
+              })
+            }}
+            onCancel={undoPending}
+          />
+        )
+      })()}
       {pushMsg && (
         <div className="push-banner">
           {pushMsg}
@@ -422,50 +486,63 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             </div>
           </div>
 
-          {/* MID AREA: Board */}
+          {/* MID AREA: Board (or Hidden for maplessMode) */}
           <div className="play-board-col" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
-            <div
-              ref={viewportRef}
-              className="board-viewport"
-              style={{ flex: 1 }}
-              onTouchStart={(e) => {
-                if (e.touches.length >= 2) { setInteracting(true); setDragging(null) /* P4：双指取消 token 拖 */ }
-              }}
-              onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
-              onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
-            >
-              <div style={{ transform: `scale(${viewport.scale})`, transformOrigin: '0 0' }}>
-                <Board
-                  mapPack={mapPack}
-                  terrain={mapPack.terrain}
-                  tokens={tokens}
-                  objectives={mapPack.objectives}
-                  phase="play"
-                  selected={selected}
-                  rangeRing={rangeRing}
-                  controlRing={controlRing}
-                  ownCover={ownCover}
-                  losLines={losLines}
-                  objControl={objControl}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerLeave={onPointerUp}
-                  onTokenPointerDown={(t) => {
-                    if (t.side !== turn.activePlayer) return
-                    setSelected(t.uid)
-                    setIntercept(null)
-                    // #4：移动需先激活；#7：需先在行动菜单选移动行动
-                    if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
-                    if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
-                    setDragging(t.uid, t.pos)
-                  }}
-                  onTokenDoubleClick={(t) => rotateToken(t.uid)}
-                  onTokenClick={onClickToken}
-                />
+            {maplessMode ? (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-panel)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
+                <p className="muted" style={{ textAlign: 'center' }}>
+                  简化对局模式<br/>
+                  无需地图。<br/>
+                  在两侧面板选择单位，点击命令与行动进行测试。<br/>
+                  攻击时将弹出目标选择窗口。
+                </p>
               </div>
-            </div>
-            {hoverInch && <div className="inch-readout">{hoverInch}</div>}
-            <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
+            ) : (
+              <>
+                <div
+                  ref={viewportRef}
+                  className="board-viewport"
+                  style={{ flex: 1 }}
+                  onTouchStart={(e) => {
+                    if (e.touches.length >= 2) { setInteracting(true); setDragging(null) /* P4：双指取消 token 拖 */ }
+                  }}
+                  onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
+                  onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
+                >
+                  <div style={{ transform: `scale(${viewport.scale})`, transformOrigin: '0 0' }}>
+                    <Board
+                      mapPack={mapPack!}
+                      terrain={mapPack!.terrain}
+                      tokens={tokens}
+                      objectives={mapPack!.objectives}
+                      phase="play"
+                      selected={selected}
+                      rangeRing={rangeRing}
+                      controlRing={controlRing}
+                      ownCover={ownCover}
+                      losLines={losLines}
+                      objControl={objControl}
+                      onPointerMove={onPointerMove}
+                      onPointerUp={onPointerUp}
+                      onPointerLeave={onPointerUp}
+                      onTokenPointerDown={(t) => {
+                        if (t.side !== turn.activePlayer) return
+                        setSelected(t.uid)
+                        setIntercept(null)
+                        // #4：移动需先激活；#7：需先在行动菜单选移动行动
+                        if (!activated || t.uid !== active?.uid) { setIntercept({ title: '未激活', reasons: ['先激活该特工才能移动'] }); return }
+                        if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
+                        setDragging(t.uid, t.pos)
+                      }}
+                      onTokenDoubleClick={(t) => rotateToken(t.uid)}
+                      onTokenClick={onClickToken}
+                    />
+                  </div>
+                </div>
+                {hoverInch && <div className="inch-readout">{hoverInch}</div>}
+                <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
+              </>
+            )}
           </div>
           {/* BOT AREA: Logs (Mini View) */}
           <div 
@@ -553,6 +630,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
               defenderContext={combatCollect.defContext}
               defenderTheme={combatCollect.defTheme}
               defenderDamage={(combatCollect as any).defDamage}
+              defenderModifiers={(combatCollect as any).defModifiers}
+              defenderRetainedDice={(combatCollect as any).defRetainedDice}
               rollMode={diceSource === 'electronic' ? 'AUTO' : 'MANUAL'}
               onComplete={(result) => {
                 const { attacker, target, kind } = combatCollect
@@ -561,7 +640,10 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                   attackerUid: attacker.uid,
                   targetUid: target.uid,
                   kind,
-                  manualNats: [...result.atkNats, ...(result.defNats || [])],
+                  atkNats: result.atkNats,
+                  defNats: result.defNats,
+                  atkRolls: result.atkRolls,
+                  defRolls: result.defRolls,
                   manualAllocation: result.manualAllocation
                 })
                 if (!r.ok) setIntercept({ title: '结算失败', reasons: r.missing ?? [] })
@@ -580,13 +662,10 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowDataCardUid(null)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: '95vw', maxWidth: '900px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column', borderRadius: '12px' }}>
             {(() => {
-              const opToken = tokens.find(t => t.uid === showDataCardUid)
-              const opPack = opToken ? packOfFaction(opToken.factionId) : null
-              if (!opToken || !opPack) return null
-              // Extract the base operative data from the pack
-              const baseOp = opPack.operatives.find(o => o.operativeId === opToken.opId)
-              if (!baseOp) return null
+              const dmData = getMatchOperativeData(showDataCardUid)
+              if (!dmData) return null
               
+              const { operative, pack: opPack, token: opToken, weapons } = dmData
               const uiTheme = opPack.faction.theme?.ui || { primaryRgb: '255, 90, 0', textHighlight: '#ffaa77' }
               
               // Use equipped weapons
@@ -594,8 +673,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
               return (
                 <div style={{ height: '100%', '--theme-primary-rgb': uiTheme.primaryRgb, '--theme-text-highlight': uiTheme.textHighlight } as React.CSSProperties}>
                   <OperativeCard 
-                    operative={baseOp} 
-                    pack={opPack} 
+                    operative={operative} 
+                    pack={{ ...opPack, weapons }} // Pass the overridden weapons array via pack to the card
                     selectedWeaponIds={opToken.weapons || []} 
                     factionRuleSelections={{}} 
                     avatarUrl={avatarUrl}
@@ -605,6 +684,53 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             })()}
           </div>
         </div>
+      )}
+
+      {/* Dungeon Master Modal */}
+      {showDungeonMaster && (
+        <DungeonMasterOverlay onClose={() => setShowDungeonMaster(false)} />
+      )}
+
+      {/* Dungeon Master Floating Button */}
+      <button 
+        className="dm-floating-btn" 
+        onClick={() => setShowDungeonMaster(true)}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: '#ff4444',
+          color: 'white',
+          border: 'none',
+          borderRadius: '50%',
+          width: '60px',
+          height: '60px',
+          fontSize: '24px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(255, 68, 68, 0.4)',
+          zIndex: 9000,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+        title="Dungeon Master Mode"
+      >
+        🎲
+      </button>
+
+      {maplessMode && pendingAttack && active && (
+        <TargetSelectionModal
+          attackerUid={active.uid}
+          kind={pendingAttack}
+          onClose={() => setPendingAttack(null)}
+          onConfirm={(targetUid) => {
+            const t = tokens.find((x) => x.uid === targetUid)
+            if (t) {
+              setPendingAttack(null)
+              runKind(active, t, pendingAttack)
+            }
+          }}
+        />
       )}
     </div>
   )

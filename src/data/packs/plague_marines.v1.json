@@ -308,59 +308,67 @@
   "stratagems": [
     {
       "id": "cloud_of_flies",
-      "name": "Cloud of Flies",
+      "name": "Cloud of Flies / 飞蝇云",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "STRATEGY"
+      "phase": "STRATEGY",
+      "description": "Place a Cloud of Flies marker. When enemy shoots a friendly Plague Marine >3\" away, the friendly operative is obscured if wholly within 1\" of the marker. / 在杀戮地带放置一枚飞蝇云标识。当敌方特工射击距离其 3\" 以外的友方瘟疫战士特工时，若该友方特工完全位于飞蝇云标识 1\" 内，则被视作遮挡 (Obscured)。"
     },
     {
       "id": "nurglings",
-      "name": "Nurglings",
+      "name": "Nurglings / 纳垢灵",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "STRATEGY"
+      "phase": "STRATEGY",
+      "description": "Select an enemy within 3\" of a friendly Plague Marine, or within 7\" if it has a Poison token. Subtract 1 from its APL until the end of its next activation. / 选择一名位于友方瘟疫战士 3\" 内的敌方特工，或一名带有己方毒素指示物且位于友方 7\" 内的敌方特工。直到那名敌方特工下一次激活结束前，其 APL 属性 -1。"
     },
     {
       "id": "contagion",
-      "name": "Contagion",
+      "name": "Contagion / 传染",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "STRATEGY"
+      "phase": "STRATEGY",
+      "description": "Worsen Hit stat of enemy weapons by 1 and reduce Move stat by 2\" if visible within 3\" of friendly Plague Marine / Icon Bearer, or if it has a Poison token. / 位于友方瘟疫战士（或持徽手）3\" 内且可见、或带有己方毒素指示物的敌方特工，其武器命中属性恶化 1，且移动属性降低 2\"。"
     },
     {
       "id": "lumbering_death",
-      "name": "Lumbering Death",
+      "name": "Lumbering Death / 慢步死亡",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "STRATEGY"
+      "phase": "STRATEGY",
+      "description": "When a friendly Plague Marine shoots or fights in an activation where it moved <=3\", or retaliates, its weapons gain Ceaseless. / 当友方瘟疫战士特工在移动不超过 3\" 的激活中进行射击/近战，或者在反击时，其武器获得“无休 (Ceaseless)”规则。"
     },
     {
       "id": "sickening_resilience",
-      "name": "Sickening Resilience",
+      "name": "Sickening Resilience / 恶心韧性",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "FIREFIGHT"
+      "phase": "FIREFIGHT",
+      "description": "When an attack dice inflicts damage on a friendly Plague Marine, subtract 1 from damage inflicted (min 2) for Disgustingly Resilient without rolling. / 当攻击骰对友方瘟疫战士造成伤害时使用。在本激活/反应中触发“恼人韧性”时无需掷骰，直接将受到的伤害 -1（最少减至 2）。"
     },
     {
       "id": "curse_of_rot",
-      "name": "Curse of Rot",
+      "name": "Curse of Rot / 腐烂诅咒",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "FIREFIGHT"
+      "phase": "FIREFIGHT",
+      "description": "When shooting/fighting enemy within 3\" (or 7\" if poisoned), after opponent rolls attack/defense dice: each result of 3 inflicts 1 damage on that enemy, cannot be retained or rerolled. / 当友方瘟疫战士对 3\" 内敌方（或 7\" 内带有毒素的敌方）进行射击/近战，对手投骰后使用。对手每投出一个 3，即对其自身造成 1 点伤害，且该 3 不能保留或重投。"
     },
     {
       "id": "virulent_poison",
-      "name": "Virulent Poison",
+      "name": "Virulent Poison / 致命毒素",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "FIREFIGHT"
+      "phase": "FIREFIGHT",
+      "description": "Use during activation/counteraction. One enemy within 3\" (or visible within 7\") gains a Poison token if it doesn't have one. / 在友方瘟疫战士激活或反应期间使用。使其 3\" 内（或可见且 7\" 内）的一名敌方特工获得一枚己方毒素指示物。"
     },
     {
       "id": "poisonous_demise",
-      "name": "Poisonous Demise",
+      "name": "Poisonous Demise / 剧毒破灭",
       "cp": 1,
       "useLimit": { "perTurningPoint": 1 },
-      "phase": "FIREFIGHT"
+      "phase": "FIREFIGHT",
+      "description": "Use when friendly Plague Marine is incapacitated before removal. Each enemy visible within 3\" gains a Poison token; if already poisoned, inflicts 1 damage instead. / 当友方瘟疫战士瘫痪被移出前使用。其 3\" 内且可见的每名敌方特工获得一枚毒素指示物；若已有毒素，则改为对其造成 1 点伤害。"
     }
   ],
   "buildConstraints": {

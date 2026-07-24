@@ -17,6 +17,72 @@
       }
     }
   },
+  "stratagems": [
+    {
+      "id": "blood_for_the_blood_god",
+      "name": "Blood for the Blood God / 血祭血神 (Khorne)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "For non-Khorne operatives, the first successful strike in a fight inflicts +1 damage. For Khorne-marked operatives, add 1 to both Damage stats of their melee weapons, up to max 7. / 非恐虐印记特工在近战中首次出击造成额外 1 点伤害；恐虐印记特工的近战武器的两个伤害属性都提升 1 点（最多 7 点）。"
+    },
+    {
+      "id": "implacable",
+      "name": "Implacable / 坚不可摧 (Nurgle)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Whenever an operative is shooting a friendly LEGIONARY operative, weapons with Piercing 1 have Piercing Crits 1 instead. Ignore any changes to stats of friendly LEGIONARY NURGLE operatives from being injured. / 每当一名特工对己方军团特工进行射击时，拥有“穿刺 1”的武器将变为拥有“关键穿刺 1”；您可以忽略己方军团纳垢特工因受创而导致的对任何属性的修改。"
+    },
+    {
+      "id": "quicksilver_speed",
+      "name": "Quicksilver Speed / 迅捷速度 (Slaanesh)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "When a friendly Legionary that has moved during the turning point is fighting or retaliating, the enemy operative’s melee weapons have their Hit stat worsened by 1. / 当一名在转折点中执行了移动的己方特工进行近战或反击时，敌方近战武器命中属性弱化 1（若为色孽特工则是被射击时也弱化）。"
+    },
+    {
+      "id": "fickle_fates",
+      "name": "Fickle Fates / 无常命运 (Tzeentch)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Grants Balanced rule to ranged weapons when shooting a ready enemy. When an enemy shoots at a ready Tzeentch-marked friendly operative, retain a failed defense die as a normal success if you retain any critical successes. / 射击就绪的敌方特工时远程武器拥有“平衡”。对就绪的奸奇特工射击时，若保留了关键成功，可将一次失败作为普通成功保留。"
+    },
+    {
+      "id": "unending_bloodshed",
+      "name": "Unending Bloodshed / 无尽杀戮 (Khorne)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Use when a friendly LEGIONARY KHORNE operative is incapacitated while fighting or retaliating. Strike the enemy with one unresolved success before being removed. / 当一名己方恐虐特工在近战或反击期间被残废时，在移出前可以使用一次未结算的成功对敌方特工进行出击。"
+    },
+    {
+      "id": "mutability_and_change",
+      "name": "Mutability and Change / 变异与扭转 (Tzeentch)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Use when a friendly LEGIONARY TZEENTCH operative is activated. Until the end of that activation, add 1 to its APL stat. Cannot repeat same action. / 当一名己方奸奇特工被激活时使用。直到激活结束前其 APL 增加 1 点，但在那次激活中不能多次执行同样的行动。"
+    },
+    {
+      "id": "malignant_aura",
+      "name": "Malignant Aura / 邪恶光环 (Nurgle)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Use when a friendly LEGIONARY NURGLE operative performs Shoot action. Whenever shooting an enemy within 3\", ranged weapons have Piercing 1. / 纳垢特工执行射击行动时，对其 3\" 内的敌方特工射击，其远程武器拥有“穿刺 1”。"
+    },
+    {
+      "id": "sickening_captivation",
+      "name": "Sickening Captivation / 不祥迷惑 (Slaanesh)",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Use during a friendly LEGIONARY SLAANESH operative's activation. Select one enemy visible within 4\"; subtract 1 from its APL until end of its next activation. / 在一名己方色孽特工激活期间，选择一个位于其 4\" 内且可见的敌方特工。直到其下一次激活结束前 APL 减少 1 点。"
+    }
+  ],
   "factionRules": [
     {
       "ruleId": "marks_of_chaos",

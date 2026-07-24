@@ -145,6 +145,7 @@ export interface Stratagem {
   cp: number
   useLimit: { perBattle?: number; perTurningPoint?: number }
   phase: 'STRATEGY' | 'ENGAGEMENT'
+  description?: string
 }
 
 export interface Wargear {

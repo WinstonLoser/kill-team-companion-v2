@@ -10,15 +10,18 @@ import { FactionOverview } from './roster/FactionOverview'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 import legionariesPack from '../data/packs/legionaries.v1.json'
 import plaguePack from '../data/packs/plague_marines.v1.json'
+import chaosCultPack from '../data/packs/chaos_cult.v1.json'
 
-// 三阵营全部可用（Epic 1-3 完成）。
+// 四阵营全部可用。
 const angelsLoaded: FactionPack = loadPack(angelsPack)
 const legionariesLoaded: FactionPack = loadPack(legionariesPack)
 const plagueLoaded: FactionPack = loadPack(plaguePack)
+const chaosCultLoaded: FactionPack = loadPack(chaosCultPack)
 const FACTIONS: FactionOption[] = [
   { id: 'angels_of_death', name: '死亡天使', available: true, pack: angelsLoaded },
   { id: 'legionaries', name: '军团兵', available: true, pack: legionariesLoaded },
   { id: 'plague_marines', name: '瘟疫战士', available: true, pack: plagueLoaded },
+  { id: 'chaos_cult', name: '混沌教派', available: true, pack: chaosCultLoaded },
 ]
 
 function packFor(factionId: string | null): FactionPack | null {
