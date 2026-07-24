@@ -270,16 +270,18 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (!actR.ok) { setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
 
     // 获取攻击者的武器和属性，唤出 DiceInterface
-    const atkPack = packOfFaction(attacker.factionId)
-    const weapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+    const atkData = getMatchOperativeData(attacker.uid)
+    const atkPack = atkData?.pack
+    const weapon = atkData?.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
     if (!weapon) { setIntercept({ title: '无武器', reasons: [`阵营包缺 ${kind} 武器`] }); return }
 
     const lethalRule = weapon.profile.weaponRules?.find((r: string) => r.startsWith('Lethal '))
     const critTarget = lethalRule ? parseInt(lethalRule.replace('Lethal ', '')) || 6 : 6;
     const context: RollContext = { hitTarget: weapon.profile.hit, critTarget }
 
-    const defPack = packOfFaction(target.factionId)
-    const defWeapon = weaponOfPack(defPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+    const defData = getMatchOperativeData(target.uid)
+    const defPack = defData?.pack
+    const defWeapon = defData?.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
 
     // 防御方数据准备 (近战时使用其武器；射击时防御方使用 save 值作为目标，防守骰数固定3或根据规则)
     const defCount = kind === 'SHOOT' ? 3 : (defWeapon?.profile.attacks ?? 0)
@@ -289,8 +291,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       const defCritTarget = defLethal ? parseInt(defLethal.replace('Lethal ', '')) || 6 : 6
       defContext = { hitTarget: defWeapon.profile.hit, critTarget: defCritTarget }
     } else if (kind === 'SHOOT') {
-      const defOp = defPack.operatives.find(o => o.operativeId === target.opId)
-      defContext = { hitTarget: defOp?.stats.save || 3, critTarget: 6 }
+      defContext = { hitTarget: defData?.operative.stats.save || 3, critTarget: 6 }
     }
 
     let defModifiers: string[] = []

@@ -64,7 +64,8 @@ export function getMatchOperativeData(uid: string) {
   }
 
   // Clone weapons and apply overrides
-  const weapons = (token.weapons || [])
+  const weaponRefs = token.weapons && token.weapons.length > 0 ? token.weapons : pack.weapons.map(w => w.weaponId)
+  const weapons = weaponRefs
     .map((ref) => pack.weapons.find((w) => w.weaponId === ref))
     .filter(Boolean)
     .map((w) => JSON.parse(JSON.stringify(w)))
@@ -840,7 +841,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     // 攻击方 effect 栈 = 全量（factionRule + chapterTactic/markOfChaos + ability + wargear + activeStratagem）
     const atkStrats = s.activeStratagems[attacker.side]
     const effects = buildEffectStack(attacker.opId, attacker.factionId, attacker.side, atkStrats)
-    const useWeapon = weaponOfPack(atkPack, kind === 'SHOOT' ? 'RANGED' : 'MELEE') ?? (kind === 'SHOOT' ? RANGED : MELEE)
+    const useWeapon = atkDmData.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
     if (!useWeapon) return { ok: false, missing: [`阵营包缺 ${kind} 武器`] }
     // 谓词 ctx（W3 接线）：目标指示物 + 双方阵营 + 武器类 + 距离 → 剧毒(+1 vs POISON)等条件门控生效
     const predicate: PredicateContext = {
@@ -876,20 +877,25 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     let woundsDealt: number
     let attackerWoundsDealt: number = 0
     let log: ResolutionLog
+    
+    const atkSave = atkDmData.operative.stats.save || DEFENDER_SAVE
+    const tgtSave = tgtDmData.operative.stats.save || DEFENDER_SAVE
+
     if (kind === 'SHOOT') {
       const cover = elig.findings.find((f) => f.kind === 'COVER')?.finalValue ?? false
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon },
-        defender: { operativeId: target.uid, save: DEFENDER_SAVE, wounds: target.wounds },
+        defender: { operativeId: target.uid, save: tgtSave, wounds: target.wounds },
         effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
       }
       const r = runShooting(input)
       woundsDealt = r.woundsDealt
       log = buildShootingLog(`${attacker.uid}>${target.uid}`, input, r)
     } else {
+      const defMeleeWeapon = tgtDmData.weapons.find(w => w.kind === 'MELEE') ?? DEFENDER_WEAPON_FALLBACK ?? useWeapon
       const input = {
-        attacker: { operativeId: attacker.uid, weapon: useWeapon, save: DEFENDER_SAVE, wounds: attacker.wounds },
-        defender: { operativeId: target.uid, weapon: DEFENDER_WEAPON_FALLBACK ?? useWeapon, save: DEFENDER_SAVE, wounds: target.wounds },
+        attacker: { operativeId: attacker.uid, weapon: useWeapon, save: atkSave, wounds: attacker.wounds },
+        defender: { operativeId: target.uid, weapon: defMeleeWeapon, save: tgtSave, wounds: target.wounds },
         effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, predicate,
         manualAllocation, // Pass down to engine
       }
