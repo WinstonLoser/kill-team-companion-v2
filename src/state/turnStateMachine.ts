@@ -265,7 +265,6 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         turningPoint: next,
         phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
         activeOpId: null,
-        cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
         operatives: ops,
         ployUses,
       }

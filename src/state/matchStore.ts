@@ -305,6 +305,8 @@ interface MatchState {
   // DM 模式数据覆写
   setTokenOverrides: (uid: string, statOverrides?: Partial<OperativeStats>, weaponOverrides?: Record<string, Partial<WeaponProfile>>) => void
   setTokenState: (uid: string, state: Partial<MatchToken>) => void
+  swapOperativeClass: (uid: string, newOpId: string) => void
+  setTokenWeapons: (uid: string, weaponIds: string[]) => void
   setResource: (side: 'a' | 'b', type: 'cp' | 'vp', delta: number) => void
   activate: (uid: string, side: Side) => void
   endActivation: (uid: string) => void
@@ -644,6 +646,33 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const idx = next.findIndex(t => t.uid === uid)
     if (idx < 0) return {}
     next[idx] = { ...next[idx], ...state }
+    return { tokens: next }
+  }),
+  swapOperativeClass: (uid, newOpId) => set((s) => {
+    const next = [...s.tokens]
+    const idx = next.findIndex(t => t.uid === uid)
+    if (idx < 0) return {}
+    const t = next[idx]
+    const pack = packOfFaction(t.factionId)
+    const baseOp = pack.operatives.find(o => o.operativeId === newOpId)
+    if (!baseOp) return {}
+    next[idx] = {
+      ...t,
+      opId: newOpId,
+      name: baseOp.name,
+      maxWounds: baseOp.stats.wounds,
+      baseRadius: baseOp.base.diameterMm / 2,
+      statOverrides: undefined,
+      weaponOverrides: undefined,
+      weapons: []
+    }
+    return { tokens: next }
+  }),
+  setTokenWeapons: (uid, weaponIds) => set((s) => {
+    const next = [...s.tokens]
+    const idx = next.findIndex(t => t.uid === uid)
+    if (idx < 0) return {}
+    next[idx] = { ...next[idx], weapons: weaponIds }
     return { tokens: next }
   }),
   setResource: (side, type, delta) => set((s) => {
@@ -1166,7 +1195,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       vp: { a: scoredA, b: scoredB },
       turn: ended ? next : { ...next, activePlayer: next.activePlayer === 'a' ? 'b' : 'a' },
       winner: ended ? winner : null,
-      phase: ended ? 'ended' : s.phase,
+      phase: ended ? 'ended' : 'strategy',
+      initiative: null,
+      strategyTurn: null,
+      strategyPasses: { a: false, b: false },
       selected: null,
       pushMsg,
       log: [...newLogs, ...s.log].slice(0, 80),

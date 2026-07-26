@@ -17,9 +17,12 @@ export function StrategyPhase() {
   const activeStratagems = useMatchStore((s) => s.activeStratagems)
   const toggleStratagem = useMatchStore((s) => s.toggleStratagem)
   const confirmInitiative = useMatchStore((s) => s.confirmInitiative)
+  const pushLog = useMatchStore((s) => s.pushLog)
   const [rollResult, setRollResult] = useState<{ a: number; b: number; winner: string } | null>(null)
   const [isRolling, setIsRolling] = useState(false)
   const [tempDice, setTempDice] = useState<{ a: number; b: number }>({ a: 6, b: 6 })
+  const [manualA, setManualA] = useState<number | ''>('')
+  const [manualB, setManualB] = useState<number | ''>('')
 
   function doRoll() {
     setIsRolling(true)
@@ -85,9 +88,37 @@ export function StrategyPhase() {
           </div>
 
           {!isRolling && !rollResult && (
-            <button className="primary main-btn dice-btn" onClick={doRoll} style={{ padding: '12px 32px', fontSize: '1.2rem' }}>
-              🎲 掷骰
-            </button>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <button className="primary main-btn dice-btn" onClick={doRoll} style={{ padding: '12px 32px', fontSize: '1.2rem', width: '100%' }}>
+                🎲 系统自动投掷
+              </button>
+              
+              <div style={{ width: '100%', borderTop: '1px solid #333', paddingTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <p className="muted" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>或手动输入你们掷出的点数：</p>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>A方:</span>
+                  <input type="number" min="1" max="6" value={manualA} onChange={e => setManualA(parseInt(e.target.value) || '')} style={{ width: '50px', background: '#222', color: '#fff', border: '1px solid #ff5c5c', borderRadius: '4px', padding: '4px 8px', textAlign: 'center' }} />
+                  
+                  <span style={{ color: '#39d98a', fontWeight: 'bold', marginLeft: '8px' }}>B方:</span>
+                  <input type="number" min="1" max="6" value={manualB} onChange={e => setManualB(parseInt(e.target.value) || '')} style={{ width: '50px', background: '#222', color: '#fff', border: '1px solid #39d98a', borderRadius: '4px', padding: '4px 8px', textAlign: 'center' }} />
+                  
+                  <button 
+                    className="btn"
+                    disabled={!manualA || !manualB || manualA === manualB || manualA > 6 || manualA < 1 || manualB > 6 || manualB < 1}
+                    onClick={() => {
+                      if (typeof manualA === 'number' && typeof manualB === 'number') {
+                        const winner = manualA > manualB ? 'a' : 'b'
+                        setRollResult({ a: manualA, b: manualB, winner })
+                        setTempDice({ a: manualA, b: manualB })
+                        pushLog('system', `玩家手动录入先手权掷骰：A 掷出 ${manualA}, B 掷出 ${manualB}。${winner.toUpperCase()} 方获胜！`)
+                      }
+                    }}
+                    style={{ marginLeft: '8px' }}
+                  >确认点数</button>
+                </div>
+                {manualA !== '' && manualB !== '' && manualA === manualB && <p style={{ color: '#ffaa77', fontSize: '0.8rem', marginTop: '8px' }}>平局，请重新投掷</p>}
+              </div>
+            </div>
           )}
 
           {rollResult && !isRolling && (

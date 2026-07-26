@@ -13,9 +13,12 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
   const tokens = useMatchStore(s => s.tokens)
   const setTokenOverrides = useMatchStore(s => s.setTokenOverrides)
   const setTokenState = useMatchStore(s => s.setTokenState)
+  const swapOperativeClass = useMatchStore(s => s.swapOperativeClass)
+  const setTokenWeapons = useMatchStore(s => s.setTokenWeapons)
   const locale = useLocaleStore(s => s.locale)
   
   const [selectedUid, setSelectedUid] = useState<string | null>(tokens[0]?.uid ?? null)
+  const [customMarker, setCustomMarker] = useState('')
   
   const [statOverrides, setStatOverrides] = useState<Partial<OperativeStats>>({})
   const [weaponOverrides, setWeaponOverrides] = useState<Record<string, Partial<WeaponProfile>>>({})
@@ -134,9 +137,9 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                   <input type="number" value={currentTokenState.wounds} onChange={e => setCurrentTokenState({ ...currentTokenState, wounds: parseInt(e.target.value) || 0 })} />
                 </div>
                 <div className="dm-field" style={{ gridColumn: 'span 2' }}>
-                  <label>Markers (Toggles)</label>
+                  <label>Markers (Toggles & Custom)</label>
                   <div className="dm-markers-row">
-                    {COMMON_MARKERS.map(m => {
+                    {Array.from(new Set([...COMMON_MARKERS, ...currentTokenState.markers])).map(m => {
                       const isActive = currentTokenState.markers.includes(m)
                       return (
                         <button 
@@ -147,6 +150,85 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                         >
                           {m}
                         </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <input 
+                      type="text" 
+                      placeholder="自定义标签名称..." 
+                      value={customMarker} 
+                      onChange={(e) => setCustomMarker(e.target.value)} 
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customMarker.trim()) {
+                          const newTag = customMarker.trim().toUpperCase();
+                          if (!currentTokenState.markers.includes(newTag)) {
+                            toggleMarker(newTag);
+                          }
+                          setCustomMarker('');
+                        }
+                      }}
+                    />
+                    <button 
+                      className="dm-btn" 
+                      style={{ padding: '8px 12px', background: themeColor, color: '#fff' }}
+                      onClick={() => {
+                        if (customMarker.trim()) {
+                          const newTag = customMarker.trim().toUpperCase();
+                          if (!currentTokenState.markers.includes(newTag)) {
+                            toggleMarker(newTag);
+                          }
+                          setCustomMarker('');
+                        }
+                      }}
+                    >添加</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="dm-section">
+              <h3 style={{ color: themeColor }}>CLASS & LOADOUT</h3>
+              <div className="dm-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="dm-field">
+                  <label>Operative Class</label>
+                  <select 
+                    value={selectedData.token.opId}
+                    onChange={(e) => {
+                      swapOperativeClass(selectedData.token.uid, e.target.value);
+                    }}
+                    style={{ background: '#222', color: '#fff', border: `1px solid ${themeBorder}`, padding: '8px', borderRadius: '4px' }}
+                  >
+                    {selectedData.pack.operatives.map(o => (
+                      <option key={o.operativeId} value={o.operativeId}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="dm-field">
+                  <label>Equipped Weapons</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                    {selectedData.pack.weapons.map(w => {
+                      const isEquipped = selectedData.token.weapons?.includes(w.weaponId) || (!selectedData.token.weapons?.length && (w.kind === 'RANGED' || w.kind === 'MELEE'));
+                      return (
+                        <label key={w.weaponId} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: isEquipped ? 'rgba(255,255,255,0.1)' : 'transparent', padding: '4px 8px', borderRadius: '4px', border: `1px solid ${isEquipped ? themeColor : '#444'}`, cursor: 'pointer' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={isEquipped}
+                            onChange={(e) => {
+                              let newWeapons = selectedData.token.weapons || [];
+                              if (e.target.checked) {
+                                newWeapons = [...newWeapons, w.weaponId];
+                              } else {
+                                newWeapons = newWeapons.filter(id => id !== w.weaponId);
+                              }
+                              setTokenWeapons(selectedData.token.uid, newWeapons);
+                            }}
+                            style={{ accentColor: themeColor }}
+                          />
+                          {w.name}
+                        </label>
                       )
                     })}
                   </div>
