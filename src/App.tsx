@@ -3,6 +3,7 @@ import { useViewStore, type View } from './state/viewStore'
 import { useRosterStore } from './state/rosterStore'
 import { useMatchStore } from './state/matchStore'
 import { useLocaleStore } from './state/localeStore'
+import { useSettingsStore } from './state/settingsStore'
 import { loadPack } from '.'
 import { MatchView } from './ui/MatchView'
 import { SimpleMatchView } from './ui/SimpleMatchView'
@@ -39,6 +40,16 @@ export function App() {
   const setView = useViewStore((s) => s.setView)
   const locale = useLocaleStore((s) => s.locale)
   const setLocale = useLocaleStore((s) => s.setLocale)
+  const theme = useSettingsStore((s) => s.theme)
+  const toggleTheme = useSettingsStore((s) => s.toggleTheme)
+
+  // 主题落到 <html data-theme>：tokens/colors-light.css 以此选择器翻转配色。
+  // dark 不需要该属性也能生效（token 定义在 :root），仍显式写上便于调试与 CSS 断言。
+  useEffect(() => {
+    const el = document.documentElement
+    el.dataset.theme = theme
+    el.style.colorScheme = theme
+  }, [theme])
 
   return (
     <div className="app">
@@ -52,6 +63,14 @@ export function App() {
             style={{ padding: '4px 8px', borderRadius: '4px' }}
           >
             {locale === 'en' ? 'EN | 中文' : '中文 | EN'}
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="theme-switcher"
+            style={{ padding: '4px 8px', borderRadius: '4px', marginLeft: '0.5rem' }}
+            title={theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
+          >
+            {theme === 'dark' ? '浅色' : '深色'}
           </button>
         </div>
         <nav>

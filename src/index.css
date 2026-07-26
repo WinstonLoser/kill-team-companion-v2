@@ -1,33 +1,33 @@
-/* 视觉基调兜底（D-31 后置美学，v1 用 token 兜底，后续 4.3 收口） */
+/*
+ * 语义别名层：把应用沿用的旧变量名映射到设计系统 token 上。
+ *
+ * 这样未改造的旧样式仍然可用，并且会自动跟随 light/dark 切换
+ * （data-theme 由 App.tsx 写在 <html> 上，见 tokens/colors-light.css）。
+ *
+ * 注意这里刻意「不」再定义 --space-* / --radius-* / --shadow-*：
+ * 这三组由设计系统独占，DS 组件自身也在消费它们，若在此覆盖会让组件失真。
+ * 影响仅有 --space-5（1.5rem=24px → DS 的 20px）与更锐利的圆角，均符合新品牌。
+ */
 :root {
-  color-scheme: dark;
-  /* 配色（4-3 AC4：深色中性底 + 双阵营冷暖分色 + 强调色仅注意态） */
-  --bg: #14171c;
-  --panel: #1c2027;
-  --border: #2a2f38;
-  --fg: #e6e9ef;
-  --muted: #9aa3b2;
-  --accent: #4a9eff;
-  --side-a: #c75d3a;      /* 阵营 A 暖 */
-  --side-b: #3a7bc7;      /* 阵营 B 冷 */
-  --ok: #39d98a;
-  --warn: #d97739;
-  --danger: #ff6b6b;
-  /* 4-3 AC2：design token（间距/字号/圆角/阴影） */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --text-xs: 0.65rem;
-  --text-sm: 0.78rem;
-  --text-base: 0.85rem;
-  --text-md: 0.9rem;
-  --text-lg: 1.1rem;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --bg: var(--bg-app);
+  --panel: var(--bg-surface);
+  /* 旧代码引用但从未定义过，导致 .play-view 等处样式落空；此处补齐。 */
+  --bg-panel: var(--bg-surface);
+  --border: var(--border-hairline);
+  --fg: var(--text-primary);
+  --muted: var(--text-muted);
+  --accent: var(--accent-primary);
+  --side-a: var(--kc-rust-3);   /* 阵营 A 暖（锈橙） */
+  --side-b: var(--kc-steel-4);  /* 阵营 B 冷（枪铁） */
+  --ok: var(--status-success);
+  --warn: var(--status-warning);
+  --danger: var(--status-danger);
+  /* 旧字号阶梯（DS 的 --text-* 是另一套命名，两者不冲突） */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 17px;
 }
 
 * { box-sizing: border-box; }
@@ -38,7 +38,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
 }
 
 .app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }

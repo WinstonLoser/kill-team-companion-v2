@@ -1,6 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+// 设计系统 token 必须先于 index.css 载入：index.css 的 :root 只做语义别名，
+// 需要覆盖在 DS token 之上（同时 DS 的 --space-*/--radius-* 保持生效）。
+import '@ds/styles.css'
 import './index.css'
 
 const root = document.getElementById('root')
