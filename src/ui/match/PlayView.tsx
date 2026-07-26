@@ -7,6 +7,7 @@ import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geo
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { UnitPanel } from './UnitPanel'
+import { ActionBar } from './ActionBar'
 import { PipelineDrawer } from './PipelineDrawer'
 import { LogPanel } from './LogPanel'
 import { InterceptorCard } from './InterceptorCard'
@@ -472,7 +473,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       <div className="play-main">
         {/* Left Column: Team A */}
         <div className="play-left-col">
-          <UnitPanel sideFilter="a" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={turn.activePlayer === 'a' ? actionBarProps : undefined} />
+          <UnitPanel sideFilter="a" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={!maplessMode && turn.activePlayer === 'a' ? actionBarProps : undefined} />
         </div>
 
         {/* Center Column: Board, Actions, Logs */}
@@ -488,16 +489,14 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
           </div>
 
           {/* MID AREA: Board (or Hidden for maplessMode) */}
-          <div className="play-board-col" style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column' }}>
+          <div className="play-board-col" style={{ flex: 1, minHeight: maplessMode ? 0 : '400px', display: 'flex', flexDirection: 'column' }}>
             {maplessMode ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-panel)', borderRadius: '8px', border: '1px dashed var(--border)' }}>
-                <p className="muted" style={{ textAlign: 'center' }}>
-                  简化对局模式<br/>
-                  无需地图。<br/>
-                  在两侧面板选择单位，点击命令与行动进行测试。<br/>
-                  攻击时将弹出目标选择窗口。
-                </p>
-              </div>
+              <ActiveOperativeFocus
+                active={activated ? active : null}
+                actionBarProps={actionBarProps}
+                effectiveMoveOf={effectiveMoveOf}
+                effectiveAplOf={effectiveAplOf}
+              />
             ) : (
               <>
                 <div
@@ -568,7 +567,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
         {/* Right Column: Team B */}
         <div className="play-right-col">
-          <UnitPanel sideFilter="b" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={turn.activePlayer === 'b' ? actionBarProps : undefined} />
+          <UnitPanel sideFilter="b" startWoundsOf={(uid) => tokens.find((t) => t.uid === uid)?.maxWounds ?? 1} onPortraitClick={(uid) => setShowDataCardUid(uid)} actionBarProps={!maplessMode && turn.activePlayer === 'b' ? actionBarProps : undefined} />
         </div>
       </div>
 
@@ -733,6 +732,117 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
           }}
         />
       )}
+    </div>
+  )
+}
+
+// 简化对局：中央「激活前空态」。显示行动号召，引导玩家激活特工。
+function SimpleMatchEmptyState() {
+  const tokens = useMatchStore((s) => s.tokens)
+  const turn = useMatchStore((s) => s.turn)
+
+  const activeSide = turn.activePlayer
+  const activePack = activeSide ? packOfFaction(tokens.find((t) => t.side === activeSide)?.factionId ?? '') : null
+  const activeRgb = activePack?.faction.theme?.ui?.primaryRgb || '160, 160, 160'
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px', backgroundColor: 'var(--bg-panel)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+      <div style={{
+        width: '100%', maxWidth: '420px', padding: '20px 24px', borderRadius: '8px', textAlign: 'center',
+        background: `rgba(${activeRgb}, 0.1)`, border: `1px solid rgba(${activeRgb}, 0.5)`,
+      }}>
+        <div style={{ fontSize: '0.78rem', color: '#aaa', marginBottom: '6px' }}>第 {turn.turningPoint} 转折点</div>
+        {activeSide ? (
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: `rgb(${activeRgb})`, textShadow: `0 0 8px rgba(${activeRgb}, 0.4)` }}>
+            轮到 {activeSide.toUpperCase()} 方激活
+          </div>
+        ) : (
+          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ccc' }}>准备激活特工</div>
+        )}
+        <div style={{ fontSize: '0.9rem', color: '#bbb', marginTop: '10px', lineHeight: 1.6 }}>
+          在两侧面板选择一名特工并点击「激活该特工 ▶」，<br/>其数据与行动菜单将显示在此。
+        </div>
+      </div>
+      <div style={{ fontSize: '0.75rem', color: '#777', textAlign: 'center' }}>
+        简化对局模式 · 无需地图 · 攻击时将弹出目标选择窗口
+      </div>
+    </div>
+  )
+}
+
+// 简化对局：中央「激活特工聚焦面板」。替代原地图占位，显示当前激活特工的核心属性 + 行动菜单。
+function ActiveOperativeFocus({
+  active,
+  actionBarProps,
+  effectiveMoveOf,
+  effectiveAplOf,
+}: {
+  active: MatchToken | null
+  actionBarProps: any
+  effectiveMoveOf: (uid: string) => number
+  effectiveAplOf: (uid: string) => number
+}) {
+  if (!active) {
+    return <SimpleMatchEmptyState />
+  }
+
+  const pack = packOfFaction(active.factionId)
+  const uiTheme = pack?.faction.theme?.ui || { primaryRgb: '255, 90, 0' }
+  const themeRgb = uiTheme.primaryRgb
+  const themeColor = `rgb(${themeRgb})`
+  const avatarUrl = getAvatarUrl(active.factionId, active.opId)
+  const save = getMatchOperativeData(active.uid)?.operative.stats.save
+
+  const hpPercent = Math.max(0, Math.min(100, (active.wounds / (active.maxWounds || 1)) * 100))
+  let hpColor = '#4ade80'
+  if (hpPercent <= 30) hpColor = '#ef4444'
+  else if (hpPercent <= 60) hpColor = '#facc15'
+
+  const stats: { label: string; value: string; color?: string }[] = [
+    { label: 'M', value: `${effectiveMoveOf(active.uid)}"` },
+    { label: 'APL', value: `${effectiveAplOf(active.uid)}` },
+    { label: 'SV', value: save != null ? `${save}+` : '—' },
+    { label: 'W', value: `${active.wounds}/${active.maxWounds}`, color: hpColor },
+  ]
+
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px',
+      backgroundColor: 'var(--bg-panel)', borderRadius: '8px',
+      border: `2px solid rgb(${themeRgb})`,
+      boxShadow: `0 0 15px rgba(${themeRgb}, 0.35), inset 0 0 12px rgba(${themeRgb}, 0.12)`,
+    }}>
+      {/* Header: avatar + name + status markers */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '52px', height: '52px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: `1px solid rgba(${themeRgb}, 0.6)`, background: 'rgba(0,0,0,0.3)' }}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt={active.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem' }}>👤</div>}
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h3 style={{ margin: 0, color: themeColor, textShadow: `0 0 8px rgba(${themeRgb}, 0.5)`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.name}</h3>
+          {active.markers && active.markers.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+              {active.markers.map((m) => (
+                <span key={m} style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '3px', background: 'rgba(255,255,255,0.1)', color: '#ccc' }}>{m}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stat line: M / APL / SV / W */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {stats.map((s) => (
+          <div key={s.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 4px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', border: `1px solid rgba(${themeRgb}, 0.25)` }}>
+            <span style={{ fontWeight: 'bold', fontSize: '1.25rem', color: s.color || '#fff', lineHeight: 1.1 }}>{s.value}</span>
+            <span style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '2px', letterSpacing: '0.05em' }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Action menu */}
+      <ActionBar {...actionBarProps} themeColor={themeColor} />
     </div>
   )
 }
