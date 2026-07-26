@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+--font-display:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif;
+--font-label:'Barlow Condensed','Big Shoulders Display',sans-serif;
+--font-body:'Barlow',-apple-system,'Segoe UI',sans-serif;
+--font-mono:'JetBrains Mono',ui-monospace,monospace;
+
+--text-display-xl:clamp(48px,7vw,96px);
+--text-display-lg:40px;
+--text-display-md:28px;
+--text-title:22px;
+--text-subtitle:17px;
+--text-body:15px;
+--text-body-sm:13px;
+--text-caption:11px;
+
+--lh-tight:1.02; /* @kind other */
+--lh-heading:1.1; /* @kind other */
+--lh-body:1.5; /* @kind other */
+--lh-label:1; /* @kind other */
+
+--ls-display:0.01em; /* @kind other */
+--ls-label:0.09em; /* @kind other */
+--ls-eyebrow:0.16em; /* @kind other */
+
+--fw-body:400; /* @kind other */
+--fw-medium:500; /* @kind other */
+--fw-semibold:600; /* @kind other */
+--fw-display:800; /* @kind other */
+--fw-display-black:900; /* @kind other */
+}

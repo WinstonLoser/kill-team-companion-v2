@@ -1,0 +1,37 @@
+:root{
+--shadow-sm:none;
+--shadow-md:none;
+--shadow-lg:none;
+--shadow-inset:none;
+--shadow-focus:none;
+
+--ease-out:cubic-bezier(.2,.7,.3,1); /* @kind other */
+--ease-in-out:cubic-bezier(.4,0,.2,1); /* @kind other */
+--dur-fast:110ms; /* @kind other */
+--dur-base:180ms; /* @kind other */
+--dur-slow:320ms; /* @kind other */
+
+--gradient-panel:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.15)); /* @kind other */
+--gradient-scanline:repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 3px); /* @kind other */
+--gradient-vignette:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.55) 100%); /* @kind other */
+--gradient-hazard:repeating-linear-gradient(135deg,var(--kc-amber-2) 0 10px,var(--kc-black-1) 10px 20px); /* @kind other */
+
+--texture-grain:url(../assets/textures/grain.png); /* @kind other */
+--texture-metal:url(../assets/textures/brushed-metal.png); /* @kind other */
+--texture-paper:url(../assets/textures/paper-grain.png); /* @kind other */
+}
+
+.kc-textured{background-color:var(--bg-app);background-image:var(--texture-grain);background-size:220px;background-repeat:repeat}
+[data-theme="light"] .kc-textured{background-image:var(--texture-paper)}
+
+.kc-dossier{border:2px dashed var(--border-strong);position:relative;background-color:var(--bg-surface)}
+.kc-dossier-corner{position:absolute;width:14px;height:14px;color:var(--border-strong);font-family:var(--font-mono);font-size:14px;line-height:14px;text-align:center}
+.kc-dossier-corner::before{content:'+'}
+.kc-dossier-corner.tl{top:-8px;left:-8px}
+.kc-dossier-corner.tr{top:-8px;right:-8px}
+.kc-dossier-corner.bl{bottom:-8px;left:-8px}
+.kc-dossier-corner.br{bottom:-8px;right:-8px}
+
+body.kc-texture-grain{position:relative}
+.kc-clip-corner{clip-path:polygon(var(--chamfer) 0,100% 0,100% calc(100% - var(--chamfer)),calc(100% - var(--chamfer)) 100%,0 100%,0 var(--chamfer))}
+.kc-clip-corner-tr{clip-path:polygon(0 0,calc(100% - var(--chamfer)) 0,100% var(--chamfer),100% 100%,0 100%)}
