@@ -1,7 +1,7 @@
 # UI Overhaul on the Kill Team Companion Design System
 
 **Branch:** `feat/ui-overhaul-ds` (branched from `dev`)
-**Status:** Phases 0–2 complete and committed. Phase 3 is next.
+**Status:** Phases 0–4 complete and committed. Phase 5a (roster restyle) is next.
 **Last updated:** 2026-07-26
 
 This is a resumable handoff document. If you are picking this up in a fresh
@@ -44,7 +44,8 @@ light/dark toggle.
 ## Current state
 
 ```
-264ae7e feat(theme): light/dark toggle on design-system tokens   <- HEAD
+(new)   refactor(nav): collapse to roster + battle, unroute map/lab screens  <- HEAD
+264ae7e feat(theme): light/dark toggle on design-system tokens
 8a5b40d chore(ds): import Kill Team Companion design system
 2d93432 remove extra files                                       <- dev
 ```
@@ -89,6 +90,41 @@ Wiring:
 
 Browser-verified: both themes render, `--bg-chrome` stays theme-invariant,
 choice survives reload, console clean.
+
+---
+
+### Phase 3 — Navigation collapsed ✅
+
+- `viewStore` → `type View = 'roster' | 'battle'`; `tests/sample.test.ts` updated
+  to match.
+- `App.tsx` rebuilt on DS `TopBar` (eyebrow flips `ROSTER`/`BATTLE`). Actions:
+  locale `Button variant="ghost"`, theme `IconButton` (☀/☾), reset
+  `Button variant="ghost"`. `VIEWS`, `TESTLAB_PACKS`, and the lab/match/rules
+  imports are gone; `AnimationEngine` and `PortraitLockHint` stay.
+- `MatchView.tsx` carries a header comment marking it unrouted.
+- Bundle drops to 183 modules; `npx vite build` is clean apart from the three
+  known texture warnings.
+
+### Phase 4 — `BattleView` ✅
+
+- `git mv src/ui/SimpleMatchView.tsx src/ui/BattleView.tsx`.
+- `buildTokens` extracted to `src/ui/buildTokens.ts` as
+  `buildTokens({ placed, defaultIds })`; both `MatchView` and `BattleView`
+  now call it (the two side loops are merged into one).
+- **Init guard moved off component state.** Rather than adding a new store
+  field, the guard reads `matchStore.maplessMode` — only `BattleView` sets it
+  and only `matchStore.reset()` clears it, so it is already exactly
+  "has this battle been initialised". No `matchStore` change was needed.
+- `RosterView.enterMatch()` → `setView('battle')`.
+
+Fixed in passing: `utils/avatars.ts` now honours `import.meta.env.BASE_URL`;
+`UnitPortrait.tsx:52` used `'font-size'` in a style object (React console
+error) — now `fontSize`.
+
+**Open UX gap introduced here:** with the nav bar gone there is no path from
+battle back to roster except ⟳ 重置 (which wipes both). If a back affordance is
+wanted, Phase 5b is the place — the store-level init guard means returning to
+roster and back into battle is now safe.
 
 ---
 
@@ -137,6 +173,11 @@ npm test           ->  58 failed | 207 passed  (14 of 32 files failing)
 
 **The gate is: tests must not increase, tsc must strictly decrease.**
 
+After Phases 3–4: **256 errors**, **58 failed | 207 passed** — gate met. Note
+the per-file table below is optimistic: unrouted files stay on disk, so `tsc`
+still checks `DeployPhase.tsx` et al. Those 29 errors are not "cleared by
+Phase 3" after all; they go away only if the files are deleted.
+
 Type errors by file (the overhaul clears most of these incidentally):
 
 | file | errors | cleared by |
@@ -172,6 +213,8 @@ it's gone, regenerate with
 ---
 
 ## Remaining work
+
+*(Phases 3 and 4 below are done — kept for reference on what was decided.)*
 
 ### Phase 3 — Collapse navigation to two screens
 
@@ -322,10 +365,8 @@ directly.**
    reset the match (the Phase-4 init-guard fix).
 
 ### Known pre-existing bug worth fixing in passing
-`src/utils/avatars.ts:2` returns a hardcoded `/assets/...` path and ignores
-`import.meta.env.BASE_URL`, so operative portraits 404 on the GitHub Pages
-subpath (`vite.config.ts` sets `base: '/kill-team-companion-v2/'`). One-line
-fix; otherwise the new roster cards will look broken in production.
+~~`src/utils/avatars.ts:2` ignores `import.meta.env.BASE_URL`.~~ Fixed in the
+Phase 3/4 commit.
 
 ---
 
@@ -333,6 +374,6 @@ fix; otherwise the new roster cards will look broken in production.
 
 1. ✅ `chore(ds): import Kill Team Companion design system`
 2. ✅ `feat(theme): light/dark toggle on design-system tokens`
-3. ⬜ `refactor(nav): collapse to roster + battle, unroute map/lab screens`
+3. ✅ `refactor(nav): collapse to roster + battle, unroute map/lab screens`
 4. ⬜ `style(roster): rebuild roster on design system`
 5. ⬜ `style(battle): rebuild battle chrome on design system`

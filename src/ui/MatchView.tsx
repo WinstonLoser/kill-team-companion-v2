@@ -1,7 +1,13 @@
+/**
+ * 有地图的完整对局流程（地图选择 → 地形编辑 → 部署 → 对局）。
+ *
+ * 当前**未挂路由**：应用已收敛为「建队 → 对局」两屏，入口只保留 BattleView。
+ * 文件保留在此以便日后恢复地图玩法，不是死代码。
+ */
 import { useState } from 'react'
 import { loadPack, type FactionPack } from '../'
-import { useMatchStore, packOfOp, packOfFaction, type MatchToken } from '../state/matchStore'
-import { useRosterStore } from '../state/rosterStore'
+import { useMatchStore } from '../state/matchStore'
+import { buildTokens } from './buildTokens'
 import type { Point, TerrainFeature } from '../geometry'
 import { loadMapPack, type MapPack, type ObjectiveMarker } from '../data/maps'
 import { MapSelect } from './match/MapSelect'
@@ -21,54 +27,6 @@ const MAPS: MapPack[] = [openMap, ruinMap, corridorMap].map((m) => loadMapPack(m
 
 const DEFAULT_IDS = [pack.operatives[0]!.operativeId, (pack.operatives[1] ?? pack.operatives[0]!).operativeId]
 
-function buildTokens(): MatchToken[] {
-  const rosterA = useRosterStore.getState().rosterA
-  const rosterB = useRosterStore.getState().rosterB
-  const pickedA = rosterA.operativeIds
-  const pickedB = rosterB.operativeIds
-  
-  const idsA = pickedA.length ? pickedA : DEFAULT_IDS
-  const idsB = pickedB.length ? pickedB : idsA
-
-  const out: MatchToken[] = []
-  
-  const opCountsA = new Map<string, number>()
-  idsA.forEach((opId, i) => {
-    const packForOp = rosterA.factionId ? packOfFaction(rosterA.factionId) : packOfOp(opId)
-    const op = packForOp.operatives.find((o) => o.operativeId === opId) ?? packForOp.operatives[0]!
-    const baseRadius = op.base.diameterMm / 2 / 25.4
-    const count = opCountsA.get(opId) ?? 0
-    opCountsA.set(opId, count + 1)
-    const key = `${opId}#${count}`
-    const weapons = rosterA.loadout[key] || (op.loadouts[0]?.options[0] ?? [])
-    
-    out.push({
-      uid: `a${i + 1}`, side: 'a', factionId: packForOp.faction.id, opId, name: `${op.name}-A${i + 1}`,
-      pos: { x: -1, y: -1 }, facing: 0, baseRadius, wounds: op.stats.wounds, maxWounds: op.stats.wounds,
-      markers: [], alive: true, placed: false, order: 'CONCEAL', weapons
-    })
-  })
-
-  const opCountsB = new Map<string, number>()
-  idsB.forEach((opId, i) => {
-    const packForOp = rosterB.factionId ? packOfFaction(rosterB.factionId) : packOfOp(opId)
-    const op = packForOp.operatives.find((o) => o.operativeId === opId) ?? packForOp.operatives[0]!
-    const baseRadius = op.base.diameterMm / 2 / 25.4
-    const count = opCountsB.get(opId) ?? 0
-    opCountsB.set(opId, count + 1)
-    const key = `${opId}#${count}`
-    const weapons = rosterB.loadout[key] || (op.loadouts[0]?.options[0] ?? [])
-    
-    out.push({
-      uid: `b${i + 1}`, side: 'b', factionId: packForOp.faction.id, opId, name: `${op.name}-B${i + 1}`,
-      pos: { x: -1, y: -1 }, facing: 0, baseRadius, wounds: op.stats.wounds, maxWounds: op.stats.wounds,
-      markers: [], alive: true, placed: false, order: 'CONCEAL', weapons
-    })
-  })
-
-  return out
-}
-
 export function MatchView() {
   const phase = useMatchStore((s) => s.phase)
   const mapPack = useMatchStore((s) => s.mapPack)
@@ -83,7 +41,7 @@ export function MatchView() {
 
   function onLoadMap(m: MapPack) {
     loadMap(m)
-    initTokens(buildTokens())
+    initTokens(buildTokens({ placed: false, defaultIds: DEFAULT_IDS }))
   }
   function onBlank() {
     startBlank(blankBounds)
@@ -92,7 +50,7 @@ export function MatchView() {
   function onTerrainDone(draft: { terrain: TerrainFeature[]; objectives: ObjectiveMarker[]; dropA: Point[]; dropB: Point[] }) {
     setBlankEditing(false)
     commitBlankMap(draft)
-    initTokens(buildTokens())
+    initTokens(buildTokens({ placed: false, defaultIds: DEFAULT_IDS }))
   }
   function beginPlay() {
     useMatchStore.getState().enterStrategy()

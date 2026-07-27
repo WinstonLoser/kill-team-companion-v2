@@ -49,7 +49,7 @@ export function UnitPortrait({
     '--portrait-theme': themeColor,
     '--portrait-theme-rgb': themeColorRgb,
     '--portrait-hp': hpColor,
-    'font-size': `${16 * scale}px`,
+    fontSize: `${16 * scale}px`,
     ...(selected ? {
       boxShadow: `0 0 15px ${themeColor}, inset 0 0 10px ${themeColor}`,
       borderColor: themeColor

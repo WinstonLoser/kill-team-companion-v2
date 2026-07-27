@@ -11,13 +11,14 @@ describe('viewStore (Story 1.1 — view switching)', () => {
     expect(useViewStore.getState().currentView).toBe('roster')
   })
 
-  it('setView 切换到 match', () => {
-    useViewStore.getState().setView('match')
-    expect(useViewStore.getState().currentView).toBe('match')
+  it('setView 切换到 battle', () => {
+    useViewStore.getState().setView('battle')
+    expect(useViewStore.getState().currentView).toBe('battle')
   })
 
-  it('setView 切换到 rules', () => {
-    useViewStore.getState().setView('rules')
-    expect(useViewStore.getState().currentView).toBe('rules')
+  it('setView 切回 roster', () => {
+    useViewStore.getState().setView('battle')
+    useViewStore.getState().setView('roster')
+    expect(useViewStore.getState().currentView).toBe('roster')
   })
 })

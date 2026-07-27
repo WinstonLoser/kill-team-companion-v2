@@ -62,10 +62,10 @@ export function RosterView() {
   const bothGreen = resultA.legal && resultB.legal
   const unresolved = (resultA.legal ? 0 : 1) + (resultB.legal ? 0 : 1)
 
-  // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切 setup-map-deploy（当前=match 视图）
+  // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切对局视图（无地图，直接进战略阶段）
   function enterMatch() {
     if (!bothGreen) return
-    setView('match')
+    setView('battle')
   }
 
   const sideLabel = (side: Side) => `${side.toUpperCase()} 方`
