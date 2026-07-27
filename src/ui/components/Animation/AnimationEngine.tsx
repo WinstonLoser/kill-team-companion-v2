@@ -50,7 +50,7 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
   }, [anim.id])
 
   const typeClass = `anim-type-${anim.type.toLowerCase()}`
-  const themeColor = anim.themeColorRgb ? `rgb(${anim.themeColorRgb})` : '#555'
+  const themeColor = anim.themeColorRgb ? `rgb(${anim.themeColorRgb})` : 'var(--border-default)'
 
   return (
     <div className={`anim-node ${phase} ${typeClass}`}>
@@ -58,7 +58,7 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
         className="anim-portrait"
         style={{ 
           backgroundImage: anim.avatarUrl ? `url(${anim.avatarUrl})` : 'none',
-          borderColor: anim.type === 'DAMAGE' || anim.type === 'DEATH' ? '#ff3333' : themeColor,
+          borderColor: anim.type === 'DAMAGE' || anim.type === 'DEATH' ? 'var(--status-danger-hover)' : themeColor,
           boxShadow: `0 0 40px ${anim.type === 'DAMAGE' || anim.type === 'DEATH' ? 'rgba(255, 50, 50, 0.6)' : themeColor.replace('rgb', 'rgba').replace(')', ', 0.6)')}`
         }}
       >
@@ -72,7 +72,7 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
       {anim.text && anim.type !== 'DEATH' && (
         <div 
           className="anim-text"
-          style={{ color: anim.type === 'HEAL' ? '#4ade80' : (anim.type === 'DAMAGE' ? '#ff5c5c' : '#fff') }}
+          style={{ color: anim.type === 'HEAL' ? 'var(--status-success-hover)' : (anim.type === 'DAMAGE' ? 'var(--kc-blood-3)' : 'var(--text-primary)') }}
         >
           {anim.text}
         </div>
@@ -94,11 +94,11 @@ function HealthBar({ max, prev, current }: { max: number, prev: number, current:
   const wPct = Math.max(0, Math.min(100, (w / max) * 100))
   
   return (
-    <div style={{ width: '200px', height: '16px', background: '#333', border: '2px solid #555', borderRadius: '8px', marginTop: '24px', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ width: '200px', height: '16px', background: 'var(--bg-surface-raised)', border: '2px solid var(--border-default)', borderRadius: 'var(--radius-lg)', marginTop: '24px', overflow: 'hidden', position: 'relative' }}>
        <div style={{ 
          width: `${wPct}%`, 
          height: '100%', 
-         background: current < prev ? '#ff3333' : '#4ade80', 
+         background: current < prev ? 'var(--status-danger-hover)' : 'var(--status-success-hover)', 
          transition: 'width 0.5s ease-out' 
        }} />
     </div>

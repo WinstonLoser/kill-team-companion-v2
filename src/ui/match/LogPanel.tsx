@@ -16,17 +16,17 @@ export function LogPanel({ onReplay, onRollbackToHere }: { onReplay: () => void;
 
   return (
     <div className="log-panel">
-      <h4>历史</h4>
+      <h4 className="ds-eyebrow">历史</h4>
       <div className="log-filters">
         {FILTERS.map((f) => (
           <button key={f} className={`chip ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>{f === 'all' ? '全部' : f}</button>
         ))}
       </div>
       <ul className="log-list">
-        {shown.length === 0 && <li className="muted">（无）</li>}
+        {shown.length === 0 && <li className="ds-empty">（无）</li>}
         {shown.map((e) => (
           <li key={e.id} className={`log-entry ${e.kind}`}>
-            <span className={`log-kind ${e.kind}`}>{e.kind}</span>
+            <span className={`ds-badge log-kind ${e.kind}`}>{e.kind}</span>
             <span className="log-text">{e.text}</span>
             {(e.kind === 'shoot' || e.kind === 'melee' || e.kind === 'score') && (
               <>

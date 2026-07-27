@@ -126,31 +126,31 @@ export function MeleeAllocationPanel({
                  atkCurrentWounds <= 0 || defCurrentWounds <= 0
 
   return (
-    <div style={{ flex: 1, width: '100%', background: '#1e1e1e', padding: '24px', borderRadius: '12px', border: '1px solid #444', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-      <h2 style={{ textAlign: 'center', color: '#eee', marginBottom: '16px' }}>Melee Allocation</h2>
+    <div style={{ flex: 1, width: '100%', background: 'var(--bg-surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-hairline)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <h2 style={{ textAlign: 'center', color: 'var(--text-primary)', marginBottom: '16px' }}>Melee Allocation</h2>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '48px', flex: 1 }}>
         {/* Attacker Column */}
-        <div style={{ flex: 1, border: '1px solid #333', padding: '16px', borderRadius: '8px', background: 'rgba(255,90,0,0.1)', opacity: activeTurn === 'ATTACKER' ? 1 : 0.3, transition: 'opacity 0.3s ease' }}>
-          <div style={{ borderBottom: '1px solid #555', paddingBottom: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, border: '1px solid var(--bg-surface-raised)', padding: '16px', borderRadius: 'var(--radius-lg)', background: 'var(--accent-primary-muted)', opacity: activeTurn === 'ATTACKER' ? 1 : 0.3, transition: 'opacity 0.3s ease' }}>
+          <div style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             {attackerPortrait ? (
               <UnitPortrait {...attackerPortrait} currentWounds={atkCurrentWounds} scale={1.1} />
             ) : (
-              <h3 style={{ fontSize: '1.5rem', color: '#ffaa77', margin: 0 }}>{attackerName} (Attacker)</h3>
+              <h3 style={{ fontSize: 'var(--text-display-md)', color: 'var(--accent-primary-hover)', margin: 0 }}>{attackerName} (Attacker)</h3>
             )}
-            {activeTurn === 'ATTACKER' && <span style={{ fontSize: '1rem', background: '#ff5a00', color: '#000', padding: '4px 12px', borderRadius: '12px', fontWeight: 'bold' }}>YOUR TURN</span>}
+            {activeTurn === 'ATTACKER' && <span style={{ fontSize: 'var(--text-subtitle)', background: 'var(--accent-primary)', color: 'var(--text-on-accent)', padding: '4px 12px', borderRadius: 'var(--radius-lg)', fontWeight: 'bold' }}>YOUR TURN</span>}
           </div>
           
           <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '4px' }}>Available Dice:</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)', marginBottom: '4px' }}>Available Dice:</p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ background: '#333', padding: '12px', borderRadius: '8px', textAlign: 'center', flex: 1 }}>
-                <div style={{ color: '#aaa', fontSize: '0.9rem' }}>NORMAL</div>
-                <div style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>{atkRemaining.normal}</div>
+              <div style={{ background: 'var(--bg-surface-raised)', padding: '12px', borderRadius: 'var(--radius-lg)', textAlign: 'center', flex: 1 }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)' }}>NORMAL</div>
+                <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-display-lg)', fontWeight: 'bold' }}>{atkRemaining.normal}</div>
               </div>
-              <div style={{ background: '#333', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #ff9900', flex: 1 }}>
-                <div style={{ color: '#ff9900', fontSize: '0.9rem' }}>CRITICAL</div>
-                <div style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>{atkRemaining.critical}</div>
+              <div style={{ background: 'var(--bg-surface-raised)', padding: '12px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--status-warning-hover)', flex: 1 }}>
+                <div style={{ color: 'var(--status-warning-hover)', fontSize: 'var(--text-body)' }}>CRITICAL</div>
+                <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-display-lg)', fontWeight: 'bold' }}>{atkRemaining.critical}</div>
               </div>
             </div>
           </div>
@@ -159,35 +159,35 @@ export function MeleeAllocationPanel({
             <button 
               disabled={activeTurn !== 'ATTACKER' || atkRemaining.normal <= 0}
               onClick={() => handleAction('ATTACKER', 'STRIKE', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#444', color: '#fff', border: 'none', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--border-hairline)', color: 'var(--text-primary)', border: 'none', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
             >
               Strike (Normal)
             </button>
             <button 
               disabled={activeTurn !== 'ATTACKER' || atkRemaining.critical <= 0}
               onClick={() => handleAction('ATTACKER', 'STRIKE', 'CRITICAL')}
-              style={{ fontSize: '1.2rem', background: '#5a3b11', color: '#ff9900', border: '1px solid #ff9900', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'ATTACKER' && atkRemaining.critical > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-amber-1)', color: 'var(--status-warning-hover)', border: '1px solid var(--status-warning-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'ATTACKER' && atkRemaining.critical > 0) ? 'pointer' : 'not-allowed' }}
             >
               Strike (Critical)
             </button>
             <button 
               disabled={activeTurn !== 'ATTACKER' || atkRemaining.normal <= 0 || defRemaining.normal <= 0}
               onClick={() => handleAction('ATTACKER', 'PARRY', 'NORMAL')}
-              style={{ background: '#2c3e50', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0 && defRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ background: 'var(--bg-surface-raised)', color: 'var(--text-primary)', border: 'none', padding: '8px', borderRadius: 'var(--radius-md)', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0 && defRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
             >
               Parry Normal (uses 1 Normal)
             </button>
             <button 
               disabled={activeTurn !== 'ATTACKER' || atkRemaining.normal < 2 || defRemaining.critical < 1}
               onClick={() => handleAction('ATTACKER', 'PARRY_CRIT_WITH_2_NORMALS', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#2d4a36', color: '#39d98a', border: '1px dashed #39d98a', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal >= 2 && defRemaining.critical >= 1) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-olive-1)', color: 'var(--status-success-hover)', border: '1px dashed var(--status-success-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal >= 2 && defRemaining.critical >= 1) ? 'pointer' : 'not-allowed' }}
             >
               Parry 1 Crit with 2 Normals
             </button>
             <button 
               disabled={activeTurn !== 'ATTACKER' || atkRemaining.normal <= 0 || (defRemaining.normal <= 0 && defRemaining.critical <= 0)}
               onClick={() => handleAction('ATTACKER', 'PARRY', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#2d4a36', color: '#39d98a', border: '1px solid #39d98a', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0 && (defRemaining.normal > 0 || defRemaining.critical > 0)) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-olive-1)', color: 'var(--status-success-hover)', border: '1px solid var(--status-success-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'ATTACKER' && atkRemaining.normal > 0 && (defRemaining.normal > 0 || defRemaining.critical > 0)) ? 'pointer' : 'not-allowed' }}
             >
               Parry with Normal
             </button>
@@ -195,26 +195,26 @@ export function MeleeAllocationPanel({
         </div>
 
         {/* Defender Column */}
-        <div style={{ flex: 1, border: '1px solid #333', padding: '16px', borderRadius: '8px', background: 'rgba(92,255,140,0.1)', opacity: activeTurn === 'DEFENDER' ? 1 : 0.3, transition: 'opacity 0.3s ease' }}>
-          <div style={{ borderBottom: '1px solid #555', paddingBottom: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, border: '1px solid var(--bg-surface-raised)', padding: '16px', borderRadius: 'var(--radius-lg)', background: 'var(--tint-success)', opacity: activeTurn === 'DEFENDER' ? 1 : 0.3, transition: 'opacity 0.3s ease' }}>
+          <div style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             {defenderPortrait ? (
               <UnitPortrait {...defenderPortrait} currentWounds={defCurrentWounds} scale={1.1} />
             ) : (
-              <h3 style={{ fontSize: '1.5rem', color: '#5cff8c', margin: 0 }}>{defenderName} (Defender)</h3>
+              <h3 style={{ fontSize: 'var(--text-display-md)', color: 'var(--status-success-hover)', margin: 0 }}>{defenderName} (Defender)</h3>
             )}
-            {activeTurn === 'DEFENDER' && <span style={{ fontSize: '1rem', background: '#39d98a', color: '#000', padding: '4px 12px', borderRadius: '12px', fontWeight: 'bold' }}>YOUR TURN</span>}
+            {activeTurn === 'DEFENDER' && <span style={{ fontSize: 'var(--text-subtitle)', background: 'var(--status-success-hover)', color: 'var(--text-on-accent)', padding: '4px 12px', borderRadius: 'var(--radius-lg)', fontWeight: 'bold' }}>YOUR TURN</span>}
           </div>
           
           <div style={{ marginBottom: '16px' }}>
-            <p style={{ color: '#aaa', fontSize: '0.8rem', marginBottom: '4px' }}>Available Dice:</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)', marginBottom: '4px' }}>Available Dice:</p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ background: '#333', padding: '12px', borderRadius: '8px', textAlign: 'center', flex: 1 }}>
-                <div style={{ color: '#aaa', fontSize: '0.9rem' }}>NORMAL</div>
-                <div style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>{defRemaining.normal}</div>
+              <div style={{ background: 'var(--bg-surface-raised)', padding: '12px', borderRadius: 'var(--radius-lg)', textAlign: 'center', flex: 1 }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)' }}>NORMAL</div>
+                <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-display-lg)', fontWeight: 'bold' }}>{defRemaining.normal}</div>
               </div>
-              <div style={{ background: '#333', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #ff9900', flex: 1 }}>
-                <div style={{ color: '#ff9900', fontSize: '0.9rem' }}>CRITICAL</div>
-                <div style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>{defRemaining.critical}</div>
+              <div style={{ background: 'var(--bg-surface-raised)', padding: '12px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--status-warning-hover)', flex: 1 }}>
+                <div style={{ color: 'var(--status-warning-hover)', fontSize: 'var(--text-body)' }}>CRITICAL</div>
+                <div style={{ color: 'var(--text-primary)', fontSize: 'var(--text-display-lg)', fontWeight: 'bold' }}>{defRemaining.critical}</div>
               </div>
             </div>
           </div>
@@ -223,35 +223,35 @@ export function MeleeAllocationPanel({
             <button 
               disabled={activeTurn !== 'DEFENDER' || defRemaining.normal <= 0}
               onClick={() => handleAction('DEFENDER', 'STRIKE', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#444', color: '#fff', border: 'none', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--border-hairline)', color: 'var(--text-primary)', border: 'none', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
             >
               Strike (Normal)
             </button>
             <button 
               disabled={activeTurn !== 'DEFENDER' || defRemaining.critical <= 0}
               onClick={() => handleAction('DEFENDER', 'STRIKE', 'CRITICAL')}
-              style={{ fontSize: '1.2rem', background: '#5a3b11', color: '#ff9900', border: '1px solid #ff9900', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'DEFENDER' && defRemaining.critical > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-amber-1)', color: 'var(--status-warning-hover)', border: '1px solid var(--status-warning-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'DEFENDER' && defRemaining.critical > 0) ? 'pointer' : 'not-allowed' }}
             >
               Strike (Critical)
             </button>
             <button 
               disabled={activeTurn !== 'DEFENDER' || defRemaining.normal <= 0 || atkRemaining.normal <= 0}
               onClick={() => handleAction('DEFENDER', 'PARRY', 'NORMAL')}
-              style={{ background: '#2c3e50', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0 && atkRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
+              style={{ background: 'var(--bg-surface-raised)', color: 'var(--text-primary)', border: 'none', padding: '8px', borderRadius: 'var(--radius-md)', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0 && atkRemaining.normal > 0) ? 'pointer' : 'not-allowed' }}
             >
               Parry Normal (uses 1 Normal)
             </button>
             <button 
               disabled={activeTurn !== 'DEFENDER' || defRemaining.normal < 2 || atkRemaining.critical < 1}
               onClick={() => handleAction('DEFENDER', 'PARRY_CRIT_WITH_2_NORMALS', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#2d4a36', color: '#39d98a', border: '1px dashed #39d98a', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal >= 2 && atkRemaining.critical >= 1) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-olive-1)', color: 'var(--status-success-hover)', border: '1px dashed var(--status-success-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal >= 2 && atkRemaining.critical >= 1) ? 'pointer' : 'not-allowed' }}
             >
               Parry 1 Crit with 2 Normals
             </button>
             <button 
               disabled={activeTurn !== 'DEFENDER' || defRemaining.normal <= 0 || (atkRemaining.normal <= 0 && atkRemaining.critical <= 0)}
               onClick={() => handleAction('DEFENDER', 'PARRY', 'NORMAL')}
-              style={{ fontSize: '1.2rem', background: '#2d4a36', color: '#39d98a', border: '1px solid #39d98a', padding: '16px', borderRadius: '8px', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0 && (atkRemaining.normal > 0 || atkRemaining.critical > 0)) ? 'pointer' : 'not-allowed' }}
+              style={{ fontSize: 'var(--text-title)', background: 'var(--kc-olive-1)', color: 'var(--status-success-hover)', border: '1px solid var(--status-success-hover)', padding: '16px', borderRadius: 'var(--radius-lg)', cursor: (activeTurn === 'DEFENDER' && defRemaining.normal > 0 && (atkRemaining.normal > 0 || atkRemaining.critical > 0)) ? 'pointer' : 'not-allowed' }}
             >
               Parry with Normal
             </button>
@@ -259,19 +259,19 @@ export function MeleeAllocationPanel({
         </div>
       </div>
 
-      <div style={{ marginTop: '16px', background: '#000', padding: '12px', borderRadius: '8px', border: '1px solid #333', maxHeight: '120px', overflowY: 'auto' }}>
-        <h4 style={{ color: '#888', marginBottom: '4px', fontSize: '0.8rem', textTransform: 'uppercase' }}>Combat Log</h4>
+      <div style={{ marginTop: '16px', background: 'var(--text-on-accent)', padding: '12px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--bg-surface-raised)', maxHeight: '120px', overflowY: 'auto' }}>
+        <h4 style={{ color: 'var(--text-muted)', marginBottom: '4px', fontSize: 'var(--text-body-sm)', textTransform: 'uppercase' }}>Combat Log</h4>
         {log.map((l, i) => (
-          <div key={i} style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '4px' }}>{l}</div>
+          <div key={i} style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)', marginBottom: '4px' }}>{l}</div>
         ))}
-        {log.length === 0 && <div style={{ color: '#555', fontSize: '0.9rem', fontStyle: 'italic' }}>Waiting for actions...</div>}
+        {log.length === 0 && <div style={{ color: 'var(--border-default)', fontSize: 'var(--text-body)', fontStyle: 'italic' }}>Waiting for actions...</div>}
       </div>
 
       {isDone && (
-        <div style={{ marginTop: '16px', textAlign: 'center', position: 'sticky', bottom: 0, paddingBottom: '8px', background: '#1e1e1e' }}>
+        <div style={{ marginTop: '16px', textAlign: 'center', position: 'sticky', bottom: 0, paddingBottom: '8px', background: 'var(--bg-surface)' }}>
           <button 
             onClick={() => onConfirm(atkStrike, defStrike)}
-            style={{ padding: '16px 48px', fontSize: '1.2rem', fontWeight: 'bold', background: '#4ade80', color: '#000', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(74, 222, 128, 0.4)' }}
+            className="ds-btn ds-btn--lg" style={{ background: 'var(--status-success)', borderColor: 'var(--status-success)' }}
           >
             CONFIRM ALLOCATION
           </button>

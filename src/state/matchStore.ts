@@ -195,7 +195,7 @@ function overrideKey(aUid: string, tUid: string, kind: string): string {
   return `${aUid}>${tUid}>${kind}`
 }
 
-interface MatchState {
+export interface MatchState {
   phase: Phase
   mapPack: MapPack | null
   customTerrain: TerrainFeature[] // 自定义板会话内（D-20）

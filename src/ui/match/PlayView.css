@@ -1,0 +1,179 @@
+/*
+ * PlayView 的局部样式。原实现是满屏内联 style={{}} + 硬编码色值
+ * （#1e1e1e / #111 / #ff4444 / #aaa / #666 / rgba(0,0,0,0.7) 等），
+ * 亮色主题下整片失效。此处全部改走 DS token。
+ *
+ * 弹窗一律复用 ds.css 的 .ds-scrim / .ds-modal 系列，只在这里定尺寸。
+ */
+
+/* -------------------------------------------------------------- 弹窗 --- */
+
+.pv-scrim-log { z-index: 9000; }
+.pv-scrim-combat { z-index: 9999; }
+.pv-scrim-datacard { z-index: 10000; }
+
+.pv-modal-log { max-width: 600px; width: 90%; max-height: 80vh; }
+
+/* 战斗结算器自带完整布局，弹窗只做外框 */
+.pv-modal-combat {
+  position: relative;
+  width: 95vw; max-width: 1000px;
+  height: 95vh; max-height: 900px;
+  padding: 0;
+}
+.pv-modal-combat .ds-modal-body { padding: 0; display: flex; flex-direction: column; flex: 1; }
+
+/* 数据卡弹窗：卡片本身就是 dossier，外层不再加边框 */
+.pv-datacard-shell {
+  width: 95vw; max-width: 900px;
+  height: 95vh; max-height: 900px;
+  display: flex; flex-direction: column;
+}
+.pv-datacard-inner { height: 100%; }
+
+/* ------------------------------------------------------ DM 浮动按钮 --- */
+
+/*
+ * 原为 #ff4444 圆形 + 投影。DS 无阴影、圆角只到 6px，
+ * 故改成锈色斜切角方钮。
+ */
+.dm-floating-btn {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0;
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  border: 1px solid var(--accent-primary);
+  border-radius: 0;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  font-size: var(--text-title);
+  z-index: 9000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+.dm-floating-btn:hover { background: var(--accent-primary-hover); border-color: var(--accent-primary-hover); }
+.dm-floating-btn:active { transform: scale(0.97); }
+
+/* ---------------------------------------------------------- 空态 --- */
+
+.pv-empty {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+/* --side-theme 由组件按当前主动方阵营注入 */
+.pv-empty-card {
+  width: 100%; max-width: 420px;
+  padding: var(--space-5) var(--space-6);
+  text-align: center;
+  background: var(--bg-panel-inset);
+  border: 2px dashed var(--side-theme, var(--border-default));
+}
+.pv-empty-tp { margin-bottom: var(--space-2); }
+.pv-empty-call { color: var(--side-theme, var(--text-secondary)); margin: 0; }
+.pv-empty-hint {
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-3);
+  line-height: var(--lh-body);
+}
+.pv-empty-mode { font-size: var(--text-caption); color: var(--text-muted); text-align: center; }
+
+/* -------------------------------------------------- 激活特工聚焦面板 --- */
+
+.pv-focus {
+  flex: 1;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-top: 3px solid var(--side-theme, var(--accent-primary));
+}
+.pv-focus-head { display: flex; align-items: center; gap: var(--space-3); }
+.pv-focus-avatar {
+  width: 52px; height: 52px;
+  border-radius: var(--radius-sm);
+  overflow: hidden; flex-shrink: 0;
+  border: 1px solid var(--side-theme, var(--accent-primary));
+  background: var(--bg-panel-inset);
+}
+.pv-focus-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pv-focus-avatar-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-display-md);
+}
+.pv-focus-title { min-width: 0; flex: 1; }
+.pv-focus-name {
+  margin: 0;
+  color: var(--side-theme, var(--accent-primary));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pv-focus-markers { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-1); }
+
+/* 属性行：斜切角数据块，数值用 Big Shoulders，标签用条压体 */
+.pv-stats { display: flex; gap: var(--space-2); }
+.pv-stat {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  padding: var(--space-2) var(--space-1);
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.pv-stat-value {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display-black);
+  font-size: var(--text-title);
+  line-height: var(--lh-tight);
+  color: var(--text-primary);
+}
+.pv-stat-label { margin-top: 2px; font-size: var(--text-caption); }
+
+/* ---------------------------------------------------- 目标选择弹窗 --- */
+
+.tsm-scrim { z-index: 9999; }
+.tsm-modal {
+  width: min(840px, 94vw);
+  max-width: none;
+  max-height: 90vh;
+  border-top-color: var(--side-theme, var(--accent-primary));
+}
+.tsm-body { display: flex; flex-direction: column; }
+.tsm-lead { margin: 0 0 var(--space-4); flex-shrink: 0; }
+
+.tsm-env {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  border-left: 3px solid var(--side-theme, var(--accent-primary));
+}
+.tsm-env.is-idle { opacity: 0.5; }
+.tsm-env-title { margin: 0 0 var(--space-3) 0; color: var(--side-theme, var(--accent-primary)); }
+.tsm-field { flex: 1; }
+.tsm-vantage {
+  font-size: var(--text-body-sm);
+  color: var(--side-theme, var(--accent-primary));
+  padding: var(--space-2);
+  background: var(--accent-primary-muted);
+  border: 1px solid var(--side-theme, var(--accent-primary));
+}
+.tsm-cover-label { display: block; margin-bottom: var(--space-2); }
+.tsm-actions { display: flex; justify-content: flex-end; gap: var(--space-3); flex-shrink: 0; }
+
+/* -------------------------------------------------------- 提示条 --- */
+
+.pv-hint { margin: var(--space-1) 0 0 0; }

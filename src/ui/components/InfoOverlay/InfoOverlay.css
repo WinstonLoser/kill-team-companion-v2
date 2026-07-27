@@ -4,8 +4,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.7);
+  border-radius: var(--radius-lg);
+  background: rgba(11, 11, 12, 0.75);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
@@ -29,8 +29,8 @@
   overflow-y: auto;
   padding-right: 8px;
   /* Make text formatting nice for explanations */
-  color: #cbd5e1;
-  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
   line-height: 1.6;
 }
 
@@ -39,20 +39,20 @@
 }
 
 .info-overlay-body::-webkit-scrollbar-track {
-  background: rgba(255, 90, 0, 0.1);
-  border-radius: 4px;
+  background: var(--accent-primary-muted);
+  border-radius: var(--radius-md);
 }
 
 .info-overlay-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 90, 0, 0.4);
-  border-radius: 4px;
+  background: var(--accent-primary-muted);
+  border-radius: var(--radius-md);
 }
 
 .close-btn {
-  background: rgba(255, 90, 0, 0.1);
-  border: 1px solid rgba(255, 90, 0, 0.4);
-  color: #ffaa77;
-  font-size: 1.2rem;
+  background: var(--accent-primary-muted);
+  border: 1px solid var(--accent-primary-muted);
+  color: var(--accent-primary-hover);
+  font-size: var(--text-title);
   min-width: 36px;
   min-height: 36px;
   width: 36px;
@@ -68,8 +68,8 @@
 }
 
 .close-btn:hover {
-  background: rgba(255, 90, 0, 0.3);
-  color: #fff;
+  background: var(--accent-primary-muted);
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 

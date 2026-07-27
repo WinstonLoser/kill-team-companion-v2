@@ -161,19 +161,18 @@ export function CombatResolver({
       {isRolling && (
         <div key={phase} style={{ 
           width: '100%', maxWidth: '900px', flex: 1, minHeight: 0,
-          background: '#1e1e1e', padding: '16px', 
-          borderRadius: '12px', border: `1px solid ${currentTheme?.baseColor || '#444'}`, 
+          background: 'var(--bg-surface)', padding: '16px', 
+          borderRadius: 'var(--radius-lg)', border: `1px solid ${currentTheme?.baseColor || 'var(--border-hairline)'}`, 
           display: 'flex', flexDirection: 'column', overflowY: 'auto',
-          boxShadow: `0 8px 32px rgba(${currentTheme?.baseColor ? currentTheme.baseColor.replace('rgb(','').replace(')','') : '0,0,0'}, 0.4)`
         }}>
-          <div style={{ borderBottom: '1px solid #555', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', paddingLeft: '16px', paddingRight: '16px' }}>
+          <div style={{ borderBottom: '1px solid var(--border-default)', paddingBottom: '8px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', justifyContent: 'space-between', paddingLeft: '16px', paddingRight: '16px' }}>
             {/* Left side: Portrait + Role info */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               {currentPortrait && (
                 <UnitPortrait {...currentPortrait} scale={0.85} />
               )}
               <div style={{ textAlign: 'left' }}>
-                <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
+                <div style={{ color: currentTheme?.baseColor || 'var(--accent-primary-hover)', fontSize: 'var(--text-title)', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
                   {currentRole} Roll (Need {currentCount})
                 </div>
               </div>
@@ -187,12 +186,12 @@ export function CombatResolver({
                     key={p.id}
                     onClick={() => onActionActivated && onActionActivated(p)}
                     style={{
-                      background: p.sourceType === 'FACTION' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(168, 85, 247, 0.2)',
-                      color: p.sourceType === 'FACTION' ? '#fca5a5' : '#e879f9', 
-                      padding: '6px 12px', borderRadius: '4px', 
-                      border: `1px solid ${p.sourceType === 'FACTION' ? '#ef4444' : '#a855f7'}`, 
+                      background: p.sourceType === 'FACTION' ? 'var(--tint-danger)' : 'var(--tint-warning)',
+                      color: p.sourceType === 'FACTION' ? 'var(--kc-blood-3)' : 'var(--kc-amber-3)', 
+                      padding: '6px 12px', borderRadius: 'var(--radius-md)', 
+                      border: `1px solid ${p.sourceType === 'FACTION' ? 'var(--status-danger)' : 'var(--status-warning)'}`, 
                       cursor: 'pointer',
-                      fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center'
+                      fontSize: 'var(--text-body)', display: 'flex', flexDirection: 'column', alignItems: 'center'
                     }}
                     title={p.description}
                   >

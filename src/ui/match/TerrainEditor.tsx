@@ -137,7 +137,7 @@ export function TerrainEditor({
         ]
       : null
 
-  const fillFor = (k: TerrainKind) => (k === 'BLOCKING' ? '#5a4030' : k === 'COVER' ? '#3a5a3a' : '#4a4a6a')
+  const fillFor = (k: TerrainKind) => (k === 'BLOCKING' ? 'var(--terrain-blocking)' : k === 'COVER' ? 'var(--terrain-cover)' : 'var(--terrain-obscuring)')
   const drawingPoly = tool === 'polygon' || tool === 'dropzone'
 
   return (
@@ -183,23 +183,23 @@ export function TerrainEditor({
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}>
         {/* 网格 */}
         {snap && Array.from({ length: Math.floor(bounds.w) + 1 }, (_, i) => (
-          <line key={`vx${i}`} x1={i * SCALE} y1={0} x2={i * SCALE} y2={H} stroke="#22262e" strokeWidth={0.5} />
+          <line key={`vx${i}`} x1={i * SCALE} y1={0} x2={i * SCALE} y2={H} stroke="var(--bg-surface)" strokeWidth={0.5} />
         ))}
         {snap && Array.from({ length: Math.floor(bounds.h) + 1 }, (_, i) => (
-          <line key={`hy${i}`} x1={0} y1={i * SCALE} x2={W} y2={i * SCALE} stroke="#22262e" strokeWidth={0.5} />
+          <line key={`hy${i}`} x1={0} y1={i * SCALE} x2={W} y2={i * SCALE} stroke="var(--bg-surface)" strokeWidth={0.5} />
         ))}
         {/* 降落区 */}
-        {dropA.length >= 3 && <polygon points={dropA.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill="rgba(199,93,58,0.15)" stroke="var(--side-a)" strokeDasharray="4 3" />}
-        {dropB.length >= 3 && <polygon points={dropB.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill="rgba(58,123,199,0.15)" stroke="var(--side-b)" strokeDasharray="4 3" />}
+        {dropA.length >= 3 && <polygon points={dropA.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill="color-mix(in srgb, var(--side-a) 15%, transparent)" stroke="var(--side-a)" strokeDasharray="4 3" />}
+        {dropB.length >= 3 && <polygon points={dropB.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill="color-mix(in srgb, var(--side-b) 15%, transparent)" stroke="var(--side-b)" strokeDasharray="4 3" />}
         {/* 地形 */}
         {terrain.map((t) => (
-          <polygon key={t.id} points={t.polygon.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill={fillFor(t.kind)} opacity={t.difficult ? 0.5 : 0.8} stroke={t.difficult ? '#d9a239' : '#000'} strokeWidth={t.difficult ? 1.5 : 0.5}>
+          <polygon key={t.id} points={t.polygon.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill={fillFor(t.kind)} opacity={t.difficult ? 0.5 : 0.8} stroke={t.difficult ? 'var(--status-warning)' : 'var(--text-on-accent)'} strokeWidth={t.difficult ? 1.5 : 0.5}>
             <title>{t.kind}${t.vantage ? ' · 制高点' : ''}${t.climbable ? ' · 可攀爬' : ''}${t.difficult ? ' · 困难' : ''}</title>
           </polygon>
         ))}
         {/* 目标点 */}
         {objectives.map((o) => (
-          <circle key={o.id} cx={o.pos.x * SCALE} cy={o.pos.y * SCALE} r={5} fill="var(--accent)" stroke="#fff" strokeWidth={1} />
+          <circle key={o.id} cx={o.pos.x * SCALE} cy={o.pos.y * SCALE} r={5} fill="var(--accent)" stroke="var(--text-primary)" strokeWidth={1} />
         ))}
         {previewRect && <polygon points={previewRect.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} fill={fillFor(kind)} opacity={0.5} />}
         {polyVerts.map((v, i) => (<circle key={i} cx={v.x * SCALE} cy={v.y * SCALE} r={3} fill="var(--accent)" />))}

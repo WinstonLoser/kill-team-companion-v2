@@ -18,17 +18,17 @@ export function StatusStrip({ prompt, isError, onConfirm, onQueryRule, onEndTP }
   const latestStep = log && log.records.length > 0 ? log.records[Math.min(log.cursor, log.records.length - 1)] : null
 
   return (
-    <div className={`status-strip ${active}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'nowrap' }}>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <span className="ss-item">转折点 <strong>{turn.turningPoint}/4</strong></span>
+    <div className={`status-strip ${active}`}>
+      <div className="ss-group">
+        <span className="ss-item">转折点 <strong className="ds-stat">{turn.turningPoint}/4</strong></span>
         <span className="ss-item">阶段 <strong>{turn.phase}</strong></span>
         <span className={`ss-item active-player ${active}`}>主动 <strong>{active.toUpperCase()}</strong></span>
-        {selApl !== null && <span className="ss-item">APL <strong>{selApl}</strong></span>}
-        {selMove !== null && <span className="ss-item">移动 <strong>{selMove}"</strong></span>}
-        <span className="ss-item vp">VP <strong>A:{vp.a} B:{vp.b}</strong></span>
+        {selApl !== null && <span className="ss-item">APL <strong className="ds-stat">{selApl}</strong></span>}
+        {selMove !== null && <span className="ss-item">移动 <strong className="ds-stat">{selMove}"</strong></span>}
+        <span className="ss-item vp">VP <strong className="ds-stat">A:{vp.a} B:{vp.b}</strong></span>
       </div>
 
-      <div style={{ flex: 1, textAlign: 'center', margin: '0 12px', fontSize: '0.85rem', color: isError ? '#ff4d4f' : '#ffeb3b', fontWeight: isError ? 'bold' : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={prompt || '提示：等待操作'}>
+      <div className={`ss-prompt ${isError ? 'is-error' : ''}`} title={prompt || '提示：等待操作'}>
         {log && latestStep && !isError ? (
            <><strong>流水线: </strong>{latestStep.summary}</>
         ) : (
@@ -36,21 +36,20 @@ export function StatusStrip({ prompt, isError, onConfirm, onQueryRule, onEndTP }
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div className="ss-group">
         {onEndTP && (
-          <button className="secondary" onClick={onEndTP} style={{ minHeight: '28px', padding: '0 12px', fontSize: '0.8rem' }} title="结束转折点">
+          <button className="ds-btn ds-btn--sm ds-btn--secondary" onClick={onEndTP} title="结束转折点">
             结束转折点
           </button>
         )}
         <button
-          className={`dice-toggle ${diceSource}`}
+          className={`ds-btn ds-btn--sm ds-btn--secondary dice-toggle ${diceSource}`}
           onClick={() => setDiceSource(diceSource === 'electronic' ? 'manual' : 'electronic')}
-          style={{ minHeight: '28px', padding: '0 8px', fontSize: '0.75rem' }}
         >
           {diceSource === 'electronic' ? '电子骰 ⇄' : '物理骰 ⇄'}
         </button>
         {onConfirm && (
-          <button className="primary" disabled={!log} onClick={onConfirm} style={{ minHeight: '28px', padding: '0 12px', fontSize: '0.8rem' }}>
+          <button className="ds-btn ds-btn--sm" disabled={!log} onClick={onConfirm}>
             确认伤亡 ▶
           </button>
         )}

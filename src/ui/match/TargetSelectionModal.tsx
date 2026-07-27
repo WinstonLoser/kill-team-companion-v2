@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useMatchStore, packOfFaction } from '../../state/matchStore'
 import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { getAvatarUrl } from '../../utils/avatars'
@@ -53,10 +53,14 @@ export function TargetSelectionModal({
   const selectedToken = selectedTarget ? enemies.find((t) => t.uid === selectedTarget) : null
 
   return (
-    <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="modal-content" style={{ backgroundColor: 'var(--bg-card, #222)', padding: '24px', borderRadius: '8px', width: 'min(840px, 94vw)', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', border: `2px solid ${atkThemeColor}`, boxShadow: `0 0 20px rgba(${atkUiTheme.primaryRgb}, 0.3)` }}>
-        <h2 style={{ marginTop: 0, marginBottom: '4px', color: atkThemeColor, flexShrink: 0 }}>选择目标 ({kind === 'SHOOT' ? '射击' : '近战'})</h2>
-        <p className="muted" style={{ marginBottom: '16px', flexShrink: 0 }}>请选择你要攻击的敌方单位</p>
+    <div className="ds-scrim tsm-scrim">
+      <div className="ds-modal tsm-modal" style={{ '--side-theme': atkThemeColor } as CSSProperties}>
+        <div className="ds-modal-head">
+          <h2 className="ds-display ds-display--md">选择目标（{kind === 'SHOOT' ? '射击' : '近战'}）</h2>
+          <button className="ds-modal-close" onClick={onClose} aria-label="关闭">×</button>
+        </div>
+        <div className="ds-modal-body tsm-body">
+        <p className="muted tsm-lead">请选择你要攻击的敌方单位</p>
 
         {/* 目标网格：三列，随内容自适应高度 */}
         <div
@@ -65,7 +69,7 @@ export function TargetSelectionModal({
         >
           {enemies.map((t) => {
             const pack = packOfFaction(t.factionId)
-            const uiTheme = pack?.faction.theme?.ui || { primaryRgb: '255, 90, 0' }
+            const uiTheme = pack?.faction.theme?.ui || { primaryRgb: '209, 69, 28' }
             const themeColor = `rgb(${uiTheme.primaryRgb})`
             const avatarUrl = getAvatarUrl(t.factionId, t.opId)
             const isSelected = selectedTarget === t.uid
@@ -91,19 +95,19 @@ export function TargetSelectionModal({
 
         {/* 环境因素：仅射击。全部选项一屏展示，无滚动；切换选项不改变弹窗尺寸 */}
         {kind === 'SHOOT' && (
-          <div style={{ flexShrink: 0, padding: '16px 20px', marginBottom: '16px', backgroundColor: 'var(--bg-panel, #111)', borderRadius: '8px', border: `1px solid ${atkThemeColor}`, opacity: selectedToken ? 1 : 0.5 }}>
-            <h4 style={{ margin: '0 0 14px 0', color: atkThemeColor }}>
+          <div className={`tsm-env ${selectedToken ? '' : 'is-idle'}`}>
+            <h4 className="ds-eyebrow tsm-env-title">
               环境因素 (规则修正){selectedToken ? ` — ${selectedToken.name}` : '（请先选择目标）'}
             </h4>
 
             <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem', flex: 1 }}>
-                <span style={{ marginBottom: '4px', color: 'var(--text-muted)' }}>进攻方楼层 (Vantage)</span>
+              <label className="ds-field tsm-field">
+                <span className="ds-label">进攻方楼层 (Vantage)</span>
                 <select
                   value={attackerFloor}
                   disabled={!selectedToken}
                   onChange={(e) => setAttackerFloor(Number(e.target.value))}
-                  style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#333', border: '1px solid #555', color: '#fff' }}
+                  className="ds-select"
                 >
                   <option value={0}>地面 (0层)</option>
                   <option value={1}>高点 (1层 / 2")</option>
@@ -111,13 +115,13 @@ export function TargetSelectionModal({
                 </select>
               </label>
 
-              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem', flex: 1 }}>
-                <span style={{ marginBottom: '4px', color: 'var(--text-muted)' }}>目标楼层</span>
+              <label className="ds-field tsm-field">
+                <span className="ds-label">目标楼层</span>
                 <select
                   value={defenderFloor}
                   disabled={!selectedToken}
                   onChange={(e) => setDefenderFloor(Number(e.target.value))}
-                  style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#333', border: '1px solid #555', color: '#fff' }}
+                  className="ds-select"
                 >
                   <option value={0}>地面 (0层)</option>
                   <option value={1}>高点 (1层 / 2")</option>
@@ -129,14 +133,14 @@ export function TargetSelectionModal({
             {/* 制高点提示：预留固定高度，切换楼层不改变弹窗尺寸 */}
             <div style={{ minHeight: '52px', marginBottom: '10px' }}>
               {attackerFloor > defenderFloor && (
-                <div style={{ fontSize: '0.8rem', color: atkThemeColor, padding: '6px 8px', backgroundColor: `rgba(${atkUiTheme.primaryRgb}, 0.1)`, borderRadius: '4px' }}>
+                <div className="tsm-vantage">
                   <strong>制高点 (Vantage Point) 生效</strong>: 进攻方比目标高，若目标具有隐蔽(Conceal)且在轻微掩体中，其将被视为处于交战(Engage)状态。
                 </div>
               )}
             </div>
 
             <div style={{ marginBottom: '14px' }}>
-              <span style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>掩体类型 (Cover)</span>
+              <span className="ds-label tsm-cover-label">掩体类型 (Cover)</span>
               <div style={{ display: 'flex', gap: '20px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                   <input type="radio" name="cover" disabled={!selectedToken} checked={coverType === 'NONE'} onChange={() => setCoverType('NONE')} style={{ marginRight: '6px' }} />
@@ -159,9 +163,10 @@ export function TargetSelectionModal({
           </div>
         )}
 
-        <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: '8px 24px', background: 'transparent', border: '1px solid var(--border)', color: 'inherit', borderRadius: '4px', cursor: 'pointer' }}>取消</button>
-          <button onClick={handleConfirm} disabled={!selectedTarget} style={{ padding: '8px 24px', background: 'var(--accent)', border: 'none', color: '#fff', borderRadius: '4px', cursor: selectedTarget ? 'pointer' : 'not-allowed', opacity: selectedTarget ? 1 : 0.5 }}>确认结算</button>
+        <div className="modal-actions tsm-actions">
+          <button className="ds-btn ds-btn--secondary" onClick={onClose}>取消</button>
+          <button className="ds-btn" onClick={handleConfirm} disabled={!selectedTarget}>确认结算</button>
+        </div>
         </div>
       </div>
     </div>

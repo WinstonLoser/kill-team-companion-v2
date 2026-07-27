@@ -21,7 +21,12 @@ export function OperativeCard({ operative, pack, selectedWeaponIds, factionRuleS
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      <div className="op-card-container">
+      /* DS 的 dossier 形态：虚线边框 + 四角十字定位标记，读作一张印刷战情档案 */
+    <div className="op-card-container kc-dossier">
+      <span className="kc-dossier-corner tl" aria-hidden="true" />
+      <span className="kc-dossier-corner tr" aria-hidden="true" />
+      <span className="kc-dossier-corner bl" aria-hidden="true" />
+      <span className="kc-dossier-corner br" aria-hidden="true" />
       <div className="op-card-header">
         <div className="op-header-left">
           <div className="op-avatar-wrapper" id={`avatar-${operative.operativeId}`}>

@@ -29,7 +29,7 @@ export function InfoOverlay({ isOpen, onClose, title, children }: InfoOverlayPro
         <div className="op-card-header">
           <div className="op-header-left">
             <div className="op-title-area">
-              <h2 className="op-name" style={{ fontSize: '1.5rem' }}>{title}</h2>
+              <h2 className="op-name" style={{ fontSize: 'var(--text-display-md)' }}>{title}</h2>
             </div>
           </div>
           <button className="close-btn" onClick={onClose} aria-label="Close">

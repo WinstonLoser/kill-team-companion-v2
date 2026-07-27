@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useMatchStore, type MatchToken, packOfFaction } from '../../state/matchStore'
 import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { ActionBar } from './ActionBar'
@@ -38,37 +39,25 @@ export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBa
         const isActiveSide = side === turn.activePlayer
 
         return (
-        <div key={side} className={`unit-side ${side}`} style={{ 
-          display: 'flex', flexDirection: 'column', gap: '8px',
-          padding: '12px',
-          borderRadius: '8px',
-          border: `2px solid ${isActiveSide ? `rgb(${sideThemeRgb})` : 'rgba(255,255,255,0.1)'}`,
-          boxShadow: isActiveSide ? `0 0 15px rgba(${sideThemeRgb}, 0.5), inset 0 0 10px rgba(${sideThemeRgb}, 0.2)` : 'none',
-          backgroundColor: isActiveSide ? `rgba(${sideThemeRgb}, 0.05)` : 'transparent',
-          transition: 'all 0.3s ease',
-          clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' // High-tech chamfered corners
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', paddingBottom: '8px', borderBottom: `1px solid ${isActiveSide ? `rgba(${sideThemeRgb}, 0.5)` : 'rgba(255,255,255,0.1)'}` }}>
-            <h4 style={{ margin: 0, color: isActiveSide ? `rgb(${sideThemeRgb})` : '#ccc', textShadow: isActiveSide ? `0 0 8px rgba(${sideThemeRgb}, 0.5)` : 'none' }}>
-              {side.toUpperCase()} 方阵容
-            </h4>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>CP</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button onClick={() => setResource(side, 'cp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{turn.cp[side]}</span>
-                  <button onClick={() => setResource(side, 'cp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
+        <div
+          key={side}
+          className={`unit-side ds-chamfer ${side} ${isActiveSide ? 'is-active' : ''}`}
+          style={{ '--side-theme': `rgb(${sideThemeRgb})` } as React.CSSProperties}
+        >
+          {/* 阵容标题带：走 DS 卡片的 chrome header 语汇 */}
+          <div className="us-head">
+            <h4 className="ds-display ds-display--sm us-title">{side.toUpperCase()} 方阵容</h4>
+            <div className="us-resources">
+              {(['cp', 'vp'] as const).map((res) => (
+                <div key={res} className="us-res">
+                  <span className="ds-label us-res-label">{res.toUpperCase()}</span>
+                  <div className="ds-stepper">
+                    <button className="ds-stepper-btn" onClick={() => setResource(side, res, -1)} title={`${res.toUpperCase()} -1`}>−</button>
+                    <span className="ds-stepper-value us-res-value">{res === 'cp' ? turn.cp[side] : vp[side]}</span>
+                    <button className="ds-stepper-btn" onClick={() => setResource(side, res, 1)} title={`${res.toUpperCase()} +1`}>+</button>
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>VP</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button onClick={() => setResource(side, 'vp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{vp[side]}</span>
-                  <button onClick={() => setResource(side, 'vp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
           <div className="unit-list" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
@@ -127,17 +116,20 @@ export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBa
                       }}
                     />
                     {isActivating && (
-                      <div style={{ position: 'absolute', top: '-6px', right: '-6px', background: themeColor, color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                      <span
+                        className="ds-badge uc-activating"
+                        style={{ background: themeColor, borderColor: themeColor, color: 'var(--text-on-accent)' }}
+                      >
                         激活中
-                      </div>
+                      </span>
                     )}
                   </div>
                   
                   {isSelected && isActiveSide && !isFinished && !isActivating && (
                     <div style={{ marginTop: '12px', width: '80%' }}>
-                      <button 
-                        className="primary" 
-                        style={{ width: '100%', padding: '8px', fontSize: '0.9rem', opacity: hasActivating ? 0.5 : 1, backgroundColor: `rgba(${uiTheme.primaryRgb}, 0.8)`, border: `1px solid rgb(${uiTheme.primaryRgb})`, borderRadius: '4px', cursor: hasActivating ? 'not-allowed' : 'pointer', color: '#fff' }}
+                      <button
+                        className="ds-btn ds-btn--sm uc-activate"
+                        style={{ width: '100%', background: themeColor, borderColor: themeColor }}
                         disabled={hasActivating}
                         title={hasActivating ? "请先结束当前特工的激活" : "激活该特工"}
                         onClick={() => {

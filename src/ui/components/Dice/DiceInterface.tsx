@@ -194,9 +194,9 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
   const renderModifiers = () => {
     if (!modifiers || modifiers.length === 0) return null
     return (
-      <div style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${theme?.baseColor || '#fff'}`, marginBottom: '16px', textAlign: 'left' }}>
-        <h4 style={{ margin: '0 0 8px 0', color: '#ccc', fontSize: '0.9rem' }}>当前生效规则修正 (Modifiers)</h4>
-        <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa', fontSize: '0.85rem' }}>
+      <div style={{ width: '100%', maxWidth: '800px', backgroundColor: 'var(--bg-panel-inset)', padding: '12px', borderRadius: 'var(--radius-lg)', borderLeft: `4px solid ${theme?.baseColor || 'var(--text-primary)'}`, marginBottom: '16px', textAlign: 'left' }}>
+        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-secondary)', fontSize: 'var(--text-body)' }}>当前生效规则修正 (Modifiers)</h4>
+        <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: 'var(--text-body)' }}>
           {modifiers.map((mod, i) => (
             <li key={i} style={{ marginBottom: '4px' }}>{mod}</li>
           ))}
@@ -209,7 +209,7 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
     <div className="dice-interface-wrapper">
       {renderModifiers()}
 
-      <div style={{ textAlign: 'center', marginBottom: '8px', color: '#ffaa77', fontWeight: 'bold' }}>
+      <div style={{ textAlign: 'center', marginBottom: '8px', color: 'var(--accent-primary-hover)', fontWeight: 'bold' }}>
         【预期阈值】 命中(Hit): {localContext.hitTarget}+ | 暴击(Crit): {localContext.critTarget}+
       </div>
 
@@ -221,29 +221,29 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
             <button className="count-btn" onClick={() => handleAdjustCount(1)}>+</button>
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-around', margin: '12px 0', background: '#333', padding: '8px', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around', margin: '12px 0', background: 'var(--bg-surface-raised)', padding: '8px', borderRadius: 'var(--radius-lg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.9rem' }}>命中(Hit)</span>
+              <span style={{ fontSize: 'var(--text-body)' }}>命中(Hit)</span>
               <button className="count-btn" style={{ width: '24px', height: '24px', padding: 0 }} onClick={() => setLocalContext(prev => ({...prev, hitTarget: Math.max(2, prev.hitTarget - 1)}))}>-</button>
               <span style={{ width: '20px', textAlign: 'center' }}>{localContext.hitTarget}+</span>
               <button className="count-btn" style={{ width: '24px', height: '24px', padding: 0 }} onClick={() => setLocalContext(prev => ({...prev, hitTarget: Math.min(6, prev.hitTarget + 1)}))}>+</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.9rem' }}>暴击(Crit)</span>
+              <span style={{ fontSize: 'var(--text-body)' }}>暴击(Crit)</span>
               <button className="count-btn" style={{ width: '24px', height: '24px', padding: 0 }} onClick={() => setLocalContext(prev => ({...prev, critTarget: Math.max(2, prev.critTarget - 1)}))}>-</button>
               <span style={{ width: '20px', textAlign: 'center' }}>{localContext.critTarget}+</span>
               <button className="count-btn" style={{ width: '24px', height: '24px', padding: 0 }} onClick={() => setLocalContext(prev => ({...prev, critTarget: Math.min(6, prev.critTarget + 1)}))}>+</button>
             </div>
           </div>
 
-          <p style={{ color: '#aaa', fontSize: '0.9rem', margin: '4px 0 12px 0' }}>点击下方骰槽以固定点数结果 (针对必中或保留技能)</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)', margin: '4px 0 12px 0' }}>点击下方骰槽以固定点数结果 (针对必中或保留技能)</p>
           <div className="prepare-slots">
             {slots.map((val, i) => (
               <div 
                 key={i} 
                 className={`prepare-slot ${val !== null ? 'is-set' : ''}`}
                 onClick={() => handleCycleSlot(i)}
-                style={val !== null ? { borderColor: theme?.baseColor || '#ff9800', color: '#ffffff', backgroundColor: theme?.baseColor ? theme.baseColor.replace('rgb(', 'rgba(').replace(')', ', 0.2)') : 'rgba(255,152,0,0.2)' } : { color: '#ffffff' }}
+                style={val !== null ? { borderColor: theme?.baseColor || 'var(--status-warning-hover)', color: 'var(--text-primary)', backgroundColor: theme?.baseColor ? theme.baseColor.replace('rgb(', 'rgba(').replace(')', ', 0.2)') : 'var(--tint-warning)' } : { color: 'var(--text-primary)' }}
               >
                 {val === null ? '?' : val}
               </div>
@@ -281,7 +281,7 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
 
       {phase === 'MODIFY' && (
         <div className="modify-container" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <p style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '16px' }}>可以点击骰子修改结算结果 (应对重投技能或修正)</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body)', marginBottom: '16px' }}>可以点击骰子修改结算结果 (应对重投技能或修正)</p>
           <div className="dice-display">
             <DicePanel 
               dice={finalRolls} 
@@ -302,7 +302,7 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
                   {[1, 2, 3, 4, 5, 6].map(n => (
                     <button key={n} className="edit-opt-btn" onClick={() => handleEditVal(n as 1|2|3|4|5|6)}>{n}</button>
                   ))}
-                  <button className="edit-opt-btn" onClick={() => handleEditVal('REROLL')} style={{ background: '#7c3aed', borderColor: '#7c3aed' }}>
+                  <button className="edit-opt-btn" onClick={() => handleEditVal('REROLL')} style={{ background: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
                     重投 (Re-roll)
                   </button>
                 </div>

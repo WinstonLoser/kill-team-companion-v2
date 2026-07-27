@@ -11,8 +11,8 @@
   position: absolute;
   top: -30px;
   font-weight: bold;
-  font-size: 20px;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+  font-size: var(--text-title);
+  text-shadow: 1px 1px 4px rgba(11, 11, 12, 0.75);
 }
 
 .dice-icon {
@@ -20,11 +20,10 @@
   height: 96px;
   background-color: var(--dice-base);
   border: 3px solid var(--dice-pip);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -47,7 +46,6 @@
   height: 16px;
   border-radius: 50%;
   background-color: var(--dice-pip);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Face layouts using grid */
@@ -80,8 +78,7 @@
 
 /* Grading */
 .dice-critical {
-  border-color: #ff9800; /* Default critical color, could be overridden by theme if we wanted but let's use a standard bright orange/gold for Crit */
-  box-shadow: 0 0 12px #ff9800, inset 0 0 8px rgba(255, 152, 0, 0.5);
+  border-color: var(--status-warning-hover); /* Default critical color, could be overridden by theme if we wanted but let's use a standard bright orange/gold for Crit */
   animation: critPulse 2s infinite;
   transform: scale(1.05);
 }
@@ -89,13 +86,13 @@
 .dice-fail {
   opacity: 0.5;
   filter: grayscale(80%) brightness(0.8);
-  border-color: #666;
+  border-color: var(--text-muted);
 }
 
 @keyframes critPulse {
-  0% { box-shadow: 0 0 12px #ff9800, inset 0 0 8px rgba(255, 152, 0, 0.5); }
-  50% { box-shadow: 0 0 20px #ffb74d, inset 0 0 12px rgba(255, 183, 77, 0.8); }
-  100% { box-shadow: 0 0 12px #ff9800, inset 0 0 8px rgba(255, 152, 0, 0.5); }
+  0% { box-shadow: 0 0 12px var(--status-warning-hover), inset 0 0 8px var(--tint-warning); }
+  50% { box-shadow: 0 0 20px var(--kc-amber-3), inset 0 0 12px var(--tint-warning); }
+  100% { box-shadow: 0 0 12px var(--status-warning-hover), inset 0 0 8px var(--tint-warning); }
 }
 
 /* Rolling Animation */

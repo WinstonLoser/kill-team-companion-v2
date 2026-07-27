@@ -9,11 +9,11 @@ function Thumb({ map }: { map: MapPack }) {
   return (
     <svg width={tw} height={th} className="map-thumb">
       {/* 降落区底色 */}
-      <polygon points={map.dropZones.a.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(199,93,58,0.18)" />
-      <polygon points={map.dropZones.b.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(58,123,199,0.18)" />
+      <polygon points={map.dropZones.a.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="color-mix(in srgb, var(--side-a) 18%, transparent)" />
+      <polygon points={map.dropZones.b.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="color-mix(in srgb, var(--side-b) 18%, transparent)" />
       {/* 地形 */}
       {map.terrain.map((t) => {
-        const fill = t.kind === 'BLOCKING' ? '#5a4030' : t.kind === 'COVER' ? '#3a5a3a' : '#4a4a6a'
+        const fill = t.kind === 'BLOCKING' ? 'var(--terrain-blocking)' : t.kind === 'COVER' ? 'var(--terrain-cover)' : 'var(--terrain-obscuring)'
         return (
           <polygon
             key={t.id}

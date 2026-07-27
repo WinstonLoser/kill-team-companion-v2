@@ -1,12 +1,9 @@
-import { useRef } from 'react'
 import { loadPack, evaluateLegality, type FactionPack } from '../'
 import { useViewStore } from '../state/viewStore'
 import { useRosterStore, type Side } from '../state/rosterStore'
-import { FactionSelect, type FactionOption } from './roster/FactionSelect'
-import { OperativePicker, computeDefaultRoster } from './roster/OperativePicker'
-import { SubFactionSelect } from './roster/SubFactionSelect'
-import { LegalityPanel } from './roster/LegalityPanel'
-import { FactionOverview } from './roster/FactionOverview'
+import { type FactionOption } from './roster/FactionSelect'
+import { TeamColumn } from './roster/TeamColumn'
+import './roster/RosterView.css'
 import angelsPack from '../data/packs/angels_of_death.v1.json'
 import legionariesPack from '../data/packs/legionaries.v1.json'
 import plaguePack from '../data/packs/plague_marines.v1.json'
@@ -42,138 +39,91 @@ function legalityOf(side: Side) {
   })
 }
 
+/**
+ * 建队屏：A / B 两栏并列，同时可编辑。
+ *
+ * 这是一局两方对战，两队要一起摆 —— 原来用页签一次只编一方，
+ * 建完一方还得切过去建另一方，且看不到对面。现在两栏各自独立滚动，
+ * 底部一条通栏的「进入对局」门禁同时反映两边状态。
+ * 窄屏（<1024px，非横屏 iPad）退回单栏 + 页签，见 RosterView.css。
+ */
 export function RosterView() {
   const setView = useViewStore((s) => s.setView)
-  const editing = useRosterStore((s) => s.editing)
-  const setEditing = useRosterStore((s) => s.setEditing)
   const patchRoster = useRosterStore((s) => s.patchRoster)
   const rosterA = useRosterStore((s) => s.rosterA)
   const rosterB = useRosterStore((s) => s.rosterB)
-
-  const entry = editing === 'a' ? rosterA : rosterB
-  const pack = packFor(entry.factionId)
-  const selector = pack?.faction.subFactionSelector
-  const result = legalityOf(editing)
-  const opListRef = useRef<HTMLDivElement>(null)
-  const locateOffender = () => opListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  // 窄屏下退回单栏时，editing 决定显示哪一栏
+  const editing = useRosterStore((s) => s.editing)
+  const setEditing = useRosterStore((s) => s.setEditing)
 
   const resultA = legalityOf('a')
   const resultB = legalityOf('b')
   const bothGreen = resultA.legal && resultB.legal
   const unresolved = (resultA.legal ? 0 : 1) + (resultB.legal ? 0 : 1)
 
-  // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切对局视图（无地图，直接进战略阶段）
+  // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切对局视图
   function enterMatch() {
     if (!bothGreen) return
     setView('battle')
   }
 
-  const sideLabel = (side: Side) => `${side.toUpperCase()} 方`
+  const sides: { side: Side; entry: typeof rosterA; result: typeof resultA }[] = [
+    { side: 'a', entry: rosterA, result: resultA },
+    { side: 'b', entry: rosterB, result: resultB },
+  ]
 
   return (
     <section className="roster">
-      <h2>建队（无点数 D-30 · 双方各建一队）</h2>
-
-      {/* A/B 双方建队切换 */}
-      <div className="row side-toggle">
-        {(['a', 'b'] as const).map((side) => {
-          const r = side === 'a' ? resultA : resultB
-          const e = side === 'a' ? rosterA : rosterB
-          return (
-            <button
-              key={side}
-              className={`side-btn ${side} ${editing === side ? 'active' : ''}`}
-              onClick={() => setEditing(side)}
-            >
-              {sideLabel(side)}{e.factionId ? ` · ${e.factionId}` : ' · 未选阵营'}
-              <span className={`dot ${r.legal ? 'ok' : 'warn'}`}>{r.legal ? '✓' : '!'}</span>
-            </button>
-          )
-        })}
+      {/* 窄屏专用页签：宽屏时 CSS 隐藏（两栏都在，不需要切换） */}
+      <div className="ds-tabbar roster-narrow-tabs">
+        {sides.map(({ side, result }) => (
+          <button
+            key={side}
+            className={`ds-tab roster-narrow-tab ${side} ${editing === side ? 'on' : ''}`}
+            onClick={() => setEditing(side)}
+          >
+            {side.toUpperCase()} 方
+            <span className={`ds-badge ${result.legal ? 'ds-badge--success' : 'ds-badge--danger'}`}>
+              {result.legal ? 'OK' : '违规'}
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* 顶部进入对局（常驻醒目） */}
-      <div className="enter-gate top">
-        <span className="eg-status">
-          <span className={`dot ${resultA.legal ? 'ok' : 'warn'}`}>A {resultA.legal ? '✓' : '!'}</span>
-          <span className={`dot ${resultB.legal ? 'ok' : 'warn'}`}>B {resultB.legal ? '✓' : '!'}</span>
+      <div className="roster-columns">
+        {sides.map(({ side, entry, result }) => (
+          <div key={side} className={`roster-col ${editing === side ? 'is-current' : ''}`}>
+            <TeamColumn
+              side={side}
+              factions={FACTIONS}
+              entry={entry}
+              pack={packFor(entry.factionId)}
+              result={result}
+              onPatch={(patch) => patchRoster(side, patch)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* 通栏门禁：两方都合规才解锁 */}
+      <footer className="roster-gate">
+        <span className="roster-gate-status">
+          <span className={`ds-badge ${resultA.legal ? 'ds-badge--success' : 'ds-badge--danger'}`}>
+            A {resultA.legal ? '合规' : '违规'}
+          </span>
+          <span className={`ds-badge ${resultB.legal ? 'ds-badge--success' : 'ds-badge--danger'}`}>
+            B {resultB.legal ? '合规' : '违规'}
+          </span>
         </span>
         <button
-          className="primary enter-btn"
+          className="ds-btn ds-btn--lg roster-gate-btn"
           disabled={!bothGreen}
           onClick={enterMatch}
           title={bothGreen ? '双方阵容合规，进入对局' : `先解决 ${unresolved} 方违规`}
         >
           {bothGreen ? '进入对局 ▶' : `待合规（${unresolved} 方）`}
         </button>
-      </div>
-
-      <div className="roster-layout">
-        <div className="roster-main" ref={opListRef}>
-          {/* AC1 顺序可达：选阵营 → 选特工+装备 → 子阵营选择器 */}
-          <FactionSelect
-            factions={FACTIONS}
-            selectedId={entry.factionId}
-            sideLabel={sideLabel(editing)}
-            onSelect={(f) => {
-              if (!f.available || !f.pack) return
-              // 切阵营：默认选首名队长 + 各类型一名（方便快速建队），清子阵营
-              const defaults = computeDefaultRoster(f.pack)
-              patchRoster(editing, {
-                factionId: f.id,
-                operativeIds: defaults.operativeIds,
-                loadout: defaults.loadout,
-                subFactionSelection: [],
-                perOperativeMarks: defaults.perOperativeMarks,
-                wargearAssignment: {},
-              })
-            }}
-          />
-
-          {pack && (
-            <>
-              <OperativePicker
-                pack={pack}
-                operativeIds={entry.operativeIds}
-                loadout={entry.loadout}
-                perOperativeMarks={entry.perOperativeMarks}
-                wargearAssignment={entry.wargearAssignment}
-                onChange={(next) => patchRoster(editing, next)}
-              />
-              {selector && selector.id === 'chapterTactic' ? (
-                <SubFactionSelect
-                  selector={selector}
-                  pack={pack}
-                  selection={entry.subFactionSelection}
-                  onChange={(next) => patchRoster(editing, { subFactionSelection: next })}
-                />
-              ) : selector && selector.id === 'markOfChaos' ? null : null}
-              {(!selector || selector.id === 'markOfChaos') && (
-                <div className="subfaction-none">
-                  <h3>阵营能力（常驻）</h3>
-                </div>
-              )}
-              <FactionOverview pack={pack} />
-            </>
-          )}
-        </div>
-
-        {/* T5 合法性面板（实时，P13 违规可定位） */}
-        <LegalityPanel result={result} sideLabel={sideLabel(editing)} onLocate={locateOffender} />
-      </div>
-
-      {/* T6 进入对局门禁 */}
-      <div className="enter-gate">
-        <button
-          className="primary enter-btn"
-          disabled={!bothGreen}
-          onClick={enterMatch}
-          title={bothGreen ? '双方阵容合规，进入对局' : `先解决 ${unresolved} 方违规`}
-        >
-          {bothGreen ? '进入对局 ▶' : `先满足合法性（${unresolved} 方未合规）`}
-        </button>
-        {!bothGreen && <span className="muted"> 先解决 {unresolved} 方违规再进入对局</span>}
-      </div>
+      </footer>
     </section>
   )
 }

@@ -1,0 +1,424 @@
+/*
+ * ============================================================================
+ * DS 类层（design-system 的 class 化转写）
+ * ============================================================================
+ *
+ * 为什么不直接 import design-system/components/*.jsx：
+ * 那批组件是「演示件」——全部内联样式，且不透传 className / title / type /
+ * aria-* / disabled 之外的任何属性；Modal 还写死 maxWidth:480（战斗结算器需要
+ * 1000px）。本应用大量按钮依赖 title 提示与既有 class（测试也选它们），照搬会
+ * 逼着重写交互逻辑，风险远大于收益。
+ *
+ * 因此这里把同一套组件样式按同一批 token 转写成 class。数值逐条对齐
+ * design-system/components/ 下的源文件，改动 DS 时两边一起改。
+ * 对应关系：
+ *   .ds-btn / .ds-btn--*      ← core/Button.jsx
+ *   .ds-icon-btn              ← core/IconButton.jsx
+ *   .ds-badge / .ds-badge--*  ← core/Badge.jsx
+ *   .ds-tag                   ← core/Tag.jsx
+ *   .ds-card / .ds-card-head  ← feedback/Card.jsx
+ *   .ds-modal-*               ← feedback/Modal.jsx
+ *   .ds-progress-*            ← feedback/ProgressBar.jsx
+ *   .ds-tabbar / .ds-tab      ← navigation/TabBar.jsx
+ *   .ds-field / .ds-input     ← forms/Input.jsx, Select.jsx
+ *   .ds-stepper-*             ← forms/Stepper.jsx
+ *
+ * 排版工具类（.ds-eyebrow / .ds-label / .ds-display / .ds-stat）来自 readme
+ * 「Visual foundations · Type」一节，不属于任何单个组件。
+ *
+ * 体系约束（readme）：无阴影；圆角只有 2/4/6px，卡片改用 14px 斜切角
+ * (--chamfer)；模糊仅用于弹窗遮罩；动效 110–180ms ease-out；按下 scale(0.97)。
+ */
+
+/* ---------------------------------------------------------------- 排版 --- */
+
+.ds-eyebrow {
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  line-height: var(--lh-label);
+}
+
+.ds-label {
+  font-family: var(--font-label);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  line-height: var(--lh-label);
+}
+
+.ds-display {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-heading);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin: 0;
+}
+.ds-display--lg { font-size: var(--text-display-md); font-weight: var(--fw-display-black); }
+.ds-display--md { font-size: var(--text-title); }
+.ds-display--sm { font-size: var(--text-subtitle); }
+
+/* 数据/统计值一律等宽字 —— readme「Numbers as data」 */
+.ds-stat {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.ds-stat--hero {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display-black);
+  font-size: var(--text-display-md);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------- 按钮 --- */
+
+.ds-btn {
+  font-family: var(--font-label);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  padding: 0.625rem 1.25rem;
+  min-height: 44px;   /* 触控友好 NFR-9，DS 原件无此约束但本应用是平板优先 */
+  min-width: 44px;
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  border-color: var(--accent-primary);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.ds-btn:hover:not(:disabled) { background: var(--accent-primary-hover); }
+.ds-btn:active:not(:disabled) { transform: scale(0.97); }
+.ds-btn:focus-visible { outline: none; border-color: var(--focus-ring); }
+.ds-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ds-btn--sm { font-size: var(--text-body-sm); padding: 0.375rem 0.875rem; min-height: 36px; }
+.ds-btn--lg { font-size: var(--text-subtitle); padding: 0.875rem 1.75rem; min-height: 56px; }
+
+.ds-btn--secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.ds-btn--secondary:hover:not(:disabled) {
+  background: var(--bg-surface-raised);
+  border-color: var(--border-accent);
+}
+
+.ds-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.ds-btn--ghost:hover:not(:disabled) { background: var(--bg-surface); color: var(--text-primary); }
+
+.ds-btn--danger {
+  background: var(--status-danger);
+  color: var(--text-on-accent);
+  border-color: var(--status-danger);
+}
+.ds-btn--danger:hover:not(:disabled) { background: var(--status-danger-hover); }
+
+.ds-icon-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.ds-icon-btn:hover:not(:disabled) { background: var(--bg-surface-raised); }
+.ds-icon-btn.on {
+  background: var(--accent-primary-muted);
+  border-color: var(--border-accent);
+  color: var(--accent-primary);
+}
+
+/* ------------------------------------------------------------ 徽章/标签 --- */
+
+.ds-badge {
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  padding: 0.1875rem 0.5625rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-raised);
+  color: var(--text-secondary);
+  display: inline-block;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ds-badge--accent  { background: var(--accent-primary-muted); color: var(--accent-primary); border-color: var(--accent-primary); }
+.ds-badge--danger  { background: rgba(143, 31, 31, 0.18);  color: var(--kc-blood-3); border-color: var(--status-danger); }
+.ds-badge--success { background: rgba(74, 92, 52, 0.22);   color: var(--kc-olive-3); border-color: var(--status-success); }
+.ds-badge--warning { background: rgba(184, 134, 46, 0.2);  color: var(--kc-amber-3); border-color: var(--status-warning); }
+
+.ds-tag {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------------------------------------------------------------- 卡片 --- */
+
+/*
+ * 标准「带标题卡」：3px 锈色顶边 + 全黑 chrome 标题带 + 浅一档的正文面。
+ * chrome 带用 --bg-chrome / --text-on-chrome，这两个 token 主题无关，
+ * 亮色主题下也保持纸上黑块（readme「Light theme」）。
+ */
+.ds-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-top: 3px solid var(--accent-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ds-card-head {
+  background: var(--bg-chrome);
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+.ds-card-head .ds-display { color: var(--text-on-chrome); }
+.ds-card-body {
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+}
+.ds-card-foot {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* 斜切角：本套件的招牌面板形状，替代圆角 */
+.ds-chamfer { border-radius: 0; clip-path: polygon(
+  var(--chamfer) 0, 100% 0,
+  100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%,
+  0 100%, 0 var(--chamfer)); }
+.ds-chamfer-tr { border-radius: 0; clip-path: polygon(
+  0 0, calc(100% - var(--chamfer)) 0, 100% var(--chamfer), 100% 100%, 0 100%); }
+
+/* ---------------------------------------------------------------- 弹窗 --- */
+
+/* 模糊只在这里出现 —— readme「Transparency/blur」 */
+.ds-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 11, 12, 0.75);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.ds-modal {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-strong);
+  border-top: 3px solid var(--accent-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  min-width: 360px;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ds-modal--wide { max-width: 640px; width: 90vw; }
+.ds-modal--full { max-width: 1000px; width: 95vw; }
+.ds-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--bg-chrome);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  flex-shrink: 0;
+}
+.ds-modal-head .ds-display { color: var(--text-on-chrome); }
+.ds-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-on-chrome);
+  font-size: var(--text-title);
+  line-height: 1;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  cursor: pointer;
+}
+.ds-modal-close:hover { color: var(--accent-primary-hover); }
+.ds-modal-body {
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  padding: var(--space-5);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------ 进度/血条 --- */
+
+.ds-progress-track {
+  height: 8px;
+  background: var(--bg-void);
+  border: 1px solid var(--border-hairline);
+  overflow: hidden;
+}
+.ds-progress-fill {
+  height: 100%;
+  background: var(--accent-primary);
+  transition: width var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out);
+}
+
+/* --------------------------------------------------------------- 标签页 --- */
+
+.ds-tabbar {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-hairline);
+}
+.ds-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  padding: 0.625rem 1rem;
+  min-height: 44px;
+  font-family: var(--font-label);
+  font-size: var(--text-body-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.ds-tab.on { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+
+/* ---------------------------------------------------------------- 表单 --- */
+
+.ds-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-field > .ds-label { color: var(--text-secondary); }
+
+.ds-input,
+.ds-select {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  background: var(--bg-void);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  min-height: 44px;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.ds-input:focus,
+.ds-select:focus { border-color: var(--border-accent); }
+.ds-input.invalid { border-color: var(--status-danger); }
+
+.ds-select {
+  padding-right: 34px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 13px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.ds-stepper { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ds-stepper-btn {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-label);
+  font-size: var(--text-subtitle);
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.ds-stepper-btn:hover:not(:disabled) { border-color: var(--border-accent); color: var(--accent-primary); }
+.ds-stepper-value {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: var(--text-title);
+  color: var(--text-primary);
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- 杂项 --- */
+
+.ds-divider { height: 1px; background: var(--border-hairline); border: 0; margin: var(--space-3) 0; }
+
+/* 空态：虚线档案框 + 眉标签，替代随处可见的灰底提示块 */
+.ds-empty {
+  border: 2px dashed var(--border-default);
+  background: var(--bg-surface);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-body-sm);
+}

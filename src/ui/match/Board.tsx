@@ -54,7 +54,7 @@ export function Board({
   const bounds = mapPack?.bounds ?? { w: 30, h: 20 }
   const W = bounds.w * SCALE
   const H = bounds.h * SCALE
-  const ctrlColor = (c: Side | null) => (c === 'a' ? 'var(--side-a)' : c === 'b' ? 'var(--side-b)' : '#6b7280')
+  const ctrlColor = (c: Side | null) => (c === 'a' ? 'var(--side-a)' : c === 'b' ? 'var(--side-b)' : 'var(--border-strong)')
 
   function evtPoint(e: { clientX: number; clientY: number; currentTarget: HTMLDivElement }): Point {
     const r = e.currentTarget.getBoundingClientRect()
@@ -89,13 +89,13 @@ export function Board({
           <>
             <polygon
               points={mapPack.dropZones.a.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
-              fill="rgba(199,93,58,0.10)"
+              fill="color-mix(in srgb, var(--side-a) 10%, transparent)"
               stroke="var(--side-a)"
               strokeDasharray="4 3"
             />
             <polygon
               points={mapPack.dropZones.b.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
-              fill="rgba(58,123,199,0.10)"
+              fill="color-mix(in srgb, var(--side-b) 10%, transparent)"
               stroke="var(--side-b)"
               strokeDasharray="4 3"
             />
@@ -113,11 +113,11 @@ export function Board({
         )}
         {/* 1" 控制范围圈（1.14 AC2） */}
         {controlRing && (
-          <circle cx={controlRing.center.x * SCALE} cy={controlRing.center.y * SCALE} r={controlRing.r * SCALE} fill="none" stroke="#9aa3b2" strokeWidth={1} strokeDasharray="2 3" opacity={0.6} />
+          <circle cx={controlRing.center.x * SCALE} cy={controlRing.center.y * SCALE} r={controlRing.r * SCALE} fill="none" stroke="var(--text-secondary)" strokeWidth={1} strokeDasharray="2 3" opacity={0.6} />
         )}
         {/* 自身掩护染色（cover=绿/exposed=灰） */}
         {ownCover && rangeRing && (
-          <circle cx={rangeRing.center.x * SCALE} cy={rangeRing.center.y * SCALE} r={14} fill="none" stroke={ownCover === 'cover' ? '#39d98a' : ownCover === 'exposed' ? '#6b7280' : 'transparent'} strokeWidth={2} opacity={0.8} />
+          <circle cx={rangeRing.center.x * SCALE} cy={rangeRing.center.y * SCALE} r={14} fill="none" stroke={ownCover === 'cover' ? 'var(--status-success-hover)' : ownCover === 'exposed' ? 'var(--border-strong)' : 'transparent'} strokeWidth={2} opacity={0.8} />
         )}
 
         {/* LOS 射线 */}
@@ -211,7 +211,7 @@ export function Board({
               <svg className="facing" width={r * 2} height={r * 2} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
                 <polygon
                   points={`${r},${r * 0.2} ${r * 0.6},${r * 0.9} ${r * 1.4},${r * 0.9}`}
-                  fill="rgba(255,255,255,0.85)"
+                  fill="var(--border-default)"
                   transform={`rotate(${t.facing} ${r} ${r})`}
                 />
               </svg>

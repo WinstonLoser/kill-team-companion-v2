@@ -4,14 +4,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(11, 11, 12, 0.75);
   z-index: 100000;
   display: flex;
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(4px);
-  color: #eee;
-  font-family: sans-serif;
+  color: var(--text-primary);
+  font-family: var(--font-body);
 }
 
 .dm-container {
@@ -19,18 +19,17 @@
   max-width: 800px;
   height: 90vh;
   max-height: 800px;
-  background: #1e1e1e;
-  border: 2px solid #ff4444;
-  border-radius: 12px;
+  background: var(--bg-surface);
+  border: 2px solid var(--accent-primary);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
 }
 
 .dm-header {
-  background: #ff4444;
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
@@ -39,7 +38,7 @@
 
 .dm-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-display-md);
   text-transform: uppercase;
   letter-spacing: 2px;
   display: flex;
@@ -50,8 +49,8 @@
 .dm-close {
   background: none;
   border: none;
-  color: white;
-  font-size: 2rem;
+  color: var(--text-on-accent);   /* 坐在锈色标题带上 */
+  font-size: var(--text-display-lg);
   cursor: pointer;
   line-height: 1;
 }
@@ -64,8 +63,8 @@
 
 .dm-sidebar {
   width: 280px;
-  background: #252525;
-  border-right: 1px solid #444;
+  background: var(--bg-surface-raised);
+  border-right: 1px solid var(--border-hairline);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -80,8 +79,8 @@
 .dm-op-item {
   padding: 8px 12px;
   cursor: pointer;
-  border-bottom: 1px solid #333;
-  transition: all 0.2s;
+  border-bottom: 1px solid var(--border-hairline);
+  transition: all var(--dur-base) var(--ease-out);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -89,11 +88,11 @@
 }
 
 .dm-op-item:hover {
-  background: #333;
+  background: var(--bg-surface-raised);
 }
 
 .dm-op-item.active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface-raised);
   border-left-color: inherit;
 }
 
@@ -102,8 +101,8 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  background: #111;
-  border: 2px solid #444;
+  background: var(--bg-panel-inset);
+  border: 2px solid var(--border-hairline);
 }
 
 .dm-op-info {
@@ -115,21 +114,21 @@
 }
 
 .dm-op-name {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .dm-op-side {
-  font-size: 0.7rem;
+  font-size: var(--text-caption);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   font-weight: bold;
   align-self: flex-start;
 }
-.dm-op-side.a { background: #ff5c5c; color: #111; }
-.dm-op-side.b { background: #39d98a; color: #111; }
+.dm-op-side.a { background: var(--side-a); color: var(--text-on-accent); }
+.dm-op-side.b { background: var(--side-b); color: var(--text-on-accent); }
 
 .dm-editor {
   flex: 1;
@@ -142,9 +141,9 @@
 }
 
 .dm-section h3 {
-  color: #ff4444;
+  color: var(--accent-primary);
   margin-top: 0;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid var(--border-hairline);
   padding-bottom: 8px;
   margin-bottom: 16px;
 }
@@ -162,23 +161,23 @@
 }
 
 .dm-field label {
-  font-size: 0.85rem;
-  color: #aaa;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
   text-transform: uppercase;
 }
 
 .dm-field input {
-  background: #111;
-  border: 1px solid #444;
-  color: white;
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
   padding: 8px;
-  border-radius: 4px;
-  font-size: 1.1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-subtitle);
 }
 
 .dm-field input:focus {
   outline: none;
-  border-color: #ff4444;
+  border-color: var(--accent-primary);
 }
 
 .dm-markers-row {
@@ -188,35 +187,34 @@
 }
 
 .dm-marker-toggle {
-  background: #111;
-  border: 1px solid #444;
-  color: #aaa;
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   font-weight: bold;
   transition: all 0.2s;
 }
 
 .dm-marker-toggle.active {
-  background: #ff4444;
-  color: white;
-  border-color: #ff4444;
-  box-shadow: 0 0 10px rgba(255, 68, 68, 0.4);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  border-color: var(--accent-primary);
 }
 
 .dm-weapon-card {
-  background: #2a2a2a;
-  border-radius: 8px;
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 16px;
-  border: 1px solid #444;
+  border: 1px solid var(--border-hairline);
 }
 
 .dm-weapon-card h4 {
   margin: 0 0 12px 0;
-  color: #ddd;
+  color: var(--text-primary);
 }
 
 .dm-actions {
@@ -225,32 +223,34 @@
   gap: 12px;
   margin-top: 32px;
   padding-top: 16px;
-  border-top: 1px solid #444;
+  border-top: 1px solid var(--border-hairline);
 }
 
 .dm-btn {
   padding: 8px 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   font-weight: bold;
   cursor: pointer;
   border: none;
-  font-size: 1rem;
+  font-size: var(--text-subtitle);
 }
 
 .dm-btn-save {
-  background: #ff4444;
-  color: white;
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
 }
 
 .dm-btn-save:hover {
-  background: #ff6666;
+  background: var(--accent-primary-hover);
 }
 
 .dm-btn-reset {
-  background: #444;
-  color: white;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
 }
 
 .dm-btn-reset:hover {
-  background: #555;
+  background: var(--bg-surface-raised);
+  border-color: var(--border-accent);
 }

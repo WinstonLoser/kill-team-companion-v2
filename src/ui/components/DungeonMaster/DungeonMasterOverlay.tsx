@@ -53,8 +53,8 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
   const save = statOverrides.save ?? operative.stats.save
   const maxWounds = statOverrides.wounds ?? operative.stats.wounds
 
-  const themeColor = pack.faction.theme?.ui?.primaryRgb ? `rgb(${pack.faction.theme.ui.primaryRgb})` : '#ff4444'
-  const themeBorder = pack.faction.theme?.ui?.primaryRgb ? `rgba(${pack.faction.theme.ui.primaryRgb}, 0.4)` : 'rgba(255, 68, 68, 0.4)'
+  const themeColor = pack.faction.theme?.ui?.primaryRgb ? `rgb(${pack.faction.theme.ui.primaryRgb})` : 'var(--accent-primary)'
+  const themeBorder = pack.faction.theme?.ui?.primaryRgb ? `rgba(${pack.faction.theme.ui.primaryRgb}, 0.4)` : 'var(--accent-primary-muted)'
 
   function toggleMarker(marker: string) {
     setCurrentTokenState(prev => {
@@ -95,7 +95,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="dm-overlay" onClick={onClose}>
-      <div className="dm-container" onClick={e => e.stopPropagation()} style={{ borderColor: themeColor, boxShadow: `0 0 20px ${themeBorder}` }}>
+      <div className="dm-container" onClick={e => e.stopPropagation()} style={{ borderColor: themeColor }}>
         <div className="dm-header" style={{ background: themeColor }}>
           <h2>🎲 DUNGEON MASTER</h2>
           <button className="dm-close" onClick={onClose}>&times;</button>
@@ -106,7 +106,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
             {tokens.map(token => {
               const opAvatar = getAvatarUrl(token.factionId, token.opId)
               const tokenPack = packOfFaction(token.factionId)
-              const tColor = tokenPack.faction.theme?.ui?.primaryRgb ? `rgb(${tokenPack.faction.theme.ui.primaryRgb})` : '#ff4444'
+              const tColor = tokenPack.faction.theme?.ui?.primaryRgb ? `rgb(${tokenPack.faction.theme.ui.primaryRgb})` : 'var(--accent-primary)'
               const tColorRgb = tokenPack.faction.theme?.ui?.primaryRgb || '255, 68, 68'
               
               return (
@@ -145,7 +145,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                         <button 
                           key={m}
                           className={`dm-marker-toggle ${isActive ? 'active' : ''}`}
-                          style={isActive ? { background: themeColor, borderColor: themeColor, boxShadow: `0 0 10px ${themeBorder}` } : {}}
+                          style={isActive ? { background: themeColor, borderColor: themeColor } : {}}
                           onClick={() => toggleMarker(m)}
                         >
                           {m}
@@ -171,7 +171,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                     />
                     <button 
                       className="dm-btn" 
-                      style={{ padding: '8px 12px', background: themeColor, color: '#fff' }}
+                      style={{ padding: '8px 12px', background: themeColor, color: 'var(--text-primary)' }}
                       onClick={() => {
                         if (customMarker.trim()) {
                           const newTag = customMarker.trim().toUpperCase();
@@ -197,7 +197,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                     onChange={(e) => {
                       swapOperativeClass(selectedData.token.uid, e.target.value);
                     }}
-                    style={{ background: '#222', color: '#fff', border: `1px solid ${themeBorder}`, padding: '8px', borderRadius: '4px' }}
+                    style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', border: `1px solid ${themeBorder}`, padding: '8px', borderRadius: 'var(--radius-md)' }}
                   >
                     {selectedData.pack.operatives.map(o => (
                       <option key={o.operativeId} value={o.operativeId}>
@@ -212,7 +212,7 @@ export function DungeonMasterOverlay({ onClose }: { onClose: () => void }) {
                     {selectedData.pack.weapons.map(w => {
                       const isEquipped = selectedData.token.weapons?.includes(w.weaponId) || (!selectedData.token.weapons?.length && (w.kind === 'RANGED' || w.kind === 'MELEE'));
                       return (
-                        <label key={w.weaponId} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: isEquipped ? 'rgba(255,255,255,0.1)' : 'transparent', padding: '4px 8px', borderRadius: '4px', border: `1px solid ${isEquipped ? themeColor : '#444'}`, cursor: 'pointer' }}>
+                        <label key={w.weaponId} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: isEquipped ? 'var(--border-hairline)' : 'transparent', padding: '4px 8px', borderRadius: 'var(--radius-md)', border: `1px solid ${isEquipped ? themeColor : 'var(--border-hairline)'}`, cursor: 'pointer' }}>
                           <input 
                             type="checkbox" 
                             checked={isEquipped}

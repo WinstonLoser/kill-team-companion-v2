@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useMatchStore } from '../state/matchStore'
+import { useEffect, useState } from 'react'
+import { useMatchStore, type MatchState } from '../state/matchStore'
 import { buildTokens } from './buildTokens'
 import { PlayView } from './match/PlayView'
 import { StrategyPhase } from './match/StrategyPhase'
@@ -19,7 +19,17 @@ export function BattleView() {
   const initTokens = useMatchStore((s) => s.initTokens)
   const setMaplessMode = useMatchStore((s) => s.setMaplessMode)
   const enterStrategy = useMatchStore((s) => s.enterStrategy)
+  // 显式标注：zustand 的类型在本项目里没解析上，不写就是 implicit any
+  const initiative = useMatchStore((s: MatchState) => s.initiative)
+  const turn = useMatchStore((s: MatchState) => s.turn)
   const rulesQuery = useRulesQuery()
+
+  // 战略阶段改成盖在棋盘上的浮层（原来是整屏替换）。收起后棋盘还在，
+  // 想回来点状态条上的「战略阶段 ▸」。每进入一个新转折点重新弹出。
+  const [strategyHidden, setStrategyHidden] = useState(false)
+  useEffect(() => {
+    if (phase === 'strategy') setStrategyHidden(false)
+  }, [phase, turn.turningPoint])
 
   useEffect(() => {
     if (useMatchStore.getState().maplessMode) return
@@ -53,14 +63,52 @@ export function BattleView() {
     )
   }
 
-  if (phase === 'strategy') {
-    return <StrategyPhase />
-  }
+  const inStrategy = phase === 'strategy'
 
-  // 行动条、单位面板等都由 PlayView 承载
+  // 行动条、单位面板等都由 PlayView 承载；战略阶段浮在它上面
   return (
     <>
       <PlayView onQueryRule={(hint) => rulesQuery.open(hint)} />
+
+      {inStrategy && !strategyHidden && (
+        <div className="ds-scrim sp-scrim">
+          <div className="ds-modal sp-modal">
+            <div className="ds-modal-head">
+              <div>
+                <div className="ds-eyebrow">转折点 {turn.turningPoint}/4</div>
+                <h3 className="ds-display ds-display--md">战略阶段</h3>
+              </div>
+              {/*
+                掷完先手骰之前不给关：此时棋盘还没有「轮到谁」，
+                放人出去只会看到一个不能操作的空局面。
+              */}
+              <button
+                className="ds-modal-close"
+                disabled={!initiative}
+                onClick={() => setStrategyHidden(true)}
+                title={initiative ? '收起，稍后从状态条继续' : '先掷先手骰'}
+                aria-label="收起战略阶段"
+              >
+                ×
+              </button>
+            </div>
+            <div className="ds-modal-body sp-modal-body">
+              <StrategyPhase />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {inStrategy && strategyHidden && (
+        <button
+          className="ds-btn ds-btn--sm sp-reopen"
+          onClick={() => setStrategyHidden(false)}
+          title="回到战略阶段（选计谋 / 结束本阶段）"
+        >
+          战略阶段 ▸
+        </button>
+      )}
+
       {rulesQuery.node && <RulesQuery ctrl={rulesQuery} />}
     </>
   )

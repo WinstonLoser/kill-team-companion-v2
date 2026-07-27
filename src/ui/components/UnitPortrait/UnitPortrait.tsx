@@ -22,7 +22,7 @@ export function UnitPortrait({
   currentWounds,
   maxWounds,
   statuses = [],
-  themeColor = '#ff5a00',
+  themeColor = 'var(--accent-primary)',
   themeColorRgb = '255, 90, 0',
   avatarUrl,
   locale = 'zh',
@@ -37,28 +37,34 @@ export function UnitPortrait({
 
   const hpPercent = Math.max(0, Math.min(100, (currentWounds / maxWounds) * 100))
   
-  // Color coding the HP bar based on health percentage
-  let hpColor = '#4ade80' // Green
+  // Color coding the HP bar based on health percentage.
+  // DS 的状态色是「脏化/去饱和」的（血红/枯橄榄/暗琥珀），不用亮饱和的通用 UI 色。
+  let hpColor = 'var(--status-success)'
   if (hpPercent <= 30) {
-    hpColor = '#ef4444' // Red
+    hpColor = 'var(--status-danger-hover)'
   } else if (hpPercent <= 60) {
-    hpColor = '#facc15' // Yellow
+    hpColor = 'var(--status-warning)'
   }
 
   const style = {
     '--portrait-theme': themeColor,
     '--portrait-theme-rgb': themeColorRgb,
     '--portrait-hp': hpColor,
-    fontSize: `${16 * scale}px`,
-    ...(selected ? {
-      boxShadow: `0 0 15px ${themeColor}, inset 0 0 10px ${themeColor}`,
-      borderColor: themeColor
-    } : {})
+    // 本组件内部一律用 em，这里定 1em 的基准。挂在 --text-body 上而非写死
+    // 16px，好让整卡跟着全局 --ui-scale 一起缩放；scale 仍是调用方的局部倍率。
+    fontSize: `calc(${scale} * var(--text-body))`,
+    // DS 是扁平体系（--shadow-* 全部 none）：选中态只换边框色，不加辉光。
+    ...(selected ? { borderColor: themeColor } : {})
   } as React.CSSProperties
 
   return (
-    <div className={`unit-portrait-container ${selected ? 'selected' : ''}`} style={style} onClick={onClick}>
-      <div 
+    <div className={`unit-portrait-container kc-dossier ${selected ? 'selected' : ''}`} style={style} onClick={onClick}>
+      {/* DS「档案卡」角标：虚线边框 + 四角 + 十字定位标记 */}
+      <span className="kc-dossier-corner tl" aria-hidden="true" />
+      <span className="kc-dossier-corner tr" aria-hidden="true" />
+      <span className="kc-dossier-corner bl" aria-hidden="true" />
+      <span className="kc-dossier-corner br" aria-hidden="true" />
+      <div
         className="up-avatar-wrapper" 
         onClick={(e) => {
           if (onAvatarClick) {

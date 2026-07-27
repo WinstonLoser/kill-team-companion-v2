@@ -18,6 +18,7 @@ import { TargetSelectionModal } from './TargetSelectionModal'
 import { StratagemPanel } from './StratagemPanel'
 import { packOfOp, packOfFaction, weaponOfPack } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
+import './PlayView.css'
 import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPanel'
 import { type RollContext } from '../../dice/source'
 
@@ -221,7 +222,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (!tok) return null
     return {
       target: tg.pos,
-      stroke: tg.obscured ? '#6b7280' : tg.losFinal ? '#39d98a' : '#ff5c5c',
+      stroke: tg.obscured ? 'var(--border-strong)' : tg.losFinal ? 'var(--status-success-hover)' : 'var(--kc-blood-3)',
       dash: tg.obscured ? '2 4' : tg.losAmbiguous ? '4 3' : 'none',
       opacity: tg.obscured ? 0.4 : 0.7,
     }
@@ -330,11 +331,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       attacker, target, kind,
       atkCount: weapon.profile.attacks,
       atkContext: context,
-      atkTheme: atkPack?.faction.theme?.dice || { baseColor: '#1e1e1e', pipColor: '#e0e0e0' },
+      // 骰面配色来自 pack 数据；缺省回落到 DS 的枪铁/骨白，不用裸色值
+      atkTheme: atkPack?.faction.theme?.dice || { baseColor: 'var(--kc-black-3)', pipColor: 'var(--kc-bone-3)' },
       atkDamage: { normal: weapon.profile.normalDamage, critical: weapon.profile.criticalDamage },
       defCount,
       defContext,
-      defTheme: defPack?.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
+      defTheme: defPack?.faction.theme?.dice || { baseColor: 'var(--kc-steel-2)', pipColor: 'var(--kc-bone-3)' },
       defDamage: defWeapon ? { normal: defWeapon.profile.normalDamage, critical: defWeapon.profile.criticalDamage } : { normal: 0, critical: 0 },
       defSave: 3, // DEFENDER_SAVE
       defWounds: target.wounds,
@@ -540,27 +542,27 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                   </div>
                 </div>
                 {hoverInch && <div className="inch-readout">{hoverInch}</div>}
-                <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
+                <p className="muted pv-hint">激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
               </>
             )}
           </div>
           {/* BOT AREA: Logs (Mini View) */}
-          <div 
-            style={{ flexShrink: 0, background: 'rgba(0,0,0,0.5)', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }}
+          <div
+            className="history-strip"
             onClick={() => setShowFullLog(true)}
             title="点击查看完整历史"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: '#aaa' }}>最近历史记录 (点击展开)</span>
-              <span style={{ fontSize: '0.8rem', color: '#666' }}>▴</span>
+            <div className="hs-head">
+              <span className="hs-label">最近历史记录 (点击展开)</span>
+              <span className="hs-caret">▴</span>
             </div>
             {latestLog ? (
-              <div style={{ fontSize: '0.9rem', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <span className={`log-kind ${latestLog.kind}`} style={{ marginRight: '8px' }}>{latestLog.kind}</span>
+              <div className="hs-line">
+                <span className={`ds-badge log-kind ${latestLog.kind}`}>{latestLog.kind}</span>
                 {latestLog.text}
               </div>
             ) : (
-              <div style={{ fontSize: '0.9rem', marginTop: '4px', color: '#666' }}>暂无记录</div>
+              <div className="hs-line hs-empty">暂无记录</div>
             )}
           </div>
         </div>
@@ -572,13 +574,13 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       </div>
 
       {showFullLog && (
-        <div className="overlay-backdrop" style={{ zIndex: 9000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowFullLog(false)}>
-          <div style={{ background: '#1e1e1e', padding: '16px', borderRadius: '8px', width: '90%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0 }}>完整历史记录</h3>
-              <button className="link-btn" onClick={() => setShowFullLog(false)} style={{ fontSize: '1.2rem' }}>✕</button>
+        <div className="ds-scrim pv-scrim-log" onClick={() => setShowFullLog(false)}>
+          <div className="ds-modal pv-modal-log" onClick={e => e.stopPropagation()}>
+            <div className="ds-modal-head">
+              <h3 className="ds-display ds-display--md">完整历史记录</h3>
+              <button className="ds-modal-close" onClick={() => setShowFullLog(false)} aria-label="关闭">×</button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="ds-modal-body">
               <LogPanel onReplay={replayLast} onRollbackToHere={rewindLast} />
             </div>
           </div>
@@ -594,8 +596,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         </div>
       )}
       {combatCollect && (
-        <div className="overlay-backdrop" style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', maxWidth: '1000px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column' }}>
+        <div className="ds-scrim pv-scrim-combat">
+          <div className="ds-modal pv-modal-combat">
             <CombatResolver
               mode={combatCollect.kind}
               attackerName={combatCollect.attacker.name}
@@ -659,19 +661,19 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
       {/* Operative Card Modal */}
       {showDataCardUid && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => setShowDataCardUid(null)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '95vw', maxWidth: '900px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column', borderRadius: '12px' }}>
+        <div className="ds-scrim pv-scrim-datacard" onClick={() => setShowDataCardUid(null)}>
+          <div className="pv-datacard-shell" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const dmData = getMatchOperativeData(showDataCardUid)
               if (!dmData) return null
               
               const { operative, pack: opPack, token: opToken, weapons } = dmData
-              const uiTheme = opPack.faction.theme?.ui || { primaryRgb: '255, 90, 0', textHighlight: '#ffaa77' }
+              const uiTheme = opPack.faction.theme?.ui || { primaryRgb: '209, 69, 28', textHighlight: 'var(--accent-primary-hover)' }
               
               // Use equipped weapons
               const avatarUrl = getAvatarUrl(opPack.faction.id, opToken.opId)
               return (
-                <div style={{ height: '100%', '--theme-primary-rgb': uiTheme.primaryRgb, '--theme-text-highlight': uiTheme.textHighlight } as React.CSSProperties}>
+                <div className="pv-datacard-inner" style={{ '--theme-primary-rgb': uiTheme.primaryRgb, '--theme-text-highlight': uiTheme.textHighlight } as React.CSSProperties}>
                   <OperativeCard 
                     operative={operative} 
                     pack={{ ...opPack, weapons }} // Pass the overridden weapons array via pack to the card
@@ -692,27 +694,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       )}
 
       {/* Dungeon Master Floating Button */}
-      <button 
-        className="dm-floating-btn" 
+      <button
+        className="dm-floating-btn"
         onClick={() => setShowDungeonMaster(true)}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          background: '#ff4444',
-          color: 'white',
-          border: 'none',
-          borderRadius: '50%',
-          width: '60px',
-          height: '60px',
-          fontSize: '24px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(255, 68, 68, 0.4)',
-          zIndex: 9000,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}
         title="Dungeon Master Mode"
       >
         🎲
@@ -746,24 +730,19 @@ function SimpleMatchEmptyState() {
   const activeRgb = activePack?.faction.theme?.ui?.primaryRgb || '160, 160, 160'
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '24px', backgroundColor: 'var(--bg-panel)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-      <div style={{
-        width: '100%', maxWidth: '420px', padding: '20px 24px', borderRadius: '8px', textAlign: 'center',
-        background: `rgba(${activeRgb}, 0.1)`, border: `1px solid rgba(${activeRgb}, 0.5)`,
-      }}>
-        <div style={{ fontSize: '0.78rem', color: '#aaa', marginBottom: '6px' }}>第 {turn.turningPoint} 转折点</div>
+    <div className="pv-empty" style={{ '--side-theme': `rgb(${activeRgb})` } as React.CSSProperties}>
+      <div className="pv-empty-card">
+        <div className="ds-eyebrow pv-empty-tp">第 {turn.turningPoint} 转折点</div>
         {activeSide ? (
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: `rgb(${activeRgb})`, textShadow: `0 0 8px rgba(${activeRgb}, 0.4)` }}>
-            轮到 {activeSide.toUpperCase()} 方激活
-          </div>
+          <h3 className="ds-display ds-display--md pv-empty-call">轮到 {activeSide.toUpperCase()} 方激活</h3>
         ) : (
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ccc' }}>准备激活特工</div>
+          <h3 className="ds-display ds-display--md">准备激活特工</h3>
         )}
-        <div style={{ fontSize: '0.9rem', color: '#bbb', marginTop: '10px', lineHeight: 1.6 }}>
+        <div className="pv-empty-hint">
           在两侧面板选择一名特工并点击「激活该特工 ▶」，<br/>其数据与行动菜单将显示在此。
         </div>
       </div>
-      <div style={{ fontSize: '0.75rem', color: '#777', textAlign: 'center' }}>
+      <div className="pv-empty-mode">
         简化对局模式 · 无需地图 · 攻击时将弹出目标选择窗口
       </div>
     </div>
@@ -794,9 +773,10 @@ function ActiveOperativeFocus({
   const save = getMatchOperativeData(active.uid)?.operative.stats.save
 
   const hpPercent = Math.max(0, Math.min(100, (active.wounds / (active.maxWounds || 1)) * 100))
-  let hpColor = '#4ade80'
-  if (hpPercent <= 30) hpColor = '#ef4444'
-  else if (hpPercent <= 60) hpColor = '#facc15'
+  // 血量色走 DS 的脏化状态色（枯橄榄 / 暗琥珀 / 血红），不用亮饱和通用色
+  let hpColor = 'var(--status-success-hover)'
+  if (hpPercent <= 30) hpColor = 'var(--status-danger-hover)'
+  else if (hpPercent <= 60) hpColor = 'var(--status-warning-hover)'
 
   const stats: { label: string; value: string; color?: string }[] = [
     { label: 'M', value: `${effectiveMoveOf(active.uid)}"` },
@@ -806,25 +786,20 @@ function ActiveOperativeFocus({
   ]
 
   return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px',
-      backgroundColor: 'var(--bg-panel)', borderRadius: '8px',
-      border: `2px solid rgb(${themeRgb})`,
-      boxShadow: `0 0 15px rgba(${themeRgb}, 0.35), inset 0 0 12px rgba(${themeRgb}, 0.12)`,
-    }}>
+    <div className="pv-focus" style={{ '--side-theme': themeColor } as React.CSSProperties}>
       {/* Header: avatar + name + status markers */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '52px', height: '52px', borderRadius: '6px', overflow: 'hidden', flexShrink: 0, border: `1px solid rgba(${themeRgb}, 0.6)`, background: 'rgba(0,0,0,0.3)' }}>
+      <div className="pv-focus-head">
+        <div className="pv-focus-avatar">
           {avatarUrl
-            ? <img src={avatarUrl} alt={active.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem' }}>👤</div>}
+            ? <img src={avatarUrl} alt={active.name} />
+            : <div className="pv-focus-avatar-fallback">👤</div>}
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <h3 style={{ margin: 0, color: themeColor, textShadow: `0 0 8px rgba(${themeRgb}, 0.5)`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.name}</h3>
+        <div className="pv-focus-title">
+          <h3 className="ds-display ds-display--md pv-focus-name">{active.name}</h3>
           {active.markers && active.markers.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+            <div className="pv-focus-markers">
               {active.markers.map((m) => (
-                <span key={m} style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '3px', background: 'rgba(255,255,255,0.1)', color: '#ccc' }}>{m}</span>
+                <span key={m} className="ds-badge">{m}</span>
               ))}
             </div>
           )}
@@ -832,11 +807,11 @@ function ActiveOperativeFocus({
       </div>
 
       {/* Stat line: M / APL / SV / W */}
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="pv-stats">
         {stats.map((s) => (
-          <div key={s.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 4px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', border: `1px solid rgba(${themeRgb}, 0.25)` }}>
-            <span style={{ fontWeight: 'bold', fontSize: '1.25rem', color: s.color || '#fff', lineHeight: 1.1 }}>{s.value}</span>
-            <span style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '2px', letterSpacing: '0.05em' }}>{s.label}</span>
+          <div key={s.label} className="pv-stat">
+            <span className="pv-stat-value" style={s.color ? { color: s.color } : undefined}>{s.value}</span>
+            <span className="ds-label pv-stat-label">{s.label}</span>
           </div>
         ))}
       </div>

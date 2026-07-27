@@ -1,61 +1,56 @@
+/*
+ * 特工数据卡 —— DS 的 dossier（档案卡）形态。
+ * readme「Corner motif」：dossier = 虚线边框 + 四角 + 十字定位标记，专用于
+ * 「读作一张印刷战情档案」的特工统计卡。这里是全应用视觉权重最高的一处。
+ *
+ * 体系约束：无阴影、无背景模糊、无辉光；深度靠边框与底色分层。
+ * --theme-primary-rgb 由 OperativeCard 按阵营 pack 注入，保留数据驱动的阵营染色。
+ */
+
 .op-card-container {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.3);
-  border-radius: 12px;
-  padding: 24px;
-  color: #e2e8f0;
+  /* 边框/底色来自 .kc-dossier，这里只覆盖阵营色描边 */
+  border-color: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.55);
+  padding: var(--space-6);
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.05);
+  gap: var(--space-6);
   height: 100%;
   overflow-y: auto;
-  font-family: 'Inter', 'Roboto', sans-serif;
+  font-family: var(--font-body);
   position: relative;
 }
 
-/* Subtle tech grid background */
-.op-card-container::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 20px 20px;
-  z-index: -1;
-  pointer-events: none;
-  border-radius: 12px;
+.op-card-container .kc-dossier-corner {
+  color: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.75);
 }
 
 .op-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
-  padding-bottom: 16px;
+  gap: var(--space-4);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.35);
+  padding-bottom: var(--space-4);
 }
 
 .op-header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .op-avatar-wrapper {
   width: 72px;
   height: 72px;
   flex-shrink: 0;
-  border-radius: 8px;
-  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
-  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.5);
+  background: var(--bg-panel-inset);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.1);
   position: relative;
 }
 
@@ -71,116 +66,135 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  background: var(--bg-panel-inset);
 }
 
 .avatar-icon {
-  font-size: 2rem;
+  font-size: var(--text-display-lg);
   opacity: 0.3;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
 }
 
 .op-title-area {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .op-name {
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: var(--text-display-md);
+  font-weight: var(--fw-display-black);
+  line-height: var(--lh-heading);
+  color: var(--text-primary);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  text-shadow: 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
+  letter-spacing: var(--ls-display);
 }
 
 .op-keywords {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .keyword-tag {
-  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15);
-  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.4);
-  color: var(--theme-text-highlight, #ffaa77);
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 4px;
+  background: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.15);
+  border: 1px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.5);
+  color: rgb(var(--theme-primary-rgb, 209, 69, 28));
+  padding: 3px 9px;
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  font-weight: var(--fw-semibold);
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--ls-eyebrow);
+  line-height: 1;
 }
+
+/* ---------------------------------------------------------------- 属性 --- */
 
 .op-stats-panel {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
+/*
+ * 属性块：原为六边形 clip-path + 辉光。改成套件招牌的斜切角方块，
+ * 与 .ds-chamfer 同一形状语言。
+ */
 .stat-hex {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 64px;
-  background: linear-gradient(135deg, rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2), rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15));
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  border: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.5);
-  box-shadow: 0 0 10px rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
+  width: 60px;
+  height: 60px;
+  background: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.12);
+  border: 1px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.55);
+  clip-path: polygon(
+    8px 0, 100% 0,
+    100% calc(100% - 8px), calc(100% - 8px) 100%,
+    0 100%, 0 8px);
 }
 
 .stat-value {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-display-md);
+  font-weight: var(--fw-display-black);
+  color: var(--text-primary);
+  line-height: var(--lh-tight);
 }
 
 .stat-label {
-  font-size: 0.65rem;
-  color: var(--theme-text-highlight, #ffaa77);
-  font-weight: 600;
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
   margin-top: 2px;
 }
+
+/* ---------------------------------------------------------------- 主体 --- */
 
 .op-body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-6);
   flex: 1;
 }
 
 .weapons-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .weapon-table-wrapper {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
+/* 表头用 chrome 黑带（主题无关），呼应 DS Card 的标题带 */
 .weapon-table-header {
-  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.15);
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--theme-text-highlight, #ffaa77);
-  letter-spacing: 1px;
+  background: var(--bg-chrome);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-label);
+  font-size: var(--text-body-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-on-chrome);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
+  gap: var(--space-2);
+  border-bottom: 2px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.6);
 }
 
 .weapon-icon {
-  font-size: 1.2rem;
+  font-size: var(--text-title);
 }
 
 .weapon-table {
@@ -190,22 +204,24 @@
 }
 
 .weapon-table th {
-  padding: 8px 12px;
-  font-size: 0.75rem;
-  color: #94a3b8;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  letter-spacing: var(--ls-label);
+  color: var(--text-muted);
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .weapon-table td {
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.2s ease;
+  padding: 10px var(--space-3);
+  font-size: var(--text-body-sm);
+  border-bottom: 1px solid var(--border-hairline);
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .weapon-row:hover td {
-  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.05);
+  background: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.08);
 }
 
 .weapon-row:last-child td {
@@ -217,89 +233,97 @@
 }
 
 .w-name {
-  font-weight: 600;
-  color: #e2e8f0;
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
 }
 
+/* 武器数值是数据，走等宽字 —— readme「Numbers as data」 */
 .w-stat {
-  font-weight: 700;
-  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .w-rules {
-  color: var(--theme-text-highlight, #ffaa77);
+  color: rgb(var(--theme-primary-rgb, 209, 69, 28));
   font-style: italic;
 }
+
+/* ---------------------------------------------------------------- 规则 --- */
 
 .rules-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .rule-block {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--bg-panel-inset);
+  border: 1px solid var(--border-hairline);
+  border-top: 2px solid rgba(var(--theme-primary-rgb, 209, 69, 28), 0.6);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
 }
 
 .rule-header {
-  margin: 0 0 12px 0;
-  font-size: 0.9rem;
-  color: var(--theme-text-highlight, #ffaa77);
+  margin: 0 0 var(--space-3) 0;
+  font-family: var(--font-label);
+  font-size: var(--text-caption);
+  color: rgb(var(--theme-primary-rgb, 209, 69, 28));
   text-transform: uppercase;
-  letter-spacing: 1px;
-  border-bottom: 1px solid rgba(var(--theme-primary-rgb, 255, 90, 0), 0.2);
-  padding-bottom: 8px;
+  letter-spacing: var(--ls-eyebrow);
+  border-bottom: 1px solid var(--border-hairline);
+  padding-bottom: var(--space-2);
 }
 
 .rule-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .rule-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .rule-name {
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 0.85rem;
+  font-family: var(--font-label);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  font-size: var(--text-body-sm);
 }
 
 .rule-desc {
-  font-size: 0.8rem;
-  color: #cbd5e1;
-  line-height: 1.5;
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
 }
 
 .w-rule-clickable {
-  color: var(--theme-text-highlight, #ffaa77);
+  color: rgb(var(--theme-primary-rgb, 209, 69, 28));
   cursor: pointer;
   text-decoration: underline;
   text-decoration-style: dotted;
-  text-decoration-color: rgba(255, 170, 119, 0.5);
-  transition: all 0.2s ease;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
 .w-rule-clickable:hover {
-  color: #ffffff;
-  text-decoration-color: #ffffff;
+  color: var(--accent-primary-hover);
 }
 
 .rule-item.clickable {
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-  margin: -8px;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-out);
+  margin: calc(var(--space-2) * -1);
 }
 
 .rule-item.clickable:hover {
-  background: rgba(var(--theme-primary-rgb, 255, 90, 0), 0.1);
+  background: rgba(var(--theme-primary-rgb, 209, 69, 28), 0.1);
 }

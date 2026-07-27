@@ -1,0 +1,331 @@
+/*
+ * 建队屏样式。
+ *
+ * 布局意图：横屏 iPad 上 A / B 两栏等宽并列，各自独立滚动，底部一条通栏门禁。
+ * 每栏约 590pt 宽 —— 这是所有密度取舍的前提：一行一名特工、装备藏进展开区、
+ * 阵营资料挪进弹层。
+ *
+ * 视觉一律走 ds.css / design-system token：无阴影、圆角只到 6px、
+ * 卡片用 14px 斜切角、动效 110–180ms。
+ */
+
+.roster {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------ 两栏 --- */
+
+.roster-columns {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;                       /* 1px 缝隙 + 底色 = 两栏之间的分隔线 */
+  background: var(--border-hairline);
+}
+
+.roster-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  background: var(--bg-app);
+}
+
+.tc-column {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 阵营色只用在栏顶那条，避免整栏染色压过内容 */
+.tc-column::before {
+  content: '';
+  height: 3px;
+  flex-shrink: 0;
+  background: var(--side-a);
+}
+.tc-b::before { background: var(--side-b); }
+
+/* ------------------------------------------------------------ 栏头 --- */
+
+.tc-head {
+  flex-shrink: 0;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tc-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.tc-a .tc-side { color: var(--side-a); }
+.tc-b .tc-side { color: var(--side-b); }
+
+/* 阵营卡：2×2，半栏宽刚好放得下 */
+.fs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.fs-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 72px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-top: 3px solid var(--border-hairline);
+  text-align: left;
+}
+.fs-card:hover:not(:disabled) { border-top-color: var(--accent-primary); }
+.fs-card:disabled { opacity: 0.4; cursor: not-allowed; }
+.fs-card-name { color: var(--text-primary); }
+
+/* 已选阵营：折叠成一条身份栏 */
+.fs-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-left: 4px solid var(--side-a);
+}
+.tc-b .fs-identity { border-left-color: var(--side-b); }
+.fs-identity-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fs-identity-name { color: var(--text-primary); }
+
+/* ------------------------------------------------------------ 栏身 --- */
+
+.tc-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;              /* 每栏独立滚动 */
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.tc-body--empty { justify-content: center; }
+
+.tc-roster-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------- 特工行 --- */
+
+.rl-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.rl-empty { margin: 0; }
+
+.rl-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-left: 3px solid transparent;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.rl-row.is-open { border-left-color: var(--accent-primary); }
+
+/* 整行可点 = 展开/收起。按钮基底样式在这里要全部推翻 */
+.rl-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  min-height: 56px;              /* 触控目标，比 44 再宽裕些 */
+}
+.rl-summary:hover { background: var(--bg-surface-raised); border: none; }
+.rl-summary:active { transform: none; }
+
+.rl-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; flex: 1; }
+.rl-name { font-weight: var(--fw-semibold); }
+.rl-stats { color: var(--text-secondary); white-space: nowrap; }
+.rl-chevron { color: var(--text-muted); flex-shrink: 0; }
+
+.rl-detail {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-hairline);
+  background: var(--bg-panel-inset);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+/* 武器名很长，让它换行而不是把栏撑出横向滚动 */
+.rl-detail .ds-select { white-space: normal; height: auto; }
+
+.rl-fixed-slot { display: flex; flex-direction: column; gap: 2px; }
+.rl-fixed-value { font-size: var(--text-body-sm); color: var(--text-secondary); }
+
+.rl-actions { display: flex; justify-content: flex-end; align-items: center; gap: var(--space-3); }
+
+/* ------------------------------------------------------- 子阵营选择 --- */
+
+.sf-block {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sf-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.sf-options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.sf-chip {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-body-sm);
+  border-radius: var(--radius-sm);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.sf-chip.on {
+  background: var(--accent-primary-muted);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* --------------------------------------------------------- 合法性 --- */
+
+.tc-foot {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--bg-surface);
+}
+
+.lp-verdict {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: none;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  color: var(--text-secondary);
+}
+.lp-verdict:hover { background: var(--bg-surface-raised); border: none; }
+.lp-verdict:active { transform: none; }
+.lp-verdict-text { flex: 1; min-width: 0; }
+.lp-chevron { color: var(--text-muted); }
+
+.lp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-5) var(--space-3);
+  max-height: 30vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.lp-item { display: flex; gap: var(--space-2); align-items: flex-start; font-size: var(--text-body-sm); }
+.lp-item.is-warn { cursor: pointer; }
+.lp-item.is-warn:hover { background: var(--tint-danger); }
+.lp-item-body { min-width: 0; overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------- 底部门禁 --- */
+
+.roster-gate {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  /*
+   * --bg-chrome / --text-on-chrome 是主题无关的一对，必须成对使用：
+   * 只写底色的话，亮色主题下会继承到近黑的 --text-primary，黑底黑字。
+   */
+  background: var(--bg-chrome);
+  color: var(--text-on-chrome);
+  border-top: 2px solid var(--border-accent);
+}
+.roster-gate-status { display: flex; gap: var(--space-2); align-items: center; }
+.roster-gate-btn { min-width: 14rem; }
+
+/* --------------------------------------------------------- 弹层 --- */
+
+.oap-modal,
+.fo-modal {
+  max-width: 720px;
+  width: 90vw;
+  max-height: 85vh;
+}
+
+.oap-body { display: flex; flex-direction: column; gap: var(--space-6); }
+.oap-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.oap-group-title { padding-bottom: var(--space-2); border-bottom: 1px solid var(--border-hairline); }
+.oap-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+
+.oap-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+.oap-item.is-current { border-color: var(--accent-primary); }
+.oap-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.oap-name { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; font-weight: var(--fw-semibold); color: var(--text-primary); }
+.oap-stats { color: var(--text-secondary); }
+.oap-count { flex-shrink: 0; }
+
+/* 阵营资料弹层沿用旧的 .fo-* 列表样式（定义在 index.css） */
+
+/* ------------------------------------------------------- 窄屏回退 --- */
+
+/*
+ * 1023px 以下（非横屏 iPad：竖屏平板、手机、小窗）退回单栏 + 页签。
+ * 横屏 iPad 宽度是 1080/1133/1180/1194/1366，都走不到这里。
+ */
+.roster-narrow-tabs { display: none; }
+
+@media (max-width: 1023px) {
+  .roster-narrow-tabs { display: flex; flex-shrink: 0; }
+  .roster-narrow-tab { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .roster-narrow-tab.a.on { color: var(--side-a); border-bottom-color: var(--side-a); }
+  .roster-narrow-tab.b.on { color: var(--side-b); border-bottom-color: var(--side-b); }
+
+  .roster-columns { grid-template-columns: 1fr; gap: 0; }
+  .roster-col { display: none; }
+  .roster-col.is-current { display: flex; }
+
+  .roster-gate { flex-wrap: wrap; }
+  .roster-gate-btn { flex: 1; min-width: 0; }
+}

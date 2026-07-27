@@ -212,6 +212,34 @@ it's gone, regenerate with
 
 ---
 
+### Phase 5 — Restyle ✅
+
+Done across 5a–5d. Mechanism note: the DS's own `components/*.jsx` are
+demo-grade (inline styles, no `className`/`title`/`type` passthrough, `Modal`
+hard-caps `maxWidth: 480`), so adopting them wholesale would have meant
+rewriting interaction code. Instead **`src/ds.css`** transcribes the same
+component styles into classes off the same tokens — see that file's header for
+the component-by-component mapping. Keep both in sync when the DS changes.
+
+Also landed:
+- Every hardcoded color literal outside `src/data/packs/**` and `src/ui/test-lab/**`
+  is gone (~250 replacements). Faction/dice colors stay data-driven; only the
+  *fallbacks* moved to tokens.
+- Radii converged to the 2/4/6/pill scale; `box-shadow` removed from all static
+  chrome (state now reads as 2px border + tint). Glows kept **only** inside
+  animation keyframes — transient action feedback, not surface depth.
+- `kc-dossier` (dashed border + `+` registration ticks) applied to
+  `OperativeCard` and `UnitPortrait`, per the kit's corner motif.
+
+**Verified:** `vite build` clean; `tsc` 255 errors = HEAD baseline minus one
+(a duplicate removed); `vitest` 207 passed / 58 failed = exactly HEAD's numbers
+(all pre-existing engine/data failures); every surface probed in both themes.
+
+**Not covered:** `src/ui/test-lab/**` — unrouted since Phase 3, deliberately
+left alone.
+
+---
+
 ## Remaining work
 
 *(Phases 3 and 4 below are done — kept for reference on what was decided.)*

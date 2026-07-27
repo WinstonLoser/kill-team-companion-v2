@@ -3,6 +3,13 @@ import { useMatchStore, packOfOp, packOfFaction, type Side } from '../../state/m
 import { loadPack, type FactionPack, type Stratagem } from '../..'
 import { useRosterStore } from '../../state/rosterStore'
 import { DiceIcon } from '../components/Dice/DiceIcon'
+// 先手骰的骰面取阵营色（锈橙 / 枪铁），点数用主题无关的 chrome 黑。
+// DiceIcon 走 SVG，需要具体色值而非 var()，故在此解析成常量。
+const SIDE_DIE: Record<Side, { base: string; pip: string }> = {
+  a: { base: 'var(--kc-rust-3)', pip: 'var(--kc-black-1)' },
+  b: { base: 'var(--kc-steel-4)', pip: 'var(--kc-black-1)' },
+}
+
 // 6.1 战略阶段屏幕：先手 D6（投骰按钮）→ 双方计谋同屏（剩余 CP）→ 进入交战
 export function StrategyPhase() {
   const turn = useMatchStore((s) => s.turn)
@@ -62,48 +69,41 @@ export function StrategyPhase() {
 
   return (
     <div className="strategy-phase">
-      <h2>战略阶段 · 转折点 {turn.turningPoint}/4</h2>
+      {/* 标题与转折点由外层浮层的 ds-modal-head 提供，这里不再重复 */}
 
       {phase === 'roll' && (
-        <div className="sp-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <div className="sp-card">
           <p className="muted">掷 D6 决定先手权（高者胜，胜者决定谁先手）</p>
-          
-          <div style={{ display: 'flex', gap: '48px', margin: '24px 0' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 'bold', color: '#ff5c5c' }}>A 方</span>
-              <DiceIcon 
-                dice={{ nat: tempDice.a, grade: 'NORMAL' }} 
-                theme={{ baseColor: '#ff5c5c', pipColor: '#111' }} 
-                isRolling={isRolling} 
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 'bold', color: '#39d98a' }}>B 方</span>
-              <DiceIcon 
-                dice={{ nat: tempDice.b, grade: 'NORMAL' }} 
-                theme={{ baseColor: '#39d98a', pipColor: '#111' }} 
-                isRolling={isRolling} 
-              />
-            </div>
+
+          <div className="sp-dice-row">
+            {(['a', 'b'] as Side[]).map((side) => (
+              <div key={side} className="sp-dice-col">
+                <span className={`ds-label sp-side-name ${side}`}>{side.toUpperCase()} 方</span>
+                <DiceIcon
+                  dice={{ nat: tempDice[side], grade: 'NORMAL' }}
+                  theme={{ baseColor: SIDE_DIE[side].base, pipColor: SIDE_DIE[side].pip }}
+                  isRolling={isRolling}
+                />
+              </div>
+            ))}
           </div>
 
           {!isRolling && !rollResult && (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <button className="primary main-btn dice-btn" onClick={doRoll} style={{ padding: '12px 32px', fontSize: '1.2rem', width: '100%' }}>
-                🎲 系统自动投掷
+            <div className="sp-roll-actions">
+              <button className="ds-btn ds-btn--lg dice-btn" onClick={doRoll} style={{ width: '100%' }}>
+                系统自动投掷
               </button>
-              
-              <div style={{ width: '100%', borderTop: '1px solid #333', paddingTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <p className="muted" style={{ marginBottom: '12px', fontSize: '0.9rem' }}>或手动输入你们掷出的点数：</p>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span style={{ color: '#ff5c5c', fontWeight: 'bold' }}>A方:</span>
-                  <input type="number" min="1" max="6" value={manualA} onChange={e => setManualA(parseInt(e.target.value) || '')} style={{ width: '50px', background: '#222', color: '#fff', border: '1px solid #ff5c5c', borderRadius: '4px', padding: '4px 8px', textAlign: 'center' }} />
-                  
-                  <span style={{ color: '#39d98a', fontWeight: 'bold', marginLeft: '8px' }}>B方:</span>
-                  <input type="number" min="1" max="6" value={manualB} onChange={e => setManualB(parseInt(e.target.value) || '')} style={{ width: '50px', background: '#222', color: '#fff', border: '1px solid #39d98a', borderRadius: '4px', padding: '4px 8px', textAlign: 'center' }} />
-                  
+
+              <div className="sp-manual">
+                <p className="ds-label sp-manual-hint">或手动输入你们掷出的点数：</p>
+                <div className="sp-manual-row">
+                  <span className="ds-label sp-side-name a">A方</span>
+                  <input className="ds-input sp-manual-input a" type="number" min="1" max="6" value={manualA} onChange={e => setManualA(parseInt(e.target.value) || '')} />
+
+                  <span className="ds-label sp-side-name b">B方</span>
+                  <input className="ds-input sp-manual-input b" type="number" min="1" max="6" value={manualB} onChange={e => setManualB(parseInt(e.target.value) || '')} />
                   <button 
-                    className="btn"
+                    className="ds-btn ds-btn--sm ds-btn--secondary"
                     disabled={!manualA || !manualB || manualA === manualB || manualA > 6 || manualA < 1 || manualB > 6 || manualB < 1}
                     onClick={() => {
                       if (typeof manualA === 'number' && typeof manualB === 'number') {
@@ -113,27 +113,22 @@ export function StrategyPhase() {
                         pushLog('system', `玩家手动录入先手权掷骰：A 掷出 ${manualA}, B 掷出 ${manualB}。${winner.toUpperCase()} 方获胜！`)
                       }
                     }}
-                    style={{ marginLeft: '8px' }}
                   >确认点数</button>
                 </div>
-                {manualA !== '' && manualB !== '' && manualA === manualB && <p style={{ color: '#ffaa77', fontSize: '0.8rem', marginTop: '8px' }}>平局，请重新投掷</p>}
+                {manualA !== '' && manualB !== '' && manualA === manualB && <p className="sp-tie">平局，请重新投掷</p>}
               </div>
             </div>
           )}
 
           {rollResult && !isRolling && (
-            <div className="sp-result" style={{ textAlign: 'center', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', width: '100%' }}>
-              <h3 style={{ margin: '0 0 16px 0', color: rollResult.winner === 'a' ? '#ff5c5c' : '#39d98a' }}>
-                {rollResult.winner.toUpperCase()} 方赢得了掷骰！
+            <div className="sp-result">
+              <h3 className={`ds-display ds-display--md sp-winner ${rollResult.winner}`}>
+                {rollResult.winner.toUpperCase()} 方赢得了掷骰
               </h3>
-              <p style={{ marginBottom: '16px' }}>请 {rollResult.winner.toUpperCase()} 方选择本转折点谁先行动：</p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                <button className="primary" onClick={() => handleConfirm('a')} style={{ background: '#ff5c5c', color: '#111' }}>
-                  A 方先手
-                </button>
-                <button className="primary" onClick={() => handleConfirm('b')} style={{ background: '#39d98a', color: '#111' }}>
-                  B 方先手
-                </button>
+              <p className="sp-result-hint">请 {rollResult.winner.toUpperCase()} 方选择本转折点谁先行动：</p>
+              <div className="sp-result-actions">
+                <button className="ds-btn sp-pick a" onClick={() => handleConfirm('a')}>A 方先手</button>
+                <button className="ds-btn sp-pick b" onClick={() => handleConfirm('b')}>B 方先手</button>
               </div>
             </div>
           )}
@@ -145,8 +140,8 @@ export function StrategyPhase() {
           <div className="sp-status">
             <span>先手：<strong className={initiative ?? ''}>{initiative?.toUpperCase()}</strong></span>
             <span>轮到：<strong className={strategyTurn ?? ''}>{strategyTurn?.toUpperCase()}</strong></span>
-            <span className="muted">剩余 CP — A:{turn.cp.a} B:{turn.cp.b}</span>
-            <button className="rollback-btn" disabled={!lastPloy} onClick={() => strategyUndo()} title="撤销最近一次战略计谋（恢复 CP/回合）">
+            <span className="ds-stat">剩余 CP — A:{turn.cp.a} B:{turn.cp.b}</span>
+            <button className="ds-btn ds-btn--sm ds-btn--ghost rollback-btn" disabled={!lastPloy} onClick={() => strategyUndo()} title="撤销最近一次战略计谋（恢复 CP/回合）">
               ↶ 回退
             </button>
           </div>
@@ -160,11 +155,12 @@ export function StrategyPhase() {
               const strategyStrats = (pack?.stratagems ?? []).filter((s) => s.phase === 'STRATEGY')
               return (
                 <div key={side} className={`sp-side ${side} ${isTurn ? 'active' : ''}`}>
-                  <h4>
+                  <h4 className="ds-display ds-display--sm">
                     {side.toUpperCase()} 方
                     {isTurn ? ' · 你的回合' : strategyPasses[side] ? ' · 已跳过' : ''}
                   </h4>
-                  <p className="muted">剩余 CP <strong>{cp}</strong></p>
+                  {/* CP 作为主视觉数字：Big Shoulders Display 大字号 */}
+                  <p className="sp-cp"><span className="ds-stat--hero">{cp}</span> <span className="ds-label">CP 剩余</span></p>
 
                   <div className="strat-list">
                     {strategyStrats.length === 0 && <span className="muted">无战略计谋</span>}
@@ -190,7 +186,7 @@ export function StrategyPhase() {
 
                   {isTurn && (
                     <div className="sp-actions">
-                      <button onClick={() => strategyAct(side, 'pass')}>跳过</button>
+                      <button className="ds-btn ds-btn--sm ds-btn--secondary" onClick={() => strategyAct(side, 'pass')}>跳过</button>
                     </div>
                   )}
                 </div>

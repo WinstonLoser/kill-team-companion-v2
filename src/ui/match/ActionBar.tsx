@@ -1,3 +1,4 @@
+import type React from 'react'
 import type { Side } from '../../state/matchStore'
 import { ACTION_AP, type ActionType, type Order } from '../../state/turnStateMachine'
 
@@ -62,49 +63,35 @@ export function ActionBar({
   themeColor?: string
 }) {
   const apLeft = apl - apUsed
-  const themeRgb = themeColor ? themeColor.replace('rgb(', '').replace(')', '') : '255, 90, 0'
 
   return (
-    <div className={`action-bar ${active}`} style={{ 
-      position: 'relative',
-      background: 'rgba(15, 23, 42, 0.7)',
-      backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)',
-      backgroundSize: '10px 10px',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      padding: '0.75em 1em',
-      boxShadow: `0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(${themeRgb}, 0.1)`,
-      border: `1px solid rgba(${themeRgb}, 0.3)`,
-      borderLeft: themeColor ? `4px solid ${themeColor}` : undefined,
-      borderRadius: '0.75em',
-      minWidth: '18.75em',
-      boxSizing: 'border-box'
-    }}>
+    /*
+     * 指挥区：DS 扁平面板 —— 无阴影、无背景模糊，深度靠 1px 钢色描边 +
+     * 左侧 4px 阵营色条。--side-theme 供子规则染色。
+     */
+    <div
+      className={`action-bar ${active}`}
+      style={themeColor ? ({ '--side-theme': themeColor } as React.CSSProperties) : undefined}
+    >
       {!activated ? (
         hasLastShot && (
           <div className="action-row">
-            <button onClick={onUndo} className="rollback-btn" style={{ width: '100%' }} title="撤销上次结算">↶ 回滚上次结算</button>
+            <button onClick={onUndo} className="ds-btn ds-btn--secondary rollback-btn" style={{ width: '100%' }} title="撤销上次结算">↶ 回滚上次结算</button>
           </div>
         )
       ) : (
         <>
           <div className="ab-orders">
             <span className="muted ab-label">命令</span>
-            <button 
-              className={`order-btn eng ${order === 'ENGAGED' ? 'on' : ''}`} 
+            <button
+              className={`order-btn eng ${order === 'ENGAGED' ? 'on' : ''}`}
               onClick={() => onSelectOrder('ENGAGED')}
-              style={order === 'ENGAGED' && themeColor 
-                ? { backgroundColor: themeColor, borderColor: themeColor } 
-                : { borderColor: themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined }}
             >交战</button>
-            <button 
-              className={`order-btn con ${order === 'CONCEALED' ? 'on' : ''}`} 
+            <button
+              className={`order-btn con ${order === 'CONCEALED' ? 'on' : ''}`}
               onClick={() => onSelectOrder('CONCEALED')}
-              style={order === 'CONCEALED' && themeColor 
-                ? { backgroundColor: themeColor.replace('rgb', 'rgba').replace(')', ', 0.6)'), borderColor: themeColor } 
-                : { borderColor: themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined }}
             >隐匿</button>
-            <span className="ap-display">AP <strong>{apUsed}</strong>/{apl}（剩 {apLeft}）</span>
+            <span className="ds-stat ap-display">AP <strong>{apUsed}</strong>/{apl}（剩 {apLeft}）</span>
           </div>
           <div className="ab-actions">
             {MOVE_ACTIONS.map(({ a, label }) => (
@@ -114,11 +101,6 @@ export function ActionBar({
                 disabled={!canDo[a]}
                 onClick={() => onPickMove(a)}
                 title={`${label}（${ACTION_AP[a]}AP）`}
-                style={{
-                  borderColor: pendingMove === a ? themeColor : (themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined),
-                  backgroundColor: pendingMove === a && themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.2)') : undefined,
-                  boxShadow: pendingMove === a && themeColor ? `0 0 0 2px ${themeColor}` : undefined
-                }}
               >
                 {label}<span className="chip-ap">{ACTION_AP[a]}</span>
               </button>
@@ -130,11 +112,6 @@ export function ActionBar({
                 disabled={!canDo[a]}
                 onClick={() => onPickAttack(k)}
                 title={`${label}（${ACTION_AP[a]}AP）`}
-                style={{
-                  borderColor: pendingAttack === k ? themeColor : (themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined),
-                  backgroundColor: pendingAttack === k && themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.2)') : undefined,
-                  boxShadow: pendingAttack === k && themeColor ? `0 0 0 2px ${themeColor}` : undefined
-                }}
               >
                 {label}<span className="chip-ap">{ACTION_AP[a]}</span>
               </button>
@@ -143,19 +120,18 @@ export function ActionBar({
           <div className="action-row">
             {movePreview ? (
               <>
-                <button className="main-btn" style={{ background: '#39d98a', color: '#111' }} onClick={onConfirmMove} title="确认移动到目标位置">确认移动 ▶</button>
-                <button className="rollback-btn" onClick={onCancelMove} title="取消移动并恢复位置">取消（回退）</button>
+                <button className="ds-btn main-btn is-confirm" onClick={onConfirmMove} title="确认移动到目标位置">确认移动 ▶</button>
+                <button className="ds-btn ds-btn--secondary rollback-btn" onClick={onCancelMove} title="取消移动并恢复位置">取消（回退）</button>
               </>
             ) : (
               <>
-                <button 
-                  className={`main-btn ${active}`} 
-                  onClick={onEndActivation} 
+                <button
+                  className={`ds-btn ds-btn--secondary main-btn ${active}`}
+                  onClick={onEndActivation}
                   title="结束后该特工本回合不能再行动"
-                  style={themeColor ? { borderColor: themeColor, color: themeColor } : {}}
                 >结束激活</button>
-                <button className="rollback-btn" disabled={!canUndoAction} onClick={onUndoAction} title="撤销当前特工的上一步行动（恢复 AP/位置）">↶ 回退上步</button>
-                {hasLastShot && <button onClick={onUndo} className="rollback-btn">↶ 回滚结算</button>}
+                <button className="ds-btn ds-btn--sm ds-btn--ghost rollback-btn" disabled={!canUndoAction} onClick={onUndoAction} title="撤销当前特工的上一步行动（恢复 AP/位置）">↶ 回退上步</button>
+                {hasLastShot && <button onClick={onUndo} className="ds-btn ds-btn--sm ds-btn--ghost rollback-btn">↶ 回滚结算</button>}
               </>
             )}
           </div>

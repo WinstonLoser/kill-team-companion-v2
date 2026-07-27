@@ -14,8 +14,8 @@ export interface DiceIconProps {
 export function DiceIcon({ dice, theme, status, isRolling }: DiceIconProps) {
   const { nat, grade } = dice
 
-  const baseColor = theme?.baseColor || '#333333'
-  const pipColor = theme?.pipColor || '#ffffff'
+  const baseColor = theme?.baseColor || 'var(--bg-surface-raised)'
+  const pipColor = theme?.pipColor || 'var(--text-primary)'
 
   // CSS variables for theming
   const style = {

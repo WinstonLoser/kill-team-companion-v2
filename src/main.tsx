@@ -1,10 +1,25 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { App } from './App'
-// 设计系统 token 必须先于 index.css 载入：index.css 的 :root 只做语义别名，
-// 需要覆盖在 DS token 之上（同时 DS 的 --space-*/--radius-* 保持生效）。
+
+/*
+ * 样式分层，顺序有意义 —— ESM 按 import 语句出现的顺序求值依赖，
+ * 所以这三行必须写在 `import { App }` **之前**：
+ *
+ *   1. @ds/styles.css   设计系统 token（颜色/排版/间距/效果）
+ *   2. ./ds.css         DS 组件样式的 class 化转写
+ *   3. ./index.css      应用全局：token 覆写（rem 标度）+ 旧屏样式
+ *   4. 组件自带的 .css  由 App 的依赖图带入，最后注入
+ *
+ * 第 4 层排在最后是关键：像 .oap-modal / .pv-modal-combat 这类要覆盖
+ * .ds-modal 的规则与被覆盖者同为单类选择器，优先级相同，只能靠先后顺序取胜。
+ * 若把 App 的 import 提到前面，组件样式会先注入，这些覆盖会全部失效
+ * （宽弹窗被压回 .ds-modal 的 480px）。
+ */
 import '@ds/styles.css'
+import './ds.css'
 import './index.css'
+
+import { App } from './App'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('#root not found')
