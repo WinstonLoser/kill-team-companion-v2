@@ -1,0 +1,659 @@
+{
+  "packId": "warpcoven",
+  "version": "1.0.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "warpcoven",
+    "name": "Warp Coven / 次元密会",
+    "keywords": ["CHAOS", "WARPCOVEN"],
+    "subFactionSelector": {
+      "id": "guidingFates",
+      "label": "奸奇恩惠（9 选 1，整队不重复）",
+      "options": [
+        "boon_sight_beyond",
+        "boon_time_walker",
+        "boon_warp_echo",
+        "boon_warp_empowered",
+        "boon_mutated_limb",
+        "boon_warp_flight",
+        "boon_twist_fate",
+        "boon_starburst",
+        "boon_immaterium_expert"
+      ],
+      "max": 1,
+      "scope": "perOperative",
+      "eligibleKeywords": ["SORCERER"],
+      "requiredPerEligible": 1,
+      "uniqueAcrossTeam": true
+    },
+    "theme": {
+      "ui": {
+        "primaryRgb": "30, 64, 175",
+        "textHighlight": "#fde047"
+      },
+      "dice": {
+        "baseColor": "#1e3a8a",
+        "pipColor": "#fde047"
+      }
+    }
+  },
+  "factionRules": [
+    {
+      "ruleId": "guiding_fates",
+      "name": "Guiding Fates / 奸奇恩惠",
+      "description": "为战斗选择每名巫师时，必须为其选择一项奸奇恩惠。每项奸奇恩惠每场战斗最多选择一次（整队不可重复）。九项恩惠见 effects（boon_*），在建队界面为每名巫师各选一项。"
+    },
+    {
+      "ruleId": "astartes_warpcoven",
+      "name": "Astartes / 阿斯塔特",
+      "description": "每名己方次元密会阿斯塔特叛军特工在每次激活中可以执行两次射击行动或两次近战行动。若两次射击都选择灵魂收割者炮或亚空间火焰喷射器，第二次行动必须额外消耗 1AP。每次激活不能多次选择同一件灵能远程武器。每名己方次元密会阿斯塔特叛军特工无论命令为何都可以进行反应。"
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "fated_shield",
+      "name": "Fated Shield / 天命庇护",
+      "description": "独特行动（1AP，灵能）。选择对该特工可见的一名己方次元密会特工。直到该巫师下一次激活开始、被残废或任意己方特工再次执行本行动，以先发生者为准；每当一名特工向目标射击时，可以重掷任意己方防御骰。该巫师位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "trample_fate",
+      "name": "Trample Fate / 蹂躏命运",
+      "description": "独特行动（1AP，灵能）。选择该巫师 9\" 内且对其可见的一名敌方特工。持续时间与“天命庇护”相同。每当目标射击、近战或反击时，对手必须重掷结果为 6 的攻击骰；判断标识控制时，把目标 APL 视为低 1 点。这不是 APL 修改，所有其他 APL 变化均与本效果叠加。该巫师位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "ritual_of_reconstitution",
+      "name": "Ritual of Reconstitution / 重构仪式",
+      "description": "独特行动（1AP，灵能）。选择该巫师 6\" 内且对其可见的一名己方次元密会特工，目标回复最多 2D3 点已失去耐伤。该巫师位于敌方控制范围内，或本转折点已有任意己方特工执行过此行动时，不能执行。"
+    },
+    {
+      "abilityId": "temporal_warp",
+      "name": "Temporal Warp / 时空波动",
+      "description": "独特行动（1AP，灵能）。选择该巫师 6\" 内且对其可见的一名己方次元密会特工，并把时空波动标识放在目标控制范围内。目标下一次激活结束时，若尚未残废且完全位于标识 6\" 内，则将其移出杀戮区并合法重新放置，使标识位于其控制范围内或尽可能靠近；随后移除标识。若目标不完全位于标识 6\" 内或已残废，则只移除标识。该巫师位于敌方控制范围内或己方时空波动标识已在杀戮区时，不能执行。注解：若目标在不能使用灵能附加规则的区域内开始或结束激活，时空波动都不能将其移除并重新放置。"
+    },
+    {
+      "abilityId": "immolate_sanity",
+      "name": "Immolate Sanity / 焚却理智",
+      "description": "结算攻击骰时，若任意关键成功造成伤害，攻击目标获得己方焚却理智标识，持续至目标下一次激活结束、被残废或任意己方特工再次使用该武器，以先发生者为准。拥有标识的特工武器命中属性弱化 1，且不与受创叠加。"
+    },
+    {
+      "abilityId": "illumination",
+      "name": "Illumination / 点明",
+      "description": "独特行动（1AP，灵能）。选择对该巫师可见的一名敌方特工。直到该巫师下一次激活开始、被残废或任意己方特工再次执行本行动，以先发生者为准，目标获得己方点明标识。己方次元密会特工向拥有标识的目标射击、近战或反击时，其武器获得无休（Ceaseless）。该巫师位于敌方控制范围内时不能执行。"
+    },
+    {
+      "abilityId": "occult_automata",
+      "name": "Occult Automata / 奥术自动机兵",
+      "description": "该特工激活时，直到该次激活结束 APL 减少 1，除非一名己方次元密会巫师位于其 9\" 内。"
+    },
+    {
+      "abilityId": "icon_bearer",
+      "name": "Icon Bearer / 徽记持有者",
+      "description": "判断标识控制时，把该特工 APL 视为高 1 点。这不是 APL 修改，其他变化均与本效果叠加。"
+    },
+    {
+      "abilityId": "slow_and_purposeful",
+      "name": "Slow and Purposeful / 缓慢而坚定",
+      "description": "该特工射击时，若本次激活尚未执行冲锋或转移，或正在进行反应，则远程武器获得无休。该规则不阻止它在射击后执行这些移动行动。"
+    },
+    {
+      "abilityId": "bestial_rage",
+      "name": "Bestial Rage / 野性狂暴",
+      "description": "每次激活中首次执行近战行动后，若该特工未被残废，可以立即无消耗再执行一次近战行动，且不必选择同一敌方特工。本规则优先于行动限制。"
+    },
+    {
+      "abilityId": "blasted_horn",
+      "name": "Blasted Horn / 兽群号角",
+      "description": "独特行动（0AP）。直到下一战略阶段的就绪步骤，为己方次元密会奸角兽特工的移动属性增加 1\"。该特工位于敌方控制范围内时不能执行。"
+    },
+    {
+      "abilityId": "herd_banner",
+      "name": "Herd Banner / 兽群旗帜",
+      "description": "每当该特工 3\" 内且对其可见的一名己方次元密会奸角兽特工因一枚攻击骰受到 3 点或以上的普通伤害时，伤害减少 1 点。"
+    },
+    {
+      "abilityId": "relic_hunter",
+      "name": "Relic Hunter / 神器猎人",
+      "description": "每场战斗限一次。当一名己方奸角兽战士完全位于对手领地内时，可以让它执行拾取标识、放置标识或任务行动少消耗 1AP。"
+    },
+    {
+      "abilityId": "shield",
+      "name": "Shield / 盾牌",
+      "description": "选择该武器时，该特工豁免为 4+；使用该武器近战或反击时，每次格挡可以格挡两个未结算成功。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "wc_sorcerer_destiny",
+      "name": "Destiny Sorcerer / 命运巫师",
+      "type": "wc_sorcerer_destiny",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "PSYKER", "SORCERER", "DESTINY SORCERER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Psychic Weapons / 灵能武器（固定）",
+          "count": 1,
+          "options": [["wc_force_stave", "wc_doombolt"]]
+        },
+        {
+          "description": "Wizard Weapon / 巫师武器（三选一）",
+          "count": 1,
+          "options": [["wc_inferno_bolt_pistol"], ["wc_prosperine_khopesh"], ["wc_warpfire_pistol"]]
+        }
+      ],
+      "abilityRefs": ["fated_shield", "trample_fate"],
+      "factionRuleRefs": ["guiding_fates", "astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_sorcerer_time",
+      "name": "Time Sorcerer / 时间巫师",
+      "type": "wc_sorcerer_time",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "PSYKER", "SORCERER", "TIME SORCERER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Psychic Weapons / 灵能武器（固定）",
+          "count": 1,
+          "options": [["wc_force_stave", "wc_warp_torrent"]]
+        },
+        {
+          "description": "Wizard Weapon / 巫师武器（三选一）",
+          "count": 1,
+          "options": [["wc_inferno_bolt_pistol"], ["wc_prosperine_khopesh"], ["wc_warpfire_pistol"]]
+        }
+      ],
+      "abilityRefs": ["ritual_of_reconstitution", "temporal_warp"],
+      "factionRuleRefs": ["guiding_fates", "astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_sorcerer_warpfire",
+      "name": "Warpfire Sorcerer / 亚空间炽焰巫师",
+      "type": "wc_sorcerer_warpfire",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "PSYKER", "SORCERER", "WARPFIRE SORCERER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Psychic Weapons / 灵能武器（固定）",
+          "count": 1,
+          "options": [["wc_force_stave", "wc_flamestorm", "wc_immolate_sanity"]]
+        },
+        {
+          "description": "Wizard Weapon / 巫师武器（三选一）",
+          "count": 1,
+          "options": [["wc_inferno_bolt_pistol"], ["wc_prosperine_khopesh"], ["wc_warpfire_pistol"]]
+        }
+      ],
+      "abilityRefs": ["immolate_sanity", "illumination"],
+      "factionRuleRefs": ["guiding_fates", "astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_rubric_gunner",
+      "name": "Rubric Marine Gunner / 红字战士炮手",
+      "type": "wc_rubric_gunner",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "RUBRIC MARINE", "GUNNER"],
+      "stats": { "apl": 3, "move": 5, "save": 2, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器（二选一）",
+          "count": 1,
+          "options": [
+            ["wc_soulreaper_focused", "wc_soulreaper_sweeping", "wc_fists"],
+            ["wc_warpflamer", "wc_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": ["occult_automata"],
+      "factionRuleRefs": ["astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_rubric_icon_bearer",
+      "name": "Rubric Marine Icon Bearer / 红字战士徽记持有者",
+      "type": "wc_rubric_icon_bearer",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "RUBRIC MARINE", "ICON BEARER"],
+      "stats": { "apl": 3, "move": 5, "save": 2, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["wc_inferno_boltgun", "wc_fists"]]
+        }
+      ],
+      "abilityRefs": ["occult_automata", "icon_bearer"],
+      "factionRuleRefs": ["astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_rubric_warrior",
+      "name": "Rubric Marine Warrior / 红字战士战士",
+      "type": "wc_rubric_warrior",
+      "keywords": ["WARPCOVEN", "CHAOS", "HERETIC ASTARTES", "RUBRIC MARINE", "WARRIOR"],
+      "stats": { "apl": 3, "move": 5, "save": 2, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["wc_inferno_boltgun", "wc_fists"]]
+        }
+      ],
+      "abilityRefs": ["occult_automata", "slow_and_purposeful"],
+      "factionRuleRefs": ["astartes_warpcoven"]
+    },
+    {
+      "operativeId": "wc_tzaangor_champion",
+      "name": "Tzaangor Champion / 奸角兽勇士",
+      "type": "wc_tzaangor_champion",
+      "keywords": ["WARPCOVEN", "CHAOS", "TZAANGOR", "CHAMPION"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 10 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Melee Weapon / 近战武器（二选一）",
+          "count": 1,
+          "options": [["wc_great_axe"], ["wc_great_blade"]]
+        }
+      ],
+      "abilityRefs": ["bestial_rage"],
+      "factionRuleRefs": []
+    },
+    {
+      "operativeId": "wc_tzaangor_horn_bearer",
+      "name": "Tzaangor Horn Bearer / 奸角兽号手",
+      "type": "wc_tzaangor_horn_bearer",
+      "keywords": ["WARPCOVEN", "CHAOS", "TZAANGOR", "HORN BEARER"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 9 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["wc_dagger"]]
+        }
+      ],
+      "abilityRefs": ["blasted_horn"],
+      "factionRuleRefs": []
+    },
+    {
+      "operativeId": "wc_tzaangor_icon_bearer",
+      "name": "Tzaangor Icon Bearer / 奸角兽徽记持有者",
+      "type": "wc_tzaangor_icon_bearer",
+      "keywords": ["WARPCOVEN", "CHAOS", "TZAANGOR", "ICON BEARER"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 9 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["wc_dagger"]]
+        }
+      ],
+      "abilityRefs": ["herd_banner", "icon_bearer"],
+      "factionRuleRefs": []
+    },
+    {
+      "operativeId": "wc_tzaangor_warrior",
+      "name": "Tzaangor Warrior / 奸角兽战士",
+      "type": "wc_tzaangor_warrior",
+      "keywords": ["WARPCOVEN", "CHAOS", "TZAANGOR", "WARRIOR"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 9 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Equipment / 装备（三选一）",
+          "count": 1,
+          "options": [
+            ["wc_tzaangor_twinstrike"],
+            ["wc_tzaangor_blade_and_shield"],
+            ["wc_autopistol", "wc_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["relic_hunter", "shield"],
+      "factionRuleRefs": []
+    }
+  ],
+  "weapons": [
+    {
+      "weaponId": "wc_inferno_bolt_pistol",
+      "name": "Inferno bolt pistol / 地狱火爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_warpfire_pistol",
+      "name": "Warpfire pistol / 亚空间炽焰手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "range": 6, "weaponRules": ["Piercing 1", "Torrent 1\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_force_stave",
+      "name": "Force stave / 灵能杖",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Psychic", "Shock"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_prosperine_khopesh",
+      "name": "Prosperine khopesh / 普罗斯佩罗弯刀",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_doombolt",
+      "name": "Doombolt / 裁决闪电",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 2, "weaponRules": ["Psychic", "Devastating 2", "Lethal 5+"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_warp_torrent",
+      "name": "Warp torrent / 奔腾涌流",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Psychic", "Blast 2\"", "Rending"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_flamestorm",
+      "name": "Flamestorm / 烈焰风暴",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 2, "criticalDamage": 3, "weaponRules": ["Psychic", "Saturate", "Seek Light", "Torrent 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_immolate_sanity",
+      "name": "Immolate Sanity / 焚却理智",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 1, "criticalDamage": 1, "weaponRules": ["Psychic", "Lethal 5+", "Saturate", "Seek Light", "Immolate Sanity"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_inferno_boltgun",
+      "name": "Inferno boltgun / 地狱火爆矢枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_soulreaper_focused",
+      "name": "Soulreaper cannon (Focused) / 灵魂收割者炮（集中）",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_soulreaper_sweeping",
+      "name": "Soulreaper cannon (Sweeping) / 灵魂收割者炮（扫射）",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing 1", "Torrent 1\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_warpflamer",
+      "name": "Warpflamer / 亚空间火焰喷射器",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 4, "criticalDamage": 4, "range": 8, "weaponRules": ["Saturate", "Piercing 1", "Torrent 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_fists",
+      "name": "Fists / 双拳",
+      "kind": "MELEE",
+      "profile": { "attacks": 3, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_great_axe",
+      "name": "Great axe / 巨斧",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Brutal", "Lethal 5+"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_great_blade",
+      "name": "Great blade / 巨剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Lethal 5+", "Rending"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_dagger",
+      "name": "Dagger / 匕首",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 3, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_autopistol",
+      "name": "Autopistol / 自动手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 2, "criticalDamage": 3, "range": 8, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_tzaangor_twinstrike",
+      "name": "Tzaangor twinstrike / 奸角兽双刃",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Balanced"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "wc_tzaangor_blade_and_shield",
+      "name": "Tzaangor blade and shield / 奸角兽之刃和盾牌",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Shield"] },
+      "keywords": []
+    }
+  ],
+  "effects": [
+    {
+      "effectId": "boon_sight_beyond",
+      "label": "虚化视觉 / Sight Beyond Sight",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "BEFORE_PIPELINE" },
+      "pipelineStep": "TARGET_VALIDATE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_sight_beyond", "prompt": "该特工的远程武器获得集中（Saturate）。该特工射击时，敌方特工不能被遮挡。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 虚化视觉" }
+    },
+    {
+      "effectId": "boon_time_walker",
+      "label": "时间行者 / Time Walker",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "STAT_OVERRIDE", "payload": { "stat": "move", "value": 7 } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 时间行者" }
+    },
+    {
+      "effectId": "boon_warp_echo",
+      "label": "亚空间残响 / Warp Echo",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_REACTION" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_warp_echo", "prompt": "每场战斗限一次，当该特工进行反应时，可以更改其命令，并可以在该次反应中额外无消耗执行一个 1AP 行动；两个行动必须不同。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 亚空间残响" }
+    },
+    {
+      "effectId": "boon_warp_empowered",
+      "label": "亚空间强化 / Warp-empowered",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_DAMAGE_PER_DIE" },
+      "pipelineStep": "MELEE_DAMAGE_AND_MITIGATE",
+      "modifier": { "kind": "DAMAGE_PLUS", "payload": { "amount": 1, "scope": "NORMAL" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 亚空间强化" }
+    },
+    {
+      "effectId": "boon_mutated_limb",
+      "label": "变异肢体 / Mutated Limb",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_mutated_limb", "prompt": "控制范围内有敌方特工不会阻止该特工执行拾取标识或任务行动。每次激活限一次，该特工执行拾取标识、放置标识或任务行动时少消耗 1AP。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 变异肢体" }
+    },
+    {
+      "effectId": "boon_warp_flight",
+      "label": "亚空间飞行 / Warp Flight",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_warp_flight", "prompt": "每个转折点限一次，当该特工在其激活中执行冲锋或转移行动时，可以飞行：移出杀戮区再放回到水平距离不超过其移动属性且合法的位置。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 亚空间飞行" }
+    },
+    {
+      "effectId": "boon_twist_fate",
+      "label": "扭曲命运 / Twist Fate",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "pipelineStep": "WEAPON_SELECT",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_twist_fate", "prompt": "该特工的灵能远程武器获得关键穿刺 1（Piercing Crits 1）。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 扭曲命运" }
+    },
+    {
+      "effectId": "boon_starburst",
+      "label": "星爆术 / Starburst",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
+      "pipelineStep": "WEAPON_SELECT",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_starburst", "prompt": "选择该特工的一件灵能远程武器，该武器获得毁灭 1。若选择裁决闪电，则以 2\" 毁灭 2 替代原本的毁灭 2。若选择烈焰风暴或焚却理智，则每次射击时选择追踪轻型或毁灭 1。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 星爆术" }
+    },
+    {
+      "effectId": "boon_immaterium_expert",
+      "label": "非物质界专家 / Immaterium Expert",
+      "source": "warpcoven:guiding_fates",
+      "trigger": { "point": "ON_ACTIVATION_START" },
+      "pipelineStep": "ACTIVATION_PRE",
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "boon_immaterium_expert", "prompt": "该特工有距离要求的灵能行动增加 3\"。对时间巫师的“时空波动”，只影响规则的第一个距离要求。（需手动结算）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_warpcoven_zh.md", "section": "阵营规则 / 奸奇恩惠 / 非物质界专家" }
+    }
+  ],
+  "stratagems": [
+    {
+      "id": "aetheric_ward",
+      "name": "Aetheric Ward / 以太守护",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "当一名特工向己方次元密会特工射击时，拥有穿刺 1 的武器改为拥有关键穿刺 1。"
+    },
+    {
+      "id": "your_fate_my_weapon",
+      "name": "Your Fate, My Weapon / 彼之命运，我之凶器",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "掷两枚 D6 并留置。在本转折点的交战阶段，每当任意特工射击、近战或反击时，在任一方掷攻击骰后、重掷前，可以用一枚留置骰替换该流程中的一枚 D6，无论骰子属于哪一方。替换骰不能被修改或重掷；若其结果本身不是成功或关键成功，也不能作为对应成功保留；流程结束后弃置。若两枚留置骰的合计小于 9，再弃置另一枚。每个流程最多使用一枚留置骰；转折点结束时弃置所有剩余留置骰。"
+    },
+    {
+      "id": "brotherhood_of_sorcerers",
+      "name": "Brotherhood of Sorcerers / 巫师兄弟会",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "己方次元密会巫师的灵能武器获得平衡；若该巫师 9\" 内有另一名己方次元密会巫师，则改为获得无休。"
+    },
+    {
+      "id": "savage_herd",
+      "name": "Savage Herd / 野蛮兽群",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "己方次元密会奸角兽的近战武器获得精准 1。若该奸角兽受到己方次元密会特工协助，或在一名己方次元密会巫师 6\" 内且对其可见的情况下进行近战，其近战武器还获得严重（Severe）。"
+    },
+    {
+      "id": "all_is_dust",
+      "name": "All is Dust / 皆为尘土",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "当一枚攻击骰对己方次元密会红字战士造成普通伤害时使用；该攻击骰改为造成 1 点伤害。"
+    },
+    {
+      "id": "fickle_plans",
+      "name": "Fickle Plans / 无常计划",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "在一名己方次元密会巫师激活结束时使用。该特工可以立即执行一次无消耗冲刺，即使执行过通常会阻止冲刺的行动；并且/或者可以更改其命令。"
+    },
+    {
+      "id": "psychic_cabal",
+      "name": "Psychic Cabal / 灵能阴谋团",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "在一名己方次元密会巫师激活时使用。选择该巫师 9\" 内且对其可见的另一名己方次元密会巫师，再选择后者的一项灵能独特行动或灵能远程武器，使前者拥有至其激活结束。不能选择后者本转折点已经使用过的灵能远程武器；后者本转折点也不能再使用所选武器。前者不会获得后者的奸奇恩惠增益。"
+    },
+    {
+      "id": "mutated_herd",
+      "name": "Mutated Herd / 变种兽群",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "在一名己方次元密会奸角兽激活时使用。选择其 2\" 内、对其可见且就绪的另一名己方次元密会奸角兽，同时激活两者，并以任意顺序逐个行动完成激活。"
+    }
+  ],
+  "wargear": [
+    {
+      "id": "wc_enchanted_ammunition",
+      "name": "Enchanted Ammunition / 附魔弹药",
+      "description": "己方次元密会特工的地狱火爆矢枪、地狱火爆矢手枪和自动手枪获得毁灭 1。"
+    },
+    {
+      "id": "wc_warpbite_weapon",
+      "name": "Warpbite Weapon / 魔啮武器",
+      "description": "己方次元密会红字战士近战武器的攻击属性增加 1。每当红字战士反击时，其近战武器获得精准 1。"
+    },
+    {
+      "id": "wc_arcane_robes",
+      "name": "Arcane Robes / 奥术长袍",
+      "description": "每个转折点限一次，当一枚攻击骰将对己方次元密会巫师造成暴击伤害时，可以让该攻击骰改为造成普通伤害。每名己方次元密会巫师每个转折点不能通过本规则受益超过一次。"
+    },
+    {
+      "id": "wc_witchscroll",
+      "name": "Witchscroll / 巫术卷轴",
+      "description": "每场战斗限一次，当己方次元密会巫师激活或反应时，可以把其奸奇恩惠换成一项不同恩惠，持续至战斗结束，并失去原有恩惠。不能选择其他己方特工已经拥有的恩惠；本规则优先于普通奸奇恩惠限制。若在反应时选择亚空间残响，可以立即用其更改命令并在该次反应中执行无消耗行动。"
+    }
+  ],
+  "buildConstraints": {
+    "operatives": { "min": 1 },
+    "selectionPoints": { "exact": 5 },
+    "operativeCosts": {
+      "wc_tzaangor_champion": 0.5,
+      "wc_tzaangor_horn_bearer": 0.5,
+      "wc_tzaangor_icon_bearer": 0.5,
+      "wc_tzaangor_warrior": 0.5
+    },
+    "minimumByKeyword": { "SORCERER": 1 },
+    "maxPerTypeExcept": ["wc_rubric_warrior", "wc_tzaangor_warrior"],
+    "equipmentLimits": {
+      "wc_warpfire_pistol": 1,
+      "wc_soulreaper_focused": 1,
+      "wc_soulreaper_sweeping": 1
+    },
+    "equipmentLimitScope": "weaponId",
+    "notes": "恰好 5 个选择点；奸角兽各算 0.5 点；至少 1 名巫师；除战士外每类最多 1 名；整队至多一把亚空间炽焰手枪和一门灵魂收割者炮。"
+  }
+}

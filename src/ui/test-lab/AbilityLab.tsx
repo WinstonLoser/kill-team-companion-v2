@@ -1,22 +1,14 @@
 import { useState, useMemo } from 'react'
 import { sandboxAbilityResolver } from '../../state/AbilityResolver'
-import type { FactionPack, Stratagem, Operative } from '../../rules/types'
-import { loadPack } from '../..'
-import angelsPack from '../../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../../data/packs/legionaries.v1.json'
-import plaguePack from '../../data/packs/plague_marines.v1.json'
-import chaosCultPack from '../../data/packs/chaos_cult.v1.json'
+import type { Stratagem, Operative } from '../../rules/types'
+import type { FactionPack } from '../../rules'
+import { FACTION_REGISTRY } from '../../data/packs'
 
 import { CombatResolver, type CombatAction } from '../components/Combat/CombatResolver'
 import { ActionBar } from '../match/ActionBar'
 import type { ActionType, Order } from '../../state/turnStateMachine'
 
-const TESTLAB_PACKS = [
-  { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack as any) },
-  { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack as any) },
-  { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack as any) },
-  { id: 'chaos_cult', name: '混沌教派', pack: loadPack(chaosCultPack as any) },
-]
+const TESTLAB_PACKS: { id: string; name: string; pack: FactionPack }[] = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, pack: f.pack }))
 
 export function AbilityLab() {
   const [logs, setLogs] = useState<string[]>([...sandboxAbilityResolver.getLogs()])

@@ -6,25 +6,22 @@ import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effe
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
 import { ElectronicDiceSource, hashSeed, type DiceSource } from '../dice'
-import { loadPack, type FactionPack, type Effect, type OperativeStats, type WeaponProfile } from '../rules'
+import type { FactionPack, Effect, OperativeStats, WeaponProfile } from '../rules'
 import type { PredicateContext } from '../rules/predicates'
 import { useRosterStore } from './rosterStore'
 import { resolveActivationEffects } from './activationResolver'
 import { useAnimationStore } from './animationStore'
 import { getAvatarUrl } from '../utils/avatars'
-import angelsPack from '../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../data/packs/legionaries.v1.json'
-import plaguePack from '../data/packs/plague_marines.v1.json'
-import chaosCultPack from '../data/packs/chaos_cult.v1.json'
+import { ALL_PACKS } from '../data/packs'
 // 对局聚合状态（1.12-1.16 共享）。UI 只读写 store（AR-9）；引擎/几何/骰源由 store 调用。
-const MATCH_PACK: FactionPack = loadPack(angelsPack)
+const MATCH_PACK: FactionPack = ALL_PACKS[0]!
 
 /** 行动中文名（日志/UI 用）。 */
 const ACTION_LABEL_ZH: Record<ActionType, string> = {
   MOVE: '转移', DASH: '冲刺', FALL_BACK: '后撤', CHARGE: '冲锋', SHOOT: '射击', FIGHT: '近战',
 }
-// 多阵营注册表：按 opId 前缀解析特工阵营包（angels_/leg_/plg_）。
-const PACKS: FactionPack[] = [MATCH_PACK, loadPack(legionariesPack), loadPack(plaguePack), loadPack(chaosCultPack)]
+// 多阵营注册表：统一来自 src/data/packs/index.ts，按 faction.id / opId 解析。
+const PACKS: FactionPack[] = ALL_PACKS
 export function packOfFaction(factionId: string): FactionPack {
   return PACKS.find((p) => p.faction.id === factionId) ?? MATCH_PACK
 }

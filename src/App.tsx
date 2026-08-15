@@ -3,7 +3,6 @@ import { useViewStore, type View } from './state/viewStore'
 import { useRosterStore } from './state/rosterStore'
 import { useMatchStore } from './state/matchStore'
 import { useLocaleStore } from './state/localeStore'
-import { loadPack } from '.'
 import { MatchView } from './ui/MatchView'
 import { SimpleMatchView } from './ui/SimpleMatchView'
 import { RosterView } from './ui/RosterView'
@@ -12,17 +11,9 @@ import { AbilityLab } from './ui/test-lab/AbilityLab'
 import { AnimationLab } from './ui/test-lab/AnimationLab'
 import { RulesSearch } from './ui/match/RulesQuery'
 import { AnimationEngine } from './ui/components/Animation/AnimationEngine'
-import angelsPack from './data/packs/angels_of_death.v1.json'
-import legionariesPack from './data/packs/legionaries.v1.json'
-import plaguePack from './data/packs/plague_marines.v1.json'
-import chaosCultPack from './data/packs/chaos_cult.v1.json'
+import { FACTION_REGISTRY } from './data/packs'
 
-const TESTLAB_PACKS = [
-  { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack as any) },
-  { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack as any) },
-  { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack as any) },
-  { id: 'chaos_cult', name: '混沌教派', pack: loadPack(chaosCultPack as any) },
-]
+const TESTLAB_PACKS = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, pack: f.pack }))
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'roster', label: '建队' },

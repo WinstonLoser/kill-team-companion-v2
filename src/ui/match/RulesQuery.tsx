@@ -1,16 +1,6 @@
 import { useState, useEffect } from 'react'
-import { loadPack, type FactionPack, type Effect, type Weapon } from '../..'
-import angelsPack from '../../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../../data/packs/legionaries.v1.json'
-import plaguePack from '../../data/packs/plague_marines.v1.json'
-import chaosCultPack from '../../data/packs/chaos_cult.v1.json'
-
-const ALL_PACKS: FactionPack[] = [
-  loadPack(angelsPack as any),
-  loadPack(legionariesPack as any),
-  loadPack(plaguePack as any),
-  loadPack(chaosCultPack as any)
-]
+import type { Effect, Weapon } from '../..'
+import { ALL_PACKS } from '../../data/packs'
 
 // 1.17 T3/T4：规则查询（参数化要点，不显示 GW 原文 D-29）。
 // 引擎接入 + UI 抽为 RulesSearch，供顶栏规则视图与对局浮层共用（P10 统一）。

@@ -371,6 +371,12 @@
       "description": "Use when friendly Plague Marine is incapacitated before removal. Each enemy visible within 3\" gains a Poison token; if already poisoned, inflicts 1 damage instead. / 当友方瘟疫战士瘫痪被移出前使用。其 3\" 内且可见的每名敌方特工获得一枚毒素指示物；若已有毒素，则改为对其造成 1 点伤害。"
     }
   ],
+  "wargear": [
+    {"id": "plague_bell", "name": "Plague Bell / 瘟疫之钟", "description": "您可以忽略任何己方瘟疫战士特工因受创而导致的属性变化（包括武器数据）。"},
+    {"id": "blight_grenade", "name": "Blight Grenade / 疫病手雷", "description": "己方瘟疫战士特工拥有以下远程武器（每场战斗最多使用两次）：疫病手雷（4 攻击、4+ 命中、2/4 伤害，范围 6\"、爆炸 2\"、集中、严重、毒素）。"},
+    {"id": "plague_ammo", "name": "Plague Ammo / 瘟疫弹药", "description": "己方瘟疫战士特工的爆矢枪和爆矢手枪拥有“毒素”和“严重”武器规则。"},
+    {"id": "mucus_exit", "name": "Mucus Exit / 排毒口", "description": "每当一名位于己方瘟疫战士特工 3\" 内的敌方特工被激活时：若其没有己方毒素指示物，掷一枚 D3，结果为 3 则获得一枚；若其拥有己方毒素指示物，则其受到 D3 点伤害（而不是 1 点）。"}
+  ],
   "buildConstraints": {
     "operatives": { "max": 6, "min": 6 },
     "leaderFrom": ["champion"],

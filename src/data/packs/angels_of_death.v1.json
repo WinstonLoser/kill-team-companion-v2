@@ -226,22 +226,18 @@
       "base": { "diameterMm": 32 },
       "loadouts": [
         {
-          "description": "Ranged Weapon / 远程武器",
+          "description": "Equipment / 装备",
           "count": 1,
           "options": [
-            ["hand_flamer"],
-            ["heavy_bolt_pistol"],
-            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup"]
-          ]
-        },
-        {
-          "description": "Melee Weapon / 近战武器",
-          "count": 1,
-          "options": [
-            ["assault_sgt_chainsword"],
-            ["assault_sgt_power_fist"],
-            ["assault_sgt_power_weapon"],
-            ["assault_sgt_thunder_hammer"]
+            ["hand_flamer", "assault_sgt_chainsword"],
+            ["hand_flamer", "assault_sgt_power_fist"],
+            ["hand_flamer", "assault_sgt_power_weapon"],
+            ["hand_flamer", "assault_sgt_thunder_hammer"],
+            ["heavy_bolt_pistol", "assault_sgt_chainsword"],
+            ["heavy_bolt_pistol", "assault_sgt_power_fist"],
+            ["heavy_bolt_pistol", "assault_sgt_power_weapon"],
+            ["heavy_bolt_pistol", "assault_sgt_thunder_hammer"],
+            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup", "assault_sgt_chainsword"]
           ]
         }
       ],
@@ -326,8 +322,7 @@
           "description": "Heavy Bolter / 重型爆矢枪",
           "count": 1,
           "options": [
-            ["heavy_bolter_focused", "bolt_pistol", "sgt_fists"],
-            ["heavy_bolter_sweeping", "bolt_pistol", "sgt_fists"]
+            ["heavy_bolter_focused", "heavy_bolter_sweeping", "bolt_pistol", "sgt_fists"]
           ]
         }
       ],
@@ -684,6 +679,12 @@
     }
   ],
 
+  "wargear": [
+    {"id": "purity_seal", "name": "Purity Seal / 纯洁印章", "description": "每个转折点限一次，在一名己方死亡天使特工进行射击、近战或反击时，如果您掷出了两次失败，那么您可以将其中一次舍弃，并将另一次失败作为普通成功进行保留。"},
+    {"id": "chapter_relic", "name": "Chapter Relic / 战团圣物", "description": "在您使用“复仇之怒”交战计谋时，如果被指定的己方特工拥有交战命令，那么那次计谋消耗 0CP。"},
+    {"id": "combat_shield", "name": "Combat Shield / 偏移肩盾", "description": "每个转折点限一次，在一名己方死亡天使特工进行近战或反击时，您可以在对手掷攻击骰后、进行重掷前使用本规则。若使用，您的对手不能在那次流程中将任何结果低于 6 的攻击骰作为关键成功进行保留（例如“致命”、“撕裂”和“严重”武器规则）。"},
+    {"id": "auspex", "name": "Auspex / 占卜仪", "description": "每个转折点限一次，在一名己方死亡天使特工执行射击行动并选择有效目标时，您可以使用本规则。若使用，那么直到那次激活（或反应）结束前，位于那名己方特工 8\" 内的敌方特工不能被遮挡。"}
+  ],
   "buildConstraints": {
     "operatives": { "max": 6, "min": 6 },
     "leaderFrom": ["space_marine_captain", "assault_intercessor_sergeant", "intercessor_sergeant"],

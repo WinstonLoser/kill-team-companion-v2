@@ -636,6 +636,12 @@
       "phase": "FIREFIGHT"
     }
   ],
+  "wargear": [
+    {"id": "warding_armour", "name": "Warding Armour / 守护护甲", "description": "战略计划。选择一名己方军团特工。将那名特工的豁免属性变为 2+，持续至下一个战略阶段的就绪步骤。"},
+    {"id": "corrupted_ammo", "name": "Corrupted Ammo / 腐化弹药", "description": "每个转折点限一次，在一名己方军团特工执行射击行动时，如果您选择使用爆矢手枪或者爆矢枪，那么可以使用本规则。若使用，直到那次行动结束前，那件武器拥有“撕裂”武器规则。"},
+    {"id": "chaos_talisman", "name": "Chaos Talisman / 混沌护身符", "description": "战略计划。选择一个混沌印记关键词。每次激活限一次，当拥有对应关键词的己方军团特工进行射击、近战或反击时，如果您掷出了两次或更多失败，那么您可以对这名己方特工造成 D3 处伤害，舍弃其中一次失败并将另一次失败作为普通成功进行保留。如果这是一次射击行动，并且那次伤害足够将己方特工残废，那次行动也不会结束。"},
+    {"id": "malefic_blade", "name": "Malefic Blade / 凶恶利刃", "description": "己方军团特工装备有以下近战武器：凶恶利刃（5 攻击、3+ 命中、3/4 伤害）。"}
+  ],
   "buildConstraints": {
     "operatives": { "max": 6, "min": 6 },
     "leaderFrom": ["aspiring_champion", "chosen"],
