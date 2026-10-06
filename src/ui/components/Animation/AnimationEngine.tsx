@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useAnimationStore, type AnimationRequest } from '../../../state/animationStore'
 import './AnimationEngine.css'
+import { useVisualFxStore } from '../../../state/visualFxStore'
+import { factionVisual } from '../../visual/factionVisuals'
 
 export function AnimationEngine() {
   const activeAnimation = useAnimationStore(s => s.activeAnimation)
@@ -21,11 +23,12 @@ export function AnimationEngine() {
 
 function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: () => void }) {
   const [phase, setPhase] = useState<'enter' | 'active' | 'exit'>('enter')
+  const motionMode = useVisualFxStore(s => s.motionMode)
 
   useEffect(() => {
     // Determine total duration
     const defaultDuration = anim.type === 'DEATH' ? 2500 : 1500
-    const duration = anim.durationMs || defaultDuration
+    const duration = motionMode === 'reduced' ? 500 : anim.durationMs || defaultDuration
 
     // Enter -> Active transition
     const enterTimer = setTimeout(() => {
@@ -35,7 +38,7 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
     // Active -> Exit transition
     const exitTimer = setTimeout(() => {
       setPhase('exit')
-    }, duration - 300) // 300ms for exit animation
+    }, Math.max(100, duration - 300)) // 300ms for exit animation
 
     // Finish
     const finishTimer = setTimeout(() => {
@@ -47,13 +50,14 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
       clearTimeout(exitTimer)
       clearTimeout(finishTimer)
     }
-  }, [anim.id])
+  }, [anim.id, motionMode, onFinish])
 
   const typeClass = `anim-type-${anim.type.toLowerCase()}`
   const themeColor = anim.themeColorRgb ? `rgb(${anim.themeColorRgb})` : '#555'
+  const visual = factionVisual(anim.factionId)
 
   return (
-    <div className={`anim-node ${phase} ${typeClass}`}>
+    <div className={`anim-node ${phase} ${typeClass}`} data-faction={anim.factionId} data-motif={visual.motif} style={{ '--fx-color': visual.accent } as React.CSSProperties}>
       <div 
         className="anim-portrait"
         style={{ 

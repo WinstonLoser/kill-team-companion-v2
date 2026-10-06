@@ -11,6 +11,7 @@ import type { FactionPack, Effect, OperativeStats, WeaponProfile, Operative, Wea
 import type { PredicateContext } from '../rules/predicates'
 import { resolveActivationEffects } from './activationResolver'
 import { useAnimationStore } from './animationStore'
+import { useVisualFxStore } from './visualFxStore'
 import { getAvatarUrl } from '../utils/avatars'
 import { ALL_PACKS } from '../data/packs'
 import { effectiveActionAp } from './turnStateMachine'
@@ -1251,14 +1252,15 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       const avatarUrl = getAvatarUrl(target.factionId, target.opId)
       
       if (finalTargetWoundsDealt > 0) {
+        useVisualFxStore.getState().emitBoardFx({ kind: 'DAMAGE', factionId: target.factionId, to: target.pos, label: `−${finalTargetWoundsDealt}`, durationMs: 900 })
         if (newW <= 0) {
           useAnimationStore.getState().playAnimation({
-            type: 'DEATH', themeColorRgb, avatarUrl, 
+            type: 'DEATH', factionId: target.factionId, themeColorRgb, avatarUrl,
             maxWounds: target.maxWounds, prevWounds: prevW, currentWounds: 0
           })
         } else {
           useAnimationStore.getState().playAnimation({
-            type: 'DAMAGE', themeColorRgb, avatarUrl, 
+            type: 'DAMAGE', factionId: target.factionId, themeColorRgb, avatarUrl,
             text: `-${finalTargetWoundsDealt}`,
             maxWounds: target.maxWounds, prevWounds: prevW, currentWounds: newW
           })
@@ -1270,6 +1272,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     // -- Animation Dispatch (Attacker) --
     const attacker = get().tokens.find((t) => t.uid === ls.attackerUid)
     if (attacker && finalAttackerWoundsDealt > 0) {
+      useVisualFxStore.getState().emitBoardFx({ kind: 'DAMAGE', factionId: attacker.factionId, to: attacker.pos, label: `−${finalAttackerWoundsDealt}`, durationMs: 900 })
       const atkPack = packOfFaction(attacker.factionId)
       const atkThemeColorRgb = atkPack.faction.theme?.ui?.primaryRgb || '255, 90, 0'
       const atkAvatarUrl = getAvatarUrl(attacker.factionId, attacker.opId)
@@ -1278,12 +1281,12 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
 
       if (atkNewW <= 0) {
         useAnimationStore.getState().playAnimation({
-          type: 'DEATH', themeColorRgb: atkThemeColorRgb, avatarUrl: atkAvatarUrl, 
+          type: 'DEATH', factionId: attacker.factionId, themeColorRgb: atkThemeColorRgb, avatarUrl: atkAvatarUrl,
           maxWounds: attacker.maxWounds, prevWounds: atkPrevW, currentWounds: 0
         })
       } else {
         useAnimationStore.getState().playAnimation({
-          type: 'DAMAGE', themeColorRgb: atkThemeColorRgb, avatarUrl: atkAvatarUrl, 
+          type: 'DAMAGE', factionId: attacker.factionId, themeColorRgb: atkThemeColorRgb, avatarUrl: atkAvatarUrl,
           text: `-${finalAttackerWoundsDealt}`,
           maxWounds: attacker.maxWounds, prevWounds: atkPrevW, currentWounds: atkNewW
         })
@@ -1304,6 +1307,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     if (overrides?.attackerMarkers) attackerMarkersToAdd = overrides.attackerMarkers
     
     if (targetMarkersToAdd.length > 0 || attackerMarkersToAdd.length > 0) {
+      if (target && targetMarkersToAdd.length) useVisualFxStore.getState().emitBoardFx({ kind: 'RULE', factionId: attacker?.factionId ?? target.factionId, to: target.pos, label: targetMarkersToAdd.some(marker => marker.startsWith('POISON')) ? '中毒' : '状态变化', durationMs: 1050 })
       set((s) => ({
         tokens: s.tokens.map((t) => {
           let add: string[] = []

@@ -5,6 +5,7 @@ export type AnimationType = 'DAMAGE' | 'DEATH' | 'HEAL' | 'BUFF' | 'CUSTOM'
 export interface AnimationRequest {
   id: string
   type: AnimationType
+  factionId?: string
   avatarUrl?: string
   themeColorRgb?: string
   text?: string

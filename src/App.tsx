@@ -12,6 +12,9 @@ const AnimationLab = lazy(() => import('./ui/test-lab/AnimationLab').then(m => (
 import { RulesSearch } from './ui/match/RulesQuery'
 import { AnimationEngine } from './ui/components/Animation/AnimationEngine'
 import { FACTION_REGISTRY } from './data/packs'
+import { useVisualFxStore } from './state/visualFxStore'
+import './ui/visual/visualEffects.css'
+import { factionVisual } from './ui/visual/factionVisuals'
 
 const TESTLAB_PACKS = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, pack: f.pack }))
 
@@ -33,7 +36,20 @@ export function App() {
 
   const [showTools, setShowTools] = useState(false)
   const phase = useMatchStore(s => s.phase)
+  const turningPoint = useMatchStore(s => s.turn.turningPoint)
   const mapless = useMatchStore(s => s.maplessMode)
+  const motionMode = useVisualFxStore(s => s.motionMode)
+  const setMotionMode = useVisualFxStore(s => s.setMotionMode)
+  const phaseNotice = useVisualFxStore(s => s.phaseNotice)
+  const showPhaseNotice = useVisualFxStore(s => s.showPhaseNotice)
+  const previousStage = useRef(`${phase}:${turningPoint}`)
+  useEffect(() => {
+    const stage = `${phase}:${turningPoint}`
+    if (stage === previousStage.current) return
+    previousStage.current = stage
+    const name = phase === 'deploy' ? '部署开始' : phase === 'strategy' ? `转折点 ${turningPoint} · 战略准备` : phase === 'play' ? '交替行动' : phase === 'ended' ? '战斗结束' : ''
+    if (name) showPhaseNotice(name, phase === 'play' ? '选择特工并执行行动' : undefined)
+  }, [phase, turningPoint, showPhaseNotice])
   const mainRef = useRef<HTMLElement>(null)
   useEffect(() => {mainRef.current?.scrollTo({top:0})},[currentView,phase])
   const steps = ['组建小队', '战场与部署', '战略准备', '交替行动', '战斗结果']
@@ -43,8 +59,9 @@ export function App() {
     else setView(view)
   }
   return (
-    <div className="app">
+    <div className={`app motion-${motionMode}`}>
       <AnimationEngine />
+      {phaseNotice && <div key={phaseNotice.id} className="phase-notice" data-faction={phaseNotice.factionId} data-motif={phaseNotice.factionId ? factionVisual(phaseNotice.factionId).motif : '◆'} role="status"><span>TACTICAL BRIEFING</span><strong>{phaseNotice.title}</strong>{phaseNotice.detail && <small>{phaseNotice.detail}</small>}</div>}
       <header className="topbar">
         <h1><span className="brand-mark">KT</span><span>战棋助手<small>KILL TEAM COMPANION</small></span></h1>
         <div style={{ marginLeft: '1rem' }}>
@@ -55,6 +72,7 @@ export function App() {
           >
             {locale === 'en' ? 'EN | 中文' : '中文 | EN'}
           </button>
+          <button className="motion-toggle" aria-label={`动效模式：${motionMode === 'full' ? '完整' : '简化'}`} onClick={() => setMotionMode(motionMode === 'full' ? 'reduced' : 'full')} title="切换完整／简化动效">动效：{motionMode === 'full' ? '完整' : '简化'}</button>
         </div>
         <nav>
           {VIEWS.filter(v => ['roster','match','simpleMatch','rules'].includes(v.key)).map((v) => (

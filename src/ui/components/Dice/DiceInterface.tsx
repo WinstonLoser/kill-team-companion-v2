@@ -194,7 +194,7 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
   const renderModifiers = () => {
     if (!modifiers || modifiers.length === 0) return null
     return (
-      <div style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${theme?.baseColor || '#fff'}`, marginBottom: '16px', textAlign: 'left' }}>
+      <div className="active-modifiers" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${theme?.baseColor || '#fff'}`, marginBottom: '16px', textAlign: 'left' }}>
         <h4 style={{ margin: '0 0 8px 0', color: '#ccc', fontSize: '0.9rem' }}>当前生效规则修正 (Modifiers)</h4>
         <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa', fontSize: '0.85rem' }}>
           {modifiers.map((mod, i) => (

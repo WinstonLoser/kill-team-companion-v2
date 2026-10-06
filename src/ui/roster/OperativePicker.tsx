@@ -237,7 +237,7 @@ export function OperativePicker({
           const name = displayName(op.name)
           const canAdd = !atCapacity && count < maxPerType(op.operativeId) && (pointsCap === undefined || totalPoints + (costs[op.operativeId] ?? 1) <= pointsCap)
           const canChooseLeader = operativeIds.some(id => leaders.has(id)) || canAdd
-          return <article key={op.operativeId} className={`recruit-card ${count ? 'recruited' : ''}`} aria-label={name}>
+          return <article key={op.operativeId} data-faction={pack.faction.id} className={`recruit-card ${count ? 'recruited' : ''}`} aria-label={name}>
             <div className="recruit-portrait">
               <div className="recruit-art-fallback" aria-hidden="true"><span>KT</span><small>{name}</small></div>
               <img key={`${pack.faction.id}/${op.operativeId}`} src={getAvatarUrl(pack.faction.id, op.operativeId)} alt={name} loading="lazy" onError={e => { e.currentTarget.style.display = 'none' }} />
@@ -270,7 +270,7 @@ export function OperativePicker({
                 const meleeWeapons = equipped.filter(weapon => weapon.kind === 'MELEE')
                 const rangedGroups = weaponProfileGroups(rangedWeapons)
                 const meleeGroups = weaponProfileGroups(meleeWeapons)
-                return <div className="recruit-member" key={key}>
+                return <div className="recruit-member" data-mark={perOperativeMarks[key] || undefined} key={key}>
                   <details>
                     <summary><span><strong>{isRepeatable ? `成员 ${String(instance + 1).padStart(2, '0')}` : '武器与配置'}</strong><small>远程：{rangedGroups.map(group => `${group.name}${group.profiles.length > 1 ? '（多模式）' : ''}`).join(' · ') || '无'}</small><small>近战：{meleeGroups.map(group => group.name).join(' · ') || '无'}</small></span><span className="recruit-expand">配置</span></summary>
                     <div className="recruit-config">
@@ -280,7 +280,7 @@ export function OperativePicker({
                         onChange({ operativeIds, loadout, perOperativeMarks: { ...perOperativeMarks, [key]: e.target.value }, boonWeaponTargets: boonWeaponTargetsNext })
                       }}>
                         <option value="">不启用此项能力</option>{markOptions.map(optId => { const used = selector!.uniqueAcrossTeam && takenMarks.has(optId) && perOperativeMarks[key] !== optId; const forbidden = pack.faction.id === 'legionaries' && op.operativeId === 'balefire_acolyte' && optId === 'mark_khorne'; return <option key={optId} value={optId} disabled={used || forbidden}>{markLabel(optId)}{forbidden ? '（邪火使徒不可选）' : used ? '（已选）' : ''}</option> })}
-                      </select></label>}
+                      </select>{perOperativeMarks[key] && <span className="member-mark" data-mark={perOperativeMarks[key]}>{markLabel(perOperativeMarks[key]!)}</span>}</label>}
                       {personalRulesEnabled && perOperativeMarks[key] === 'boon_starburst' && <label>星爆术作用武器<select aria-label={`${name} ${instance + 1} 星爆术作用武器`} value={boonWeaponTargets[key] ?? ''} onChange={e => onChange({ operativeIds, loadout, boonWeaponTargets: { ...boonWeaponTargets, [key]: e.target.value } })}>
                         <option value="">请选择已装备的灵能远程武器…</option>{psychicRangedWeapons(pack, myLoadout).map(w => <option key={w.weaponId} value={w.weaponId}>{displayName(w.name)}</option>)}
                       </select></label>}

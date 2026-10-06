@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { type DiceRoll } from '../../../dice/source'
 import { DiceIcon } from './DiceIcon'
 import './DicePanel.css'
+import { useVisualFxStore } from '../../../state/visualFxStore'
 
 export interface DicePanelProps {
   dice: DiceRoll[]
@@ -20,21 +21,23 @@ export interface DicePanelProps {
 }
 
 export function DicePanel({ dice, theme, animate = false, statuses = {}, onSoundEvent, onConfirm, onDieClick, animatingIndices }: DicePanelProps) {
+  const motionMode = useVisualFxStore(s => s.motionMode)
+  const shouldAnimate = animate && motionMode === 'full'
   // Array of boolean indicating if each die is currently rolling
   const getActiveIndices = () => animatingIndices ?? dice.map((d, i) => d.isRetained ? -1 : i).filter(i => i !== -1);
   const [rollingStates, setRollingStates] = useState<boolean[]>(
-    dice.map((_d, i) => animate ? getActiveIndices().includes(i) : false)
+    dice.map((_d, i) => shouldAnimate ? getActiveIndices().includes(i) : false)
   )
 
   // Reveal states for sequential display
-  const [showCrits, setShowCrits] = useState(!animate)
-  const [showHits, setShowHits] = useState(!animate)
-  const [showFails, setShowFails] = useState(!animate)
-  const [showConfirm, setShowConfirm] = useState(!animate)
+  const [showCrits, setShowCrits] = useState(!shouldAnimate)
+  const [showHits, setShowHits] = useState(!shouldAnimate)
+  const [showFails, setShowFails] = useState(!shouldAnimate)
+  const [showConfirm, setShowConfirm] = useState(!shouldAnimate)
 
   // Reset sequential reveal states when dice change
   useEffect(() => {
-    if (!animate) {
+    if (!shouldAnimate) {
       setShowCrits(true)
       setShowHits(true)
       setShowFails(true)
@@ -45,10 +48,10 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
       setShowFails(false)
       setShowConfirm(false)
     }
-  }, [dice, animate])
+  }, [dice, shouldAnimate])
 
   useEffect(() => {
-    if (animate) {
+    if (shouldAnimate) {
       const activeIndices = getActiveIndices()
       setRollingStates(dice.map((_d, i) => activeIndices.includes(i) ? true : false))
       onSoundEvent?.('roll_start')
@@ -89,7 +92,7 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
     } else {
       setRollingStates(new Array(dice.length).fill(false))
     }
-  }, [dice, animate])
+  }, [dice, shouldAnimate])
 
   const crits = dice.filter(d => d.grade === 'CRITICAL').length
   const hits = dice.filter(d => d.grade === 'NORMAL').length
@@ -110,8 +113,8 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
           return (
             <div 
               key={`${d.seed || 'dice'}-${i}`} 
-              className={`dice-entrance ${animate && activeIndices.includes(i) ? 'animated' : ''}`}
-              style={(animate && activeIndices.includes(i)) ? { animationDelay: `${delayIndex * 50}ms`, cursor: onDieClick ? 'pointer' : 'default' } : { cursor: onDieClick ? 'pointer' : 'default' }}
+              className={`dice-entrance ${shouldAnimate && activeIndices.includes(i) ? 'animated' : ''}`}
+              style={(shouldAnimate && activeIndices.includes(i)) ? { animationDelay: `${delayIndex * 50}ms`, cursor: onDieClick ? 'pointer' : 'default' } : { cursor: onDieClick ? 'pointer' : 'default' }}
               onClick={() => onDieClick?.(i)}
             >
               <DiceIcon
