@@ -1,4 +1,5 @@
-import { create } from 'zustand'
+import { applyUnitRules, isAstartes } from '../rules/unitRules'
+import { create, type UseBoundStore, type StoreApi } from 'zustand'
 import type { Point, TerrainFeature, OperativePlacement, Board as BoardT } from '../geometry'
 import { losFinding, engagementFinding, validateTarget, coverFinding, obscuredFinding } from '../geometry'
 import type { ObjectiveMarker, MapPack } from '../data/maps'
@@ -6,13 +7,13 @@ import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effe
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
 import { ElectronicDiceSource, hashSeed, type DiceSource } from '../dice'
-import type { FactionPack, Effect, OperativeStats, WeaponProfile } from '../rules'
+import type { FactionPack, Effect, OperativeStats, WeaponProfile, Operative, Weapon } from '../rules'
 import type { PredicateContext } from '../rules/predicates'
-import { useRosterStore } from './rosterStore'
 import { resolveActivationEffects } from './activationResolver'
 import { useAnimationStore } from './animationStore'
 import { getAvatarUrl } from '../utils/avatars'
 import { ALL_PACKS } from '../data/packs'
+import { effectiveActionAp } from './turnStateMachine'
 // 对局聚合状态（1.12-1.16 共享）。UI 只读写 store（AR-9）；引擎/几何/骰源由 store 调用。
 const MATCH_PACK: FactionPack = ALL_PACKS[0]!
 
@@ -31,13 +32,17 @@ export function packOfOp(opId: string): FactionPack {
 export function weaponOfPack(pack: FactionPack, kind: 'RANGED' | 'MELEE') {
   return pack.weapons.find((w) => w.kind === kind)
 }
+export function combatWeapon(uid: string, kind: 'RANGED' | 'MELEE'): Weapon | undefined {
+  const data = getMatchOperativeData(uid)
+  return data?.weapons.find(w => w.kind === kind && w.weaponId === data.token.chosenWeapons?.[kind]) ?? data?.weapons.find(w => w.kind === kind)
+}
 // P4：武器查找为可选（缺类不致导入期崩溃，多阵营安全）；结算时再 guard。
 const RANGED = MATCH_PACK.weapons.find((w) => w.kind === 'RANGED')
 const MELEE = MATCH_PACK.weapons.find((w) => w.kind === 'MELEE')
 const DEFENDER_SAVE = 3
 const DEFENDER_WEAPON_FALLBACK = MELEE ?? RANGED // 近战防御方也需武器；缺则降级
 /** 攻击方阵营「常驻」effect（source 以 factionRule: 开头）：瘟疫毒素挂指示物 + 剧毒 +1 等。 */
-function factionRuleEffectsFor(opId: string, factionId: string): Effect[] {
+function factionRuleEffectsFor(_opId: string, factionId: string): Effect[] {
   return packOfFaction(factionId).effects.filter((e) => e.source.startsWith('factionRule:'))
 }
 
@@ -45,7 +50,7 @@ function factionRuleEffectsFor(opId: string, factionId: string): Effect[] {
  * 读取当前对局中带 DM Overrides 的特工数据。
  * @returns 深度克隆并合并了 token.statOverrides 和 token.weaponOverrides 的 operative 和 weapons。
  */
-export function getMatchOperativeData(uid: string) {
+export function getMatchOperativeData(uid: string): { operative: Operative; pack: FactionPack; weapons: Weapon[]; token: MatchToken } | null {
   const s = useMatchStore.getState()
   const token = s.tokens.find((t) => t.uid === uid)
   if (!token) return null
@@ -55,17 +60,17 @@ export function getMatchOperativeData(uid: string) {
   if (!baseOp) return null
 
   // Clone to avoid mutating global constants
-  const op = JSON.parse(JSON.stringify(baseOp))
+  const op: Operative = structuredClone(baseOp)
   if (token.statOverrides) {
     op.stats = { ...op.stats, ...token.statOverrides }
   }
 
   // Clone weapons and apply overrides
-  const weaponRefs = token.weapons && token.weapons.length > 0 ? token.weapons : pack.weapons.map(w => w.weaponId)
+  const weaponRefs = token.weapons ?? baseOp.loadouts.flatMap(slot => slot.options[0] ?? [])
   const weapons = weaponRefs
     .map((ref) => pack.weapons.find((w) => w.weaponId === ref))
-    .filter(Boolean)
-    .map((w) => JSON.parse(JSON.stringify(w)))
+    .filter((w): w is Weapon => Boolean(w))
+    .map((w) => structuredClone(w))
 
   if (token.weaponOverrides) {
     for (const w of weapons) {
@@ -75,6 +80,7 @@ export function getMatchOperativeData(uid: string) {
     }
   }
 
+  applyUnitRules(op, weapons, token.selections ?? [], token.wounds, token.maxWounds)
   return { operative: op, pack, weapons, token }
 }
 
@@ -86,17 +92,17 @@ export function getMatchOperativeData(uid: string) {
 - wargear: 装备（常驻，v1 全装）
 - stratagem: 仅 activeStratagams 列表内的
  */
-function buildEffectStack(opId: string, factionId: string, _side: Side, activeStratagems: string[]): Effect[] {
+function buildEffectStack(token: MatchToken, activeStratagems: string[]): Effect[] {
+  const { opId, factionId } = token
   const pack = packOfFaction(factionId)
   const out: Effect[] = []
   for (const e of pack.effects) {
     const cat = e.source.split(':')[0]
-    if (cat === 'factionRule' || cat === 'ability' || cat === 'wargear') out.push(e)
+    if (cat === 'factionRule') out.push(e)
+    else if (cat === 'ability' && pack.operatives.find(o => o.operativeId === opId)?.abilityRefs?.includes(e.source.split(':')[1]!)) out.push(e)
     else if (cat === 'chapterTactic' || cat === 'markOfChaos') {
-      // roster 双方都选了（B 镜像 A）→ 读 rosterA 选择
-      const roster = useRosterStore.getState().rosterA
-      const sel = cat === 'chapterTactic' ? roster.subFactionSelection : roster.subFactionSelection
-      if (sel.includes(e.effectId)) out.push(e)
+      // Current pack descriptors predate current rule text; direct profile rules are applied per token.
+      if (e.modifier.kind === 'CUSTOM_HOOK' && token.selections?.includes(e.effectId)) out.push(e)
     }
     else if (cat === 'stratagem') {
       if (activeStratagems.includes(e.effectId)) out.push(e)
@@ -143,6 +149,9 @@ export interface MatchToken {
   order: 'CONCEAL' | 'ENGAGE'
   /** 该特工配备的武器ID列表（自 Roster 导入） */
   weapons: string[]
+  chosenWeapons?: Partial<Record<'RANGED' | 'MELEE', string>>
+  selections?: string[]
+  wargear?: string[]
   /** 运行时数据覆写：基础属性修改（DM Mode） */
   statOverrides?: Partial<OperativeStats>
   /** 运行时数据覆写：武器属性修改（DM Mode）Record<weaponId, Partial<WeaponProfile>> */
@@ -165,6 +174,7 @@ export interface ActiveEffect {
 
 /** D3：会话内全局回退快照（确认伤亡 / 计分前各存一份，"回滚到此"恢复棋盘+VP+回合）。 */
 export interface Snapshot {
+  flow?: Pick<MatchState, "phase" | "initiative" | "strategyTurn" | "strategyPasses" | "activeStratagems" | "usedPloys" | "reactionUid" | "reacted" | "previousInitiative" | "winner">
   id: number
   label: string
   tokens: MatchToken[]
@@ -215,7 +225,7 @@ interface MatchState {
   activeStratagems: { a: string[]; b: string[] }
   diceSource: DiceSourceKind
   /** D-24 咨询式翻转：key=`${aUid}>${tUid}>${kind}` → 玩家终裁 finalValue。 */
-  overrides: Record<string, boolean>
+  overrides: Record<string, boolean | string | number>
   /** D4：特工身上的限时 effect（uid → 列表）。 */
   activeEffects: Record<string, ActiveEffect[]>
   /** D3：会话内回退快照栈（确认/计分前 push）。 */
@@ -239,7 +249,7 @@ interface MatchState {
   /** 6.1 战略阶段：最近一次使用计谋前的快照（一级回退，防误点） */
   lastPloy: { cp: { a: number; b: number }; strategyTurn: 'a' | 'b'; strategyPasses: { a: boolean; b: boolean }; activeStratagems: { a: string[]; b: string[] } } | null
   /** 激活期逐步回退栈：每次 doAction 前压栈，undoAction 弹栈恢复（AP/行动记录/位置）。激活结束清空。 */
-  activationUndo: { uid: string; apUsed: number; actionsThisActivation: ActionType[]; fallBackDone: boolean; chargeDone: boolean; moveDone: boolean; pos: Point }[]
+  activationUndo: { uid: string; apUsed: number; actionsThisActivation: ActionType[]; fallBackDone: boolean; chargeDone: boolean; moveDone: boolean; pos: Point; tokens: MatchToken[] }[]
   /** 简化对局模式（无地图、跳过部署、自动隐蔽、手动选择目标/掩体） */
   maplessMode?: boolean
 
@@ -290,12 +300,12 @@ interface MatchState {
   /** 6.1：撤销最近一次战略计谋（恢复 CP/回合/激活态） */
   strategyUndo: () => void
   /** D-24：设置某项 finding 的玩家终裁值（key 不存在则用引擎值）。 */
-  setOverride: (key: string, value: boolean) => void
+  setOverride: (key: string, value: boolean | string | number) => void
   clearOverride: (key: string) => void
   /** 取某对 (attacker,target) 的 findingOverrides，注入 validateTarget。 */
   findingOverridesFor: (aUid: string, tUid: string) => { kind: 'LOS' | 'COVER' | 'OBSCURED' | 'RANGE' | 'ENGAGEMENT'; finalValue: boolean }[]
   /** D-24：读某项 finding 的玩家终裁值（无则 undefined=用引擎值）。 */
-  overrideValue: (aUid: string, tUid: string, kind: string) => boolean | undefined
+  overrideValue: (aUid: string, tUid: string, kind: string) => boolean | string | number | undefined
   setIntercept: (i: { title: string; reasons: string[] } | null) => void
   pushLog: (kind: LogKind, text: string) => void
   setLogFilter: (f: LogKind | 'all') => void
@@ -305,6 +315,16 @@ interface MatchState {
   swapOperativeClass: (uid: string, newOpId: string) => void
   setTokenWeapons: (uid: string, weaponIds: string[]) => void
   setResource: (side: 'a' | 'b', type: 'cp' | 'vp', delta: number) => void
+  reactionUid: string | null
+  reacted: string[]
+  previousInitiative: Side | null
+  usedPloys: Record<string, number>
+  usePloy: (side: Side, id: string) => { ok: boolean; reason?: string }
+  canEndTP: () => { ok: boolean; reason?: string }
+  canReact: (uid: string) => boolean
+  react: (uid: string) => void
+  passOpportunity: () => void
+  setCombatWeapon: (uid: string, kind: 'RANGED' | 'MELEE', weaponId: string) => void
   activate: (uid: string, side: Side) => void
   endActivation: (uid: string) => void
   /** 激活时选命令（交战/隐匿）。 */
@@ -315,6 +335,7 @@ interface MatchState {
   undoAction: () => void
   /** 查特工有效 APL（base + effects）。 */
   effectiveAplOf: (uid: string) => number
+  actionCostOf: (uid: string, action: ActionType) => number
   /** 查特工有效移动距离（base + effects）。 */
   effectiveMoveOf: (uid: string) => number
   /** 检查行动合法性（AP/约束），返回 {ok, reason}。 */
@@ -374,7 +395,8 @@ function nextLogId(): number {
 }
 let snapshotId = 0
 
-export const useMatchStore = create<MatchState>((set, get) => ({
+export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchState>((set, get) => ({
+  reactionUid: null, reacted: [], previousInitiative: null, usedPloys: {},
   phase: 'map-select',
   mapPack: null,
   customTerrain: [],
@@ -464,7 +486,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       deployDice: null,
       deployRollNonce: 0,
       intercept: null,
-      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '部署已重置（地图保留）' }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '部署已重置（地图保留）' }, ...s.log],
     })),
   placeToken: (uid, pos, facing) =>
     set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, placed: true, pos, facing } : t)) })),
@@ -519,12 +541,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const dice = new ElectronicDiceSource(hashSeed('DEPLOY_INITIATIVE', 'D6', nonce))
     const a = dice.roll(1)[0]!.nat
     const b = dice.roll(1)[0]!.nat
-    const winner: 'a' | 'b' = a >= b ? 'a' : 'b' // 平局 A 方先手（简化）
+    const winner: 'a' | 'b' = a === b ? (dice.roll(1)[0]!.nat <= 3 ? 'a' : 'b') : a > b ? 'a' : 'b'
     set((s) => ({
       deployInitiative: winner,
       deployDice: { a, b },
       deployRollNonce: nonce,
-      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `部署先手 D6：A=${a} B=${b} → ${winner.toUpperCase()} 方先部署` }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `部署先手 D6：A=${a} B=${b} → ${winner.toUpperCase()} 方先部署` }, ...s.log],
     }))
     return { a, b, winner }
   },
@@ -533,24 +555,28 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   enterStrategy: () => {
     const s = get()
     // 全员就绪
+    if (s.phase !== 'deploy' && s.phase !== 'map-select') return
     const turn = turnReducer(s.turn, { type: 'START_BATTLE' })
+    for (const t of s.tokens) turn.operatives[t.uid] = { order: t.order === 'ENGAGE' ? 'ENGAGED' : 'CONCEALED', ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false }
     set({ phase: 'strategy', turn, initiative: null, strategyPasses: { a: false, b: false }, strategyTurn: null })
     s.pushLog('system', `转折点 ${turn.turningPoint} 战略阶段开始 — 掷 D6 定先手权`)
   },
   rollInitiative: () => {
     let a = 0, b = 0
     const dice = new ElectronicDiceSource(hashSeed('INITIATIVE', 'D6', get().turn.turningPoint + Math.random()))
-    while (a === b) {
+    {
       a = dice.roll(1)[0]!.nat
       b = dice.roll(1)[0]!.nat
     }
-    const winner = a > b ? 'a' as const : 'b' as const
+    const previous = get().previousInitiative ?? get().deployInitiative ?? 'a'
+    const winner: Side = a === b ? (previous === 'a' ? 'b' : 'a') : a > b ? 'a' : 'b'
     get().pushLog('system', `先手权争夺：A 掷 ${a}, B 掷 ${b}。${winner.toUpperCase()} 胜出。`)
     return { a, b, winner }
   },
   confirmInitiative: (side: 'a' | 'b') => {
     // CP 发放：首 TP 各 +1（START_BATTLE 已给 3/3）；后续先手+1 非先手+2
     const s = get()
+    if (s.phase !== 'strategy' || s.initiative) return
     const tp = s.turn.turningPoint
     let cpA = s.turn.cp.a, cpB = s.turn.cp.b
     if (tp === 1) { cpA += 1; cpB += 1 }
@@ -561,7 +587,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       strategyTurn: side,
       strategyPasses: { a: false, b: false },
       turn: { ...st.turn, cp: { a: cpA, b: cpB }, activePlayer: side },
-      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `${side.toUpperCase()} 方决定先手；CP A:${cpA} B:${cpB}` }, ...st.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `${side.toUpperCase()} 方决定先手；CP A:${cpA} B:${cpB}` }, ...st.log],
     }))
   },
   strategyAct: (side, action) => {
@@ -599,7 +625,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       strategyPasses: lp.strategyPasses,
       activeStratagems: lp.activeStratagems,
       lastPloy: null,
-      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '已撤销最近一次战略计谋' }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '已撤销最近一次战略计谋' }, ...s.log],
     })
   },
   toggleStratagem: (side, effectId) =>
@@ -618,23 +644,23 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   findingOverridesFor: (aUid, tUid) => {
     const ov = get().overrides
     return (Object.keys(ov) as (keyof typeof ov)[])
-      .filter((k) => k.startsWith(`${aUid}>${tUid}>`))
+      .filter((k) => k.startsWith(`${aUid}>${tUid}>`) && ['LOS','COVER','OBSCURED','RANGE','ENGAGEMENT'].includes(k.split('>')[2]!) && typeof ov[k] === 'boolean')
       .map((k) => {
         const kind = k.split('>')[2] as 'LOS' | 'COVER' | 'OBSCURED' | 'RANGE' | 'ENGAGEMENT'
-        return { kind, finalValue: ov[k]! }
+        return { kind, finalValue: ov[k] === true }
       })
   },
 overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kind)],
   setIntercept: (intercept) => set({ intercept }),
   pushLog: (kind, text) =>
-    set((s) => ({ log: [{ id: nextLogId(), kind, text }, ...s.log].slice(0, 80) })),
+    set((s) => ({ log: [{ id: nextLogId(), kind, text }, ...s.log] })),
   setLogFilter: (logFilter) => set({ logFilter }),
   // DM 数据修改
   setTokenOverrides: (uid, statOverrides, weaponOverrides) => set((s) => {
     const next = [...s.tokens]
     const idx = next.findIndex(t => t.uid === uid)
     if (idx < 0) return {}
-    next[idx] = { ...next[idx], statOverrides, weaponOverrides }
+    next[idx] = { ...next[idx]!, statOverrides, weaponOverrides }
     return { tokens: next }
   }),
   // DM 数据修改: 直接修改当前血量与状态指示物
@@ -642,14 +668,14 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const next = [...s.tokens]
     const idx = next.findIndex(t => t.uid === uid)
     if (idx < 0) return {}
-    next[idx] = { ...next[idx], ...state }
+    next[idx] = { ...next[idx]!, ...state }
     return { tokens: next }
   }),
   swapOperativeClass: (uid, newOpId) => set((s) => {
     const next = [...s.tokens]
     const idx = next.findIndex(t => t.uid === uid)
     if (idx < 0) return {}
-    const t = next[idx]
+    const t = next[idx]!
     const pack = packOfFaction(t.factionId)
     const baseOp = pack.operatives.find(o => o.operativeId === newOpId)
     if (!baseOp) return {}
@@ -658,10 +684,11 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       opId: newOpId,
       name: baseOp.name,
       maxWounds: baseOp.stats.wounds,
-      baseRadius: baseOp.base.diameterMm / 2,
+      wounds: Math.max(0, baseOp.stats.wounds - (t.maxWounds - t.wounds)),
+      baseRadius: baseOp.base.diameterMm / 2 / 25.4,
       statOverrides: undefined,
       weaponOverrides: undefined,
-      weapons: []
+      weapons: baseOp.loadouts.flatMap(slot => slot.options[0] ?? [])
     }
     return { tokens: next }
   }),
@@ -669,7 +696,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const next = [...s.tokens]
     const idx = next.findIndex(t => t.uid === uid)
     if (idx < 0) return {}
-    next[idx] = { ...next[idx], weapons: weaponIds }
+    next[idx] = { ...next[idx]!, weapons: weaponIds }
     return { tokens: next }
   }),
   setResource: (side, type, delta) => set((s) => {
@@ -680,9 +707,75 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       return { turn: { ...s.turn, cp: { ...s.turn.cp, [side]: Math.max(0, currentCp + delta) } } }
     }
   }),
+  setCombatWeapon: (uid, kind, weaponId) => {
+    const data = getMatchOperativeData(uid)
+    if (!data?.weapons.some(w => w.weaponId === weaponId && w.kind === kind) || get().lastShot) return
+    set(s => ({ tokens: s.tokens.map(t => t.uid === uid ? { ...t, chosenWeapons: { ...t.chosenWeapons, [kind]: weaponId } } : t) }))
+  },
+  canEndTP: () => {
+    const s = get()
+    if (s.phase !== 'play') return { ok: false, reason: '请先完成战略阶段；已结束的战斗不能重复计分' }
+    if (s.lastShot || s.turn.activeOpId || s.dragging) return { ok: false, reason: '请先确认伤亡并结束当前激活或反应' }
+    const ready = s.tokens.filter(t => t.alive && t.placed && s.turn.operatives[t.uid]?.ready !== false)
+    if (ready.length) return { ok: false, reason: `还有 ${ready.length} 名特工未激活` }
+    return { ok: true }
+  },
+  usePloy: (side, id) => {
+    const s = get()
+    const token = s.tokens.find(t => t.side === side)
+    const pack = token ? packOfFaction(token.factionId) : null
+    const ploy = pack?.stratagems?.find(p => p.id === id)
+    if (!ploy || !pack || s.phase === 'ended') return { ok: false, reason: '没有可用计谋' }
+    if ((ploy.phase === 'STRATEGY' && (s.phase !== 'strategy' || s.strategyTurn !== side)) || (ploy.phase === 'ENGAGEMENT' && s.phase !== 'play')) return { ok: false, reason: '当前不是该计谋的使用阶段' }
+    const tpKey = `${side}:${id}:tp${s.turn.turningPoint}`
+    const battleKey = `${side}:${id}:battle`
+    if ((s.usedPloys[tpKey] ?? 0) >= (ploy.useLimit.perTurningPoint ?? 1) || (s.usedPloys[battleKey] ?? 0) >= (ploy.useLimit.perBattle ?? Infinity)) return { ok: false, reason: '本计谋已达使用上限' }
+    if (s.turn.cp[side] < ploy.cp) return { ok: false, reason: 'CP 不足' }
+    const eids = pack.effects.filter(e => e.source === `stratagem:${id}`).map(e => e.effectId)
+    set({
+      turn: { ...s.turn, cp: { ...s.turn.cp, [side]: s.turn.cp[side] - ploy.cp } },
+      usedPloys: { ...s.usedPloys, [tpKey]: (s.usedPloys[tpKey] ?? 0) + 1, [battleKey]: (s.usedPloys[battleKey] ?? 0) + 1 },
+      activeStratagems: { ...s.activeStratagems, [side]: [...new Set([...s.activeStratagems[side], ...eids])] },
+      strategyTurn: ploy.phase === 'STRATEGY' ? (side === 'a' ? 'b' : 'a') : s.strategyTurn,
+      strategyPasses: ploy.phase === 'STRATEGY' ? { a: false, b: false } : s.strategyPasses,
+      lastPloy: null,
+    })
+    get().pushLog('ploy', `${side.toUpperCase()} 使用 ${ploy.name}（−${ploy.cp} CP）；${ploy.description ?? '按卡面处理对象与效果'}`)
+    return { ok: true }
+  },
+  canReact: (uid) => {
+    const s = get()
+    const t = s.tokens.find(t => t.uid === uid)
+    if (!t || !t.alive || !t.placed || s.phase !== 'play' || s.turn.activeOpId || s.lastShot || s.reacted.includes(uid) || t.side !== s.turn.activePlayer) return false
+    if (s.tokens.some(x => x.side === t.side && x.alive && s.turn.operatives[x.uid]?.ready !== false)) return false
+    if (!s.tokens.some(x => x.side !== t.side && x.alive && s.turn.operatives[x.uid]?.ready !== false)) return false
+    const data = getMatchOperativeData(uid)
+    return s.turn.operatives[uid]?.order === 'ENGAGED' || !!data && isAstartes(data.operative)
+  },
+  react: (uid) => {
+    if (!get().canReact(uid)) return
+    const s = get()
+    const t = s.tokens.find(t => t.uid === uid)!
+    const turn = turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: t.side })
+    set({ turn, reactionUid: uid, reacted: [...s.reacted, uid], selected: uid, activationUndo: [] })
+    get().pushLog('turn', `${t.name} 反应：免费执行一个1AP行动，移动最多2英寸`)
+  },
+  passOpportunity: () => {
+    const s = get()
+    if (s.phase !== 'play' || s.turn.activeOpId || s.lastShot) return
+    if (s.tokens.some(t => t.alive && t.side === s.turn.activePlayer && s.turn.operatives[t.uid]?.ready !== false)) return
+    set({ turn: { ...s.turn, activePlayer: s.turn.activePlayer === 'a' ? 'b' : 'a' }, selected: null })
+    get().pushLog('turn', `${s.turn.activePlayer.toUpperCase()} 放弃本次反应机会`)
+  },
   // P5：activate 只 dispatch，由 reducer 自包含 upsert ready:true（不再手填 operatives）。
   activate: (uid, side) => {
+    const before = get()
+    const candidate = before.tokens.find(t => t.uid === uid)
+    if (!candidate?.alive || !candidate.placed || before.phase !== 'play' || before.turn.activeOpId || before.lastShot || side !== before.turn.activePlayer || candidate.side !== side || before.turn.operatives[uid]?.ready === false) return
     set((s) => ({ turn: turnReducer(s.turn, { type: 'ACTIVATE', opId: uid, player: side }), activationUndo: [] }))
+    const poison = candidate.markers.filter(m => m.startsWith('POISON:') || m === 'POISON').length
+    if (poison) { get().applyDamage(uid, poison); get().pushLog('turn', `${candidate.name} 毒素造成 ${poison} 伤害`) }
+    if (!get().tokens.find(t => t.uid === uid)?.alive) { get().endActivation(uid); return }
     // 5-6 mucus_exit：激活期 effect resolver（排毒口 D3=3 挂 POISON / D3 伤）
     const s = get()
     const activator = s.tokens.find((t) => t.uid === uid)
@@ -691,9 +784,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const holders = s.tokens
       .filter((t) => t.alive && t.placed && t.side !== side)
       .map((t) => {
-        const effects = factionRuleEffectsFor(t.opId).concat(
-          PACKS.flatMap((p) => p.effects).filter((e) => e.source.startsWith('wargear:') && e.trigger.point === 'ON_ACTIVATION_START'),
-        )
+        const effects = factionRuleEffectsFor(t.opId, t.factionId)
         return { uid: t.uid, pos: t.pos, side: t.side, effects }
       })
       .filter((h) => h.effects.length > 0)
@@ -717,15 +808,20 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
           return { ...t, markers: newMarkers, wounds: newWounds, alive: newWounds > 0 }
         }),
         log: aResult.trace.length
-          ? [{ id: nextLogId(), kind: 'system' as LogKind, text: `激活效果：${aResult.trace.map((tr) => tr.detail).join('; ')}` }, ...st.log].slice(0, 80)
+          ? [{ id: nextLogId(), kind: 'system' as LogKind, text: `激活效果：${aResult.trace.map((tr) => tr.detail).join('; ')}` }, ...st.log]
           : st.log,
       }))
     }
   },
-  endActivation: (uid) =>
-    set((s) => ({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }), activationUndo: [] })),
+  endActivation: (uid) => {
+    const s = get()
+    if (s.turn.activeOpId !== uid || s.lastShot) return
+    set({ turn: turnReducer(s.turn, { type: 'END_ACTIVATION', opId: uid }), activationUndo: [], reactionUid: null })
+  },
   selectOrder: (uid, order) => {
+    if (get().reactionUid || get().lastShot || get().turn.operatives[uid]?.apUsed) return
     set((s) => ({ turn: turnReducer(s.turn, { type: 'SELECT_ORDER', opId: uid, order }) }))
+    set(s => ({ tokens: s.tokens.map(t => t.uid === uid ? { ...t, order: order === 'ENGAGED' ? 'ENGAGE' : 'CONCEAL' } : t) }))
     get().pushLog('turn', `${get().tokens.find((t) => t.uid === uid)?.name ?? uid} 选命令：${order === 'ENGAGED' ? '交战' : '隐匿'}`)
   },
   doAction: (uid, action) => {
@@ -736,10 +832,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const tok = s.tokens.find((t) => t.uid === uid)
     // 逐步回退栈：压入 commit 前状态
     const undo = op && tok
-      ? [...s.activationUndo, { uid, apUsed: op.apUsed, actionsThisActivation: [...op.actionsThisActivation], fallBackDone: op.fallBackDone, chargeDone: op.chargeDone, moveDone: op.moveDone, pos: tok.pos }]
+      ? [...s.activationUndo, { uid, apUsed: op.apUsed, actionsThisActivation: [...op.actionsThisActivation], fallBackDone: op.fallBackDone, chargeDone: op.chargeDone, moveDone: op.moveDone, pos: tok.pos, tokens: structuredClone(s.tokens) }]
       : s.activationUndo
-    set({ turn: turnReducer(s.turn, { type: 'DO_ACTION', opId: uid, action }), activationUndo: undo })
-    s.pushLog('turn', `${s.tokens.find((t) => t.uid === uid)?.name ?? uid} → ${ACTION_LABEL_ZH[action] ?? action}（−${ACTION_AP[action]}AP）`)
+    set({ turn: turnReducer(s.turn, { type: 'DO_ACTION', opId: uid, action, apCost: get().actionCostOf(uid, action) }), activationUndo: undo })
+    s.pushLog('turn', `${s.tokens.find((t) => t.uid === uid)?.name ?? uid} → ${ACTION_LABEL_ZH[action] ?? action}（−${s.actionCostOf(uid, action)}AP）`)
     return { ok: true }
   },
   undoAction: () => {
@@ -749,48 +845,61 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const op = s.turn.operatives[last.uid]
     set({
       turn: op ? { ...s.turn, operatives: { ...s.turn.operatives, [last.uid]: { ...op, apUsed: last.apUsed, actionsThisActivation: [...last.actionsThisActivation], fallBackDone: last.fallBackDone, chargeDone: last.chargeDone, moveDone: last.moveDone } } } : s.turn,
-      tokens: s.tokens.map((t) => (t.uid === last.uid ? { ...t, pos: last.pos } : t)),
+      tokens: structuredClone(last.tokens),
+      lastShot: null, currentLog: null,
       activationUndo: s.activationUndo.slice(0, -1),
-      log: [{ id: nextLogId(), kind: 'turn' as LogKind, text: `↶ 撤销 ${s.tokens.find((t) => t.uid === last.uid)?.name ?? ''} 上一步行动` }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'turn' as LogKind, text: `↶ 撤销 ${s.tokens.find((t) => t.uid === last.uid)?.name ?? ''} 上一步行动` }, ...s.log],
     })
   },
   effectiveAplOf: (uid) => {
+    if (get().reactionUid === uid) return 1
     const s = get()
     const dmData = getMatchOperativeData(uid)
     if (!dmData) return 0
     const { operative, token: t } = dmData
     const baseApl = operative.stats.apl ?? 3
-    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
-    return effectiveApl(baseApl, effects)
+    const effects = buildEffectStack(t, s.activeStratagems[t.side])
+    return t.selections?.includes('chapterTactic_resolute') ? baseApl : effectiveApl(baseApl, effects)
   },
   effectiveMoveOf: (uid) => {
+    if (get().reactionUid === uid) return 2
     const s = get()
     const dmData = getMatchOperativeData(uid)
     if (!dmData) return 0
     const { operative, token: t } = dmData
     const baseMove = operative.stats.move ?? 6
-    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
+    const effects = buildEffectStack(t, s.activeStratagems[t.side])
     return effectiveMove(baseMove, effects)
+  },
+  actionCostOf: (uid, action) => {
+    const s = get()
+    if (s.reactionUid === uid) return 1
+    const t = s.tokens.find(t => t.uid === uid)
+    if (!t) return ACTION_AP[action]
+    if (action === 'FALL_BACK' && t.selections?.includes('chapterTactic_mobile')) return 1
+    return effectiveActionAp(action, ACTION_AP[action], buildEffectStack(t, s.activeStratagems[t.side]))
   },
   checkAction: (uid, action) => {
     const s = get()
     const op = s.turn.operatives[uid]
-    if (!op || !op.ready) return { ok: false, reason: '特工未就绪' }
+    if (!op || !op.ready || s.phase !== 'play' || s.turn.activeOpId !== uid || s.lastShot) return { ok: false, reason: '请先完成当前结算并激活该特工' }
     const t = s.tokens.find((x) => x.uid === uid)
-    if (!t) return { ok: false, reason: '特工不存在' }
+    if (!t?.alive || t.side !== s.turn.activePlayer) return { ok: false, reason: '该特工不能行动' }
     const pack = packOfFaction(t.factionId)
     const opData = pack.operatives.find((o) => o.operativeId === t.opId)
-    const baseApl = opData?.stats.apl ?? 3
-    const effects = buildEffectStack(t.opId, t.factionId, t.side, s.activeStratagems[t.side])
-    const apl = effectiveApl(baseApl, effects)
+    const apl = s.effectiveAplOf(uid)
     // effectiveActionAp 已在 canDoAction 内消费（ACTION_AP_MOD delta → ACTION_AP 调整）
-    const isAstartes = pack.faction.keywords.includes('ASTARTES')
+    const astartes = opData ? isAstartes(opData) : false
+    if (s.reactionUid === uid && (ACTION_AP[action] !== 1 || op.actionsThisActivation.length > 0)) return { ok: false, reason: '反应仅允许一个原费用为1AP的行动' }
+    const ranged = combatWeapon(uid, 'RANGED')
+    const extra = { actionCost: s.actionCostOf(uid, action), quiet: !!ranged?.profile.weaponRules.some(r => /silent|quiet/i.test(r)), chargeInEngagement: t.selections?.includes('chapterTactic_mobile') }
     
     // 简化对局模式下，跳过物理距离的交战检查，假设条件满足（由玩家手动判定）
     if (s.maplessMode) {
       return canDoAction(s.turn, uid, action, {
+        ...extra,
         apl,
-        isAstartes,
+        isAstartes: astartes,
         inEngagementRange: action === 'FIGHT' || action === 'FALL_BACK', // 若是近战/后撤则当做交战中
         enemyInEngagement: action === 'FIGHT' || action === 'FALL_BACK', 
       })
@@ -802,8 +911,9 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
         Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1,
     )
     return canDoAction(s.turn, uid, action, {
+      ...extra,
       apl,
-      isAstartes,
+      isAstartes: astartes,
       inEngagementRange: inEng,
       enemyInEngagement: inEng,
     })
@@ -811,7 +921,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
   // ===== AR-9 intent：一击结算（引擎/几何/骰源在 store 内，UI 只 dispatch）=====
   checkAttackLegality: ({ attackerUid, targetUid, kind }) => {
     const s = get()
-    if (s.maplessMode) return { ok: true }
+    if (s.maplessMode) {
+      const a = s.tokens.find(t => t.uid === attackerUid); const d = s.tokens.find(t => t.uid === targetUid)
+      return a?.alive && d?.alive && a.side !== d.side && combatWeapon(attackerUid, kind === 'SHOOT' ? 'RANGED' : 'MELEE') ? { ok: true } : { ok: false, missing: ['请选择存活敌人及已装备武器'] }
+    }
     const attacker = s.tokens.find((t) => t.uid === attackerUid)
     const target = s.tokens.find((t) => t.uid === targetUid)
     const map = s.mapPack
@@ -825,11 +938,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     }
     const others = s.tokens.filter((t) => t.alive && t.placed && t.uid !== target.uid).map((t) => t.pos)
     
-    const atkPack = packOfFaction(attacker.factionId)
-    const atkRanged = weaponOfPack(atkPack, 'RANGED')
+    const atkRanged = combatWeapon(attacker.uid, 'RANGED')
     const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
     
-    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind })
+    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind, targetOrder: target.order === 'CONCEAL' ? 'CONCEALED' : 'ENGAGED', friendlyPositions: s.tokens.filter(t => t.alive && t.placed && t.side === attacker.side && t.uid !== attacker.uid).map(t => t.pos) })
     return { ok: elig.ok, missing: elig.missing }
   },
   resolveAttack: ({ attackerUid, targetUid, kind, atkNats, defNats, atkRolls, defRolls, manualAllocation }) => {
@@ -854,7 +966,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const atkPack = atkDmData.pack
     const tgtPack = tgtDmData.pack
     
-    const atkRanged = atkDmData.weapons.find(w => w.kind === 'RANGED')
+    const atkRanged = combatWeapon(attacker.uid, 'RANGED')
     // P3/D-24：获取几何判定的 findingOverrides （如掩体遮蔽）
     const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
     
@@ -866,9 +978,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
 
     // 攻击方 effect 栈 = 全量（factionRule + chapterTactic/markOfChaos + ability + wargear + activeStratagem）
     const atkStrats = s.activeStratagems[attacker.side]
-    const effects = buildEffectStack(attacker.opId, attacker.factionId, attacker.side, atkStrats)
-    const useWeapon = atkDmData.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
+    const effects = buildEffectStack(attacker, atkStrats)
+    const useWeapon = combatWeapon(attacker.uid, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
     if (!useWeapon) return { ok: false, missing: [`阵营包缺 ${kind} 武器`] }
+    if (useWeapon.profile.weaponRules.some(r => /^(Toxic|Virulent)$/i.test(r)) && target.markers.includes(`POISON:${attacker.side}`)) { useWeapon.profile.normalDamage++; useWeapon.profile.criticalDamage++ }
     // 谓词 ctx（W3 接线）：目标指示物 + 双方阵营 + 武器类 + 距离 → 剧毒(+1 vs POISON)等条件门控生效
     const predicate: PredicateContext = {
       targetMarkers: target.markers,
@@ -882,8 +995,13 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     // Create a mutable array of all dice provided so that successive rolls consume it
     const manualDicePool = (atkNats || defNats) ? [...(atkNats || []), ...(defNats || [])] : undefined
     
+    const finalizedRolls = atkRolls && defRolls ? [...atkRolls, ...defRolls] : undefined
     const dice: DiceSource = {
+      finalized: !!finalizedRolls,
       roll: (n: number, ctx: any) => {
+        if (finalizedRolls) {
+          return finalizedRolls.splice(0,n).map(d => ({nat: d.nat as 1|2|3|4|5|6,grade: d.grade as 'NORMAL'|'CRITICAL'|'FAIL'}))
+        }
         if (manualDicePool && manualDicePool.length > 0) {
           const take = manualDicePool.splice(0, n)
           return take.map((d) => {
@@ -912,17 +1030,17 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon },
         defender: { operativeId: target.uid, save: tgtSave, wounds: target.wounds },
-        effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
+        effects, defenderEffects: buildEffectStack(target, s.activeStratagems[target.side]), dice, hasCover: cover, predicate,
       }
       const r = runShooting(input)
       woundsDealt = r.woundsDealt
       log = buildShootingLog(`${attacker.uid}>${target.uid}`, input, r)
     } else {
-      const defMeleeWeapon = tgtDmData.weapons.find(w => w.kind === 'MELEE') ?? DEFENDER_WEAPON_FALLBACK ?? useWeapon
+      const defMeleeWeapon = combatWeapon(target.uid, 'MELEE') ?? DEFENDER_WEAPON_FALLBACK ?? useWeapon
       const input = {
         attacker: { operativeId: attacker.uid, weapon: useWeapon, save: atkSave, wounds: attacker.wounds },
         defender: { operativeId: target.uid, weapon: defMeleeWeapon, save: tgtSave, wounds: target.wounds },
-        effects, defenderEffects: buildEffectStack(target.opId, target.factionId, target.side, s.activeStratagems[target.side]), dice, predicate,
+        effects, defenderEffects: buildEffectStack(target, s.activeStratagems[target.side]), dice, predicate,
         manualAllocation, // Pass down to engine
       }
       const r = runMelee(input)
@@ -935,7 +1053,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     set({
       lastShot: { targetUid: target.uid, targetName: target.name, woundsDealt, prevWounds: target.wounds, attackerUid: attacker.uid, kind: logKind === 'shoot' ? 'SHOOT' : 'MELEE', attackerWoundsDealt, atkNats, defNats, atkRolls, defRolls },
       currentLog: log,
-      log: [{ id: nextLogId(), kind: logKind, text: `${attacker.name} → ${target.name}：待确认伤亡 ${woundsDealt}` }, ...s.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: logKind, text: `${attacker.name} → ${target.name}：待确认伤亡 ${woundsDealt}` }, ...s.log],
     })
     return { ok: true }
   },
@@ -991,7 +1109,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       const atkPack = packOfFaction(attacker.factionId)
       const atkThemeColorRgb = atkPack.faction.theme?.ui?.primaryRgb || '255, 90, 0'
       const atkAvatarUrl = getAvatarUrl(attacker.factionId, attacker.opId)
-      const atkPrevW = attacker.wounds
+      const atkPrevW = attacker.wounds + finalAttackerWoundsDealt
       const atkNewW = Math.max(0, atkPrevW - finalAttackerWoundsDealt)
 
       if (atkNewW <= 0) {
@@ -1017,6 +1135,8 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     let targetMarkersToAdd = granted.filter(g => g.target === 'DEFENDER').map(g => g.marker)
     let attackerMarkersToAdd = granted.filter(g => g.target === 'ATTACKER').map(g => g.marker)
     if (overrides?.targetMarkers) targetMarkersToAdd = overrides.targetMarkers
+    const toxinWeapon = combatWeapon(ls.attackerUid, ls.kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+    if (finalTargetWoundsDealt > 0 && toxinWeapon?.profile.weaponRules.some(r => /^(Poison|Toxin)$/i.test(r)) && attacker) targetMarkersToAdd = [...targetMarkersToAdd, `POISON:${attacker.side}`]
     if (overrides?.attackerMarkers) attackerMarkersToAdd = overrides.attackerMarkers
     
     if (targetMarkersToAdd.length > 0 || attackerMarkersToAdd.length > 0) {
@@ -1037,12 +1157,12 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       currentLog: null,
       replayLog: log,
       log: [
-        { id: nextLogId(), kind: 'system', text: `确认伤亡：${ls.targetName} -${finalTargetWoundsDealt}血` + (finalAttackerWoundsDealt > 0 ? `，${ls.attackerUid === ls.targetUid ? '' : '攻击方'} -${finalAttackerWoundsDealt}血` : '') + (markerLog.length ? ` [${markerLog.join(', ')}]` : '') },
+        { id: nextLogId(), kind: 'system' as LogKind, text: `确认伤亡：${ls.targetName} -${finalTargetWoundsDealt}血` + (finalAttackerWoundsDealt > 0 ? `，${ls.attackerUid === ls.targetUid ? '' : '攻击方'} -${finalAttackerWoundsDealt}血` : '') + (markerLog.length ? ` [${markerLog.join(', ')}]` : '') },
         ...s.log
-      ].slice(0, 80)
+      ]
     }))
   },
-  undoPending: () => set({ lastShot: null, currentLog: null }),
+  undoPending: () => { get().undoAction(); set({ lastShot: null, currentLog: null }) },
   attackViz: (activeUid) => {
     const s = get()
     const map = s.mapPack
@@ -1051,7 +1171,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     if (!attacker) return { range: 0, controlRing: null, ownCover: null, targets: [] }
     const placed = s.tokens.filter((t) => t.alive && t.placed)
     const board: BoardT = { terrain: map.terrain, operatives: placed.map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })) }
-    const range = RANGED.profile.range ?? 24
+    const range = combatWeapon(activeUid, 'RANGED')?.profile.range ?? 24
     // 1.14 AC2：1" 控制范围圈 + 自身掩护染色（COVER 1" 内→绿；2" 内有他特工→灰）
     const others = placed.filter((t) => t.uid !== attacker.uid).map((t) => t.pos)
     const cf = coverFinding(attacker.pos, board, others)
@@ -1065,7 +1185,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
           const los = losFinding(attacker.pos, t.pos, board)
           const ov = s.overrides[overrideKey(attacker.uid, t.uid, 'LOS')]
           const obscured = obscuredFinding(t.pos, board).finalValue
-          return { uid: t.uid, pos: t.pos, losFinal: ov ?? los.finalValue, losAmbiguous: los.confidence === 'AMBIGUOUS', obscured }
+          return { uid: t.uid, pos: t.pos, losFinal: typeof ov === 'boolean' ? ov : los.finalValue, losAmbiguous: los.confidence === 'AMBIGUOUS', obscured }
         }),
     }
   },
@@ -1081,7 +1201,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     return engagementFinding(
       { operativeId: a.uid, pos: a.pos, baseRadius: a.baseRadius },
       { operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius },
-      ov ?? los.finalValue,
+      typeof ov === 'boolean' ? ov : los.finalValue,
     ).finalValue
   },
   manualDiceNeeded: (kind) => {
@@ -1112,7 +1232,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     if (expired.length) newLogs.push({ id: nextLogId(), kind: 'system', text: `effect 到期 ×${expired.length}：${expired.join('，')}` })
     set({
       activeEffects: next,
-      log: [...newLogs, ...s.log].slice(0, 80),
+      log: [...newLogs, ...s.log],
       // D4 effect 到期 push：作为非阻塞 intercept 提示
       intercept: expired.length ? { title: `effect 到期 ×${expired.length}`, reasons: expired } : s.intercept,
     })
@@ -1122,9 +1242,10 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const s = get()
     snapshotId += 1
     const snap: Snapshot = {
+      flow: structuredClone({phase:s.phase, initiative:s.initiative, strategyTurn:s.strategyTurn, strategyPasses:s.strategyPasses, activeStratagems:s.activeStratagems, usedPloys:s.usedPloys, reactionUid:s.reactionUid, reacted:s.reacted, previousInitiative:s.previousInitiative, winner:s.winner}),
       id: snapshotId,
       label,
-      tokens: s.tokens.map((t) => ({ ...t })),
+      tokens: structuredClone(s.tokens),
       vp: { ...s.vp },
       turn: { ...s.turn, operatives: { ...s.turn.operatives } },
       activeEffects: Object.fromEntries(Object.entries(s.activeEffects).map(([k, v]) => [k, v.map((e) => ({ ...e }))])),
@@ -1136,14 +1257,16 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const snap = s.snapshots.find((x) => x.id === id)
     if (!snap) return
     set((cur) => ({
-      tokens: snap.tokens.map((t) => ({ ...t })),
+      ...snap.flow,
+      activationUndo: [], selected: null, dragging: null,
+      tokens: structuredClone(snap.tokens),
       vp: { ...snap.vp },
       turn: { ...snap.turn, operatives: { ...snap.turn.operatives } },
       activeEffects: Object.fromEntries(Object.entries(snap.activeEffects).map(([k, v]) => [k, v.map((e) => ({ ...e }))])),
       lastShot: null,
       currentLog: null,
       snapshots: cur.snapshots.filter((x) => x.id < id), // 丢弃其后快照
-      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `↶ 回退：<${snap.label}>` }, ...cur.log].slice(0, 80),
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `↶ 回退：<${snap.label}>` }, ...cur.log],
     }))
   },
   replayLast: () => {
@@ -1160,6 +1283,8 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
   },
   setPushMsg: (pushMsg) => set({ pushMsg }),
   scoreAndEndTP: () => {
+    const gate = get().canEndTP()
+    if (!gate.ok) { get().setIntercept({ title: '暂不能结束转折点', reasons: [gate.reason!] }); return }
     // D4：先结算到期 effect（递减/移除/记日志/push），再计分推进
     get().tickEffects()
     const s = get() // tickEffects 已 set，重取最新
@@ -1183,12 +1308,14 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const ended = next.phase === 'BATTLE_END'
     let winner: string | null = s.winner
     if (ended) {
-      winner = scoredA > scoredB ? 'A 胜' : scoredB > scoredA ? 'B 胜' : '平局'
+      winner = s.mapPack?.objectives.length === 0 && scoredA === 0 && scoredB === 0 ? '训练完成（未记录任务得分）' : scoredA > scoredB ? 'A 胜' : scoredB > scoredA ? 'B 胜' : '平局'
       newLogs.push({ id: nextLogId(), kind: 'system' as LogKind, text: `战斗结束 → ${winner}（VP A:${scoredA} B:${scoredB}）` })
     }
     // P11：TP 结束计分 push 文案
     const pushMsg = ended ? null : `TP${s.turn.turningPoint} 结束 — VP +${gainedA}/+${gainedB}（A:${scoredA} B:${scoredB}）`
     set({
+      previousInitiative: s.initiative,
+      activeStratagems: { a: [], b: [] }, reacted: [], reactionUid: null,
       vp: { a: scoredA, b: scoredB },
       turn: ended ? next : { ...next, activePlayer: next.activePlayer === 'a' ? 'b' : 'a' },
       winner: ended ? winner : null,
@@ -1198,7 +1325,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       strategyPasses: { a: false, b: false },
       selected: null,
       pushMsg,
-      log: [...newLogs, ...s.log].slice(0, 80),
+      log: [...newLogs, ...s.log],
     })
   },
   reset: () =>

@@ -172,7 +172,7 @@ export function DiceInterface({ count: initialCount, theme, statuses, rollContex
         const [r] = source.roll(1, localContext)
         setFinalRolls(prev => {
           const next = [...prev]
-          next[editingIndex] = { ...r, isRetained: true }
+          next[editingIndex] = { ...r!, isRetained: true }
           return next
         })
         setAnimatingIndices([editingIndex])

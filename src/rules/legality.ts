@@ -75,12 +75,13 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
   const leaderFrom = constraints?.leaderFrom
   if (leaderFrom && leaderFrom.length > 0) {
     const leadSet = new Set(leaderFrom)
-    const hasLeader = operativeIds.some((id) => leadSet.has(id))
+    const leaderCount = operativeIds.filter((id) => leadSet.has(id)).length
+    const hasLeader = leaderCount === 1
     checks.push({
       key: 'leader',
       label: '队长',
       status: hasLeader ? 'ok' : 'warn',
-      detail: hasLeader ? `有队长（${leaderFrom.join('/')}）` : `需 ≥1 名队长（${leaderFrom.join('/')}）`,
+      detail: hasLeader ? '已选择 1 名队长' : `必须恰好 1 名队长，当前 ${leaderCount} 名`,
     })
   }
 
@@ -187,6 +188,7 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
         const instance = operativeIds.slice(0, position).filter((x) => x === id).length
         const key = `${id}#${instance}`
         const mark = marks[key]
+        if (pack.faction.id === 'legionaries' && id === 'balefire_acolyte' && mark === 'mark_khorne') problems.push('邪火使徒不能选择恐虐印记')
         if (eligible) {
           if (required > 0 && (!mark || !validOptions.has(mark))) {
             problems.push(`${op.name}需选 ${required} 项`)
@@ -217,7 +219,7 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
       const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
       let sfStatus: RosterLegalityStatus = 'ok'
       let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
-      if (subFactionSelection.length !== selector.max) {
+      if (subFactionSelection.length !== selector.max || new Set(subFactionSelection).size !== selector.max) {
         sfStatus = 'warn'
         sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
       } else if (invalid.length > 0) {

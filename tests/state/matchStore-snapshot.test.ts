@@ -48,7 +48,7 @@ describe('快照回退 + 回放（D3）', () => {
     const s = useMatchStore.getState()
     // 模拟一次待确认结算
     useMatchStore.setState({
-      lastShot: { targetUid: 'b1', targetName: 'B1', woundsDealt: 3, prevWounds: 10, attackerUid: 'a1', kind: 'shoot' },
+      lastShot: { targetUid: 'b1', targetName: 'B1', woundsDealt: 3, prevWounds: 10, attackerUid: 'a1', kind: 'SHOOT' },
       currentLog: { resolutionId: 'r1', pipelineKind: 'SHOOTING', records: [{ stepId: 'HIT_ROLL', summary: 'x', appliedEffectIds: [], rejectedEffectIds: [] }], cursor: 1, inputSnapshot: {} as never, result: {} as never },
     })
     s.confirmCasualties()

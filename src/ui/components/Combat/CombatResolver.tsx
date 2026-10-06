@@ -4,7 +4,6 @@ import { type DiceRoll, type RollContext } from '../../../dice/source'
 import { type Pool } from '../../../engine/parry'
 import { MeleeAllocationPanel } from './MeleeAllocationPanel'
 import { UnitPortrait, type UnitPortraitProps } from '../UnitPortrait/UnitPortrait'
-import { type Stratagem } from '../../../rules/types'
 
 export interface CombatAction {
   id: string
@@ -93,33 +92,14 @@ export function CombatResolver({
   const handleDefenderConfirm = (rolls: DiceRoll[]) => {
     setDefRolls(rolls)
     if (mode === 'SHOOT') {
-      // Resolve shooting
-      let atkNormal = atkRolls.filter(r => r.grade === 'NORMAL').length
-      let atkCrit = atkRolls.filter(r => r.grade === 'CRITICAL').length
-
-      let defNormal = rolls.filter(r => r.grade === 'NORMAL').length
-      let defCrit = rolls.filter(r => r.grade === 'CRITICAL').length
-
-      // Simple auto-parry logic for shooting defense
-      // Crit def -> blocks crit atk
-      // Normal def -> blocks normal atk, 2 normal def -> blocks crit atk
-      while (defCrit > 0 && atkCrit > 0) { defCrit--; atkCrit--; }
-      while (defCrit > 0 && atkNormal > 0) { defCrit--; atkNormal--; }
-      while (defNormal >= 2 && atkCrit > 0) { defNormal -= 2; atkCrit--; }
-      while (defNormal > 0 && atkNormal > 0) { defNormal--; atkNormal--; }
-
-      // In shooting, no allocation. Complete immediately!
-      let normalDmg = (atkNormal * (attackerDamage?.normal || 3))
-      let critDmg = (atkCrit * (attackerDamage?.critical || 4))
-      let totalDmg = normalDmg + critDmg
-
+      // Store engine is the single source of damage resolution.
       if (onComplete) {
         onComplete({ 
           atkNats: atkRolls.map(r => r.nat), 
           defNats: rolls.map(r => r.nat),
           atkRolls,
           defRolls: rolls,
-          damageDealt: { normal: totalDmg, critical: 0 }
+
         })
       }
     } else {
@@ -145,7 +125,7 @@ export function CombatResolver({
   const currentPortrait = isAttacker ? attackerPortrait : defenderPortrait
   const currentName = isAttacker ? attackerName : defenderName
   const currentRole = isAttacker ? 'Attacker' : 'Defender'
-  const currentCount = isAttacker ? attackerCount : (mode === 'SHOOT' ? 3 : defenderCount)
+  const currentCount = isAttacker ? attackerCount : defenderCount
   const currentTheme = isAttacker ? attackerTheme : defenderTheme
   const currentContext = isAttacker ? attackerContext : defenderContext
   const currentConfirm = isAttacker ? handleAttackerConfirm : handleDefenderConfirm
@@ -158,6 +138,7 @@ export function CombatResolver({
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1vh' }}>
+      {onCancel && <button className="combat-cancel" onClick={onCancel}>取消攻击并恢复行动</button>}
       {isRolling && (
         <div key={phase} style={{ 
           width: '100%', maxWidth: '900px', flex: 1, minHeight: 0,
@@ -174,7 +155,7 @@ export function CombatResolver({
               )}
               <div style={{ textAlign: 'left' }}>
                 <div style={{ color: currentTheme?.baseColor || '#ffaa77', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px', fontWeight: 'bold' }}>
-                  {currentRole} Roll (Need {currentCount})
+                  {currentName} · {currentRole === 'Attacker' ? '攻击' : '防御'}骰 {currentCount} 枚
                 </div>
               </div>
             </div>

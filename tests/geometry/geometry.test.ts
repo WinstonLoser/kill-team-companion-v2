@@ -128,12 +128,12 @@ describe('资格判定 + 咨询式翻转', () => {
     expect(flipped.overridden).toBe(true)
   })
 
-  it('P13：目标隐匿命令 → 不可射击', () => {
+  it('隐匿目标在开阔地仍可射击', () => {
     const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [], {
       targetOrder: 'CONCEALED',
     })
-    expect(r.ok).toBe(false)
-    expect(r.missing.some((m) => m.includes('隐匿'))).toBe(true)
+    expect(r.ok).toBe(true)
+    expect(r.missing.some((m) => m.includes('隐匿'))).toBe(false)
   })
 
   it('P13：目标与己方近战纠缠（控制范围内有己方）→ 不可射击', () => {

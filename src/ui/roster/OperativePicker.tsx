@@ -1,4 +1,6 @@
-import { Fragment } from 'react'
+import { useState } from 'react'
+import { getAvatarUrl } from '../../utils/avatars'
+import '../../styles/roster-builder.css'
 import type { FactionPack } from '../../rules'
 import { fmtWeapon } from '../weaponDisplay'
 
@@ -34,6 +36,8 @@ export function OperativePicker({
   wargearAssignment: Record<string, string[]>
   onChange: (next: { operativeIds: string[]; loadout: Record<string, string[]>; perOperativeMarks?: Record<string, string>; wargearAssignment?: Record<string, string[]> }) => void
 }) {
+  const [filter, setFilter] = useState<'all' | 'selected'>('all')
+  const displayName = (name: string) => name.split(' / ').at(-1) ?? name
   const except = new Set(pack.buildConstraints?.maxPerTypeExcept ?? [])
   const leaders = new Set(pack.buildConstraints?.leaderFrom ?? [])
   const typeLimits = pack.buildConstraints?.operativeTypeLimits ?? {}
@@ -167,140 +171,74 @@ export function OperativePicker({
   const pointsCap = sp?.exact ?? sp?.max ?? sp?.min
 
   return (
-    <div className="operative-picker">
-      <h3>
-        特工配置（{operativeIds.length}/{maxTotal} 名）
-        {sp && pointsCap !== undefined && <span className={totalPoints === pointsCap ? 'op-full ok' : 'op-full'}> · 点数 {totalPoints}/{pointsCap}</span>}
-        {atCapacity && <span className="op-full"> 已满</span>}
-      </h3>
-      <table className="roster-table">
-        <thead>
-          <tr>
-            <th className="rt-name">特工</th>
-            <th className="rt-stat">豁免</th>
-            <th className="rt-stat">耐伤</th>
-            <th className="rt-stat">移动</th>
-            <th className="rt-wg">阵营装备</th>
-            <th className="rt-wp">装备配置</th>
-            <th className="rt-act">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordered.map((op) => {
-            const isLeader = leaders.has(op.operativeId)
-            const isRepeatable = maxPerType(op.operativeId) > 1
-            const lim = typeLimits[op.operativeId]
-            const count = countOf(op.operativeId)
-            const instances = getInstances(op.operativeId)
-            const canAdd = !atCapacity && count < maxPerType(op.operativeId)
-
-            return (
-              <Fragment key={op.operativeId}>
-                {/* 类型头行：名称 + 属性 + 加号 */}
-                <tr className={`rt-type-row ${count > 0 ? 'has' : ''}`}>
-                  <td className="rt-name">
-                    {isLeader ? (
-                      <label className="rt-leader-pick">
-                        <input type="radio" name="leader" checked={count > 0} onChange={() => selectLeader(op.operativeId)} />
-                        {op.name}
-                      </label>
-                    ) : (
-                      <span>{op.name}</span>
-                    )}
-                    {isLeader && <span className="rt-tag">队长</span>}
-                    {isRepeatable && <span className="rt-tag">{lim ? `×${lim.max ?? maxTotal}` : '可复选'}</span>}
-                  </td>
-                  <td className="rt-stat">{op.stats.save}+</td>
-                  <td className="rt-stat">{op.stats.wounds}</td>
-                  <td className="rt-stat">{op.stats.move}"</td>
-                  <td className="rt-wg"></td>
-                  <td className="rt-wp"></td>
-                  <td className="rt-act">
-                    {!isLeader && (
-                      <button className="op-btn" onClick={() => addOp(op.operativeId)} disabled={!canAdd} title="添加">＋</button>
-                    )}
-                    {isRepeatable && count > 0 && <span className="rt-cnt">×{count}</span>}
-                  </td>
-                </tr>
-                {/* 每个已入队实例：独立阵营装备 + 装备配置 */}
-                {instances.map(({ key, instance }) => {
-                  const myLoadout = loadout[key] ?? []
-                  const myWg = (wargearAssignment[key] ?? [])[0] ?? ''
-                  const taken = takenWargearIds(key)
-
-                  return (
-                    <tr key={key} className="rt-instance-row">
-                      <td className="rt-name rt-sub">
-                        <span className="rt-inst-name">{op.name}{isRepeatable && instance > 0 ? ` #${instance + 1}` : ''}</span>
-                        {isPerOperativeSelector && markEligible(op.keywords) && (
-                          <select
-                            className="rt-mark-select"
-                            value={perOperativeMarks[key] ?? ''}
-                            onChange={(e) => onChange({ operativeIds, loadout, perOperativeMarks: { ...perOperativeMarks, [key]: e.target.value } })}
-                          >
-                            <option value="">{selector!.label.split('（')[0]}…</option>
-                            {markOptions.map((optId) => {
-                              const takenByOther = selector!.uniqueAcrossTeam
-                                && takenMarks.has(optId)
-                                && perOperativeMarks[key] !== optId
-                              return <option key={optId} value={optId} disabled={takenByOther}>{markLabel(optId)}{takenByOther ? '（已选）' : ''}</option>
-                            })}
-                          </select>
-                        )}
-                      </td>
-                      <td className="rt-stat muted">{op.stats.save}+</td>
-                      <td className="rt-stat muted">{op.stats.wounds}</td>
-                      <td className="rt-stat muted">{op.stats.move}"</td>
-                      <td className="rt-wg">
-                        {WARGEAR_SELECTION_ENABLED ? (
-                          <select value={myWg} onChange={(e) => setWargear(key, e.target.value)}>
-                            <option value="">无</option>
-                            {wargearList.map((wg) => (
-                              <option key={wg.id} value={wg.id} disabled={taken.has(wg.id)}>
-                                {wg.name}{taken.has(wg.id) ? '（已占用）' : ''}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="muted" title="阵营装备功能未启用，规则可在阵营概览中查看">—</span>
-                        )}
-                      </td>
-                      <td className="rt-wp">
-                        {op.loadouts.map((slot, sIdx) => {
-                          if (slot.options.length === 0) return null
-                          const optLabel = (opt: string[]) =>
-                            opt.map((wid) => pack.weapons.find((w) => w.weaponId === wid))
-                              .filter(Boolean)
-                              .map((w) => `${w!.name} (${fmtWeapon(w!)})`)
-                              .join(' + ')
-                          if (slot.options.length === 1) {
-                            return <div key={sIdx} className="rt-slot-fixed"><span className="rt-slot-desc">{slot.description}：</span>{optLabel(slot.options[0]!)}</div>
-                          }
-                          const selectedOpt = slot.options.findIndex((opt) => opt.every((wid) => myLoadout.includes(wid)))
-                          return (
-                            <select key={sIdx} value={selectedOpt >= 0 ? String(selectedOpt) : ''} onChange={(e) => { if (e.target.value !== '') setSlot(op.operativeId, key, sIdx, parseInt(e.target.value, 10)) }}>
-                              <option value="" disabled>{slot.description}…</option>
-                              {slot.options.map((opt, oIdx) => <option key={oIdx} value={String(oIdx)}>{optLabel(opt)}</option>)}
-                            </select>
-                          )
-                        })}
-                      </td>
-                      <td className="rt-act">
-                        {isLeader ? (
-                          <span className="rt-fixed">队长</span>
-                        ) : (
-                          <button className="op-btn rt-remove" onClick={() => removeInstance(op.operativeId, instance)} title="移除">✕</button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </Fragment>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <section className="operative-picker roster-builder">
+      <header className="builder-heading">
+        <div><span className="builder-eyebrow">OPERATIVE SELECTION</span><h3>组建你的杀戮小队</h3><p>选择成员，展开卡片配置每一名特工的武器。</p></div>
+        <div className="builder-count" aria-live="polite"><strong>{operativeIds.length}<small> / {maxTotal}</small></strong><span>已入队{atCapacity ? ' · 人数已满' : ''}</span>{sp && pointsCap !== undefined && <span>点数 {totalPoints} / {pointsCap}</span>}</div>
+      </header>
+      <div className="builder-toolbar" aria-label="特工筛选">
+        <button aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>全部特工 · {ordered.length} 类</button>
+        <button aria-pressed={filter === 'selected'} onClick={() => setFilter('selected')}>已入队 · {operativeIds.length} 名</button>
+        <span>金色边框表示已入队</span>
+      </div>
+      {filter === 'selected' && operativeIds.length === 0 && <p className="builder-empty">小队还没有成员。切换到「全部特工」开始选择。</p>}
+      <div className="builder-grid">
+        {ordered.filter(op => filter === 'all' || countOf(op.operativeId) > 0).map(op => {
+          const isLeader = leaders.has(op.operativeId)
+          const isRepeatable = maxPerType(op.operativeId) > 1
+          const count = countOf(op.operativeId)
+          const name = displayName(op.name)
+          const canAdd = !atCapacity && count < maxPerType(op.operativeId)
+          return <article key={op.operativeId} className={`recruit-card ${count ? 'recruited' : ''}`} aria-label={name}>
+            <div className="recruit-portrait">
+              <div className="recruit-art-fallback" aria-hidden="true"><span>KT</span><small>{name}</small></div>
+              <img key={`${pack.faction.id}/${op.operativeId}`} src={getAvatarUrl(pack.faction.id, op.operativeId)} alt={name} loading="lazy" onError={e => { e.currentTarget.style.display = 'none' }} />
+              <span className="recruit-role">{isLeader ? '队长' : isRepeatable ? '可复选成员' : '独立成员'}{sp ? ` · ${costs[op.operativeId] ?? 1} 点` : ''}</span>
+              {count > 0 && <span className="recruit-status">✓ 已入队{count > 1 ? ` ×${count}` : ''}</span>}
+              <div className="recruit-title"><small>{op.name.includes(' / ') ? op.name.split(' / ')[0] : 'KILL TEAM OPERATIVE'}</small><h4>{name}</h4></div>
+            </div>
+            <dl className="recruit-stats">
+              <div><dt>行动点</dt><dd>{op.stats.apl}<small> APL</small></dd></div>
+              <div><dt>移动</dt><dd>{op.stats.move}<small>″</small></dd></div>
+              <div><dt>豁免</dt><dd>{op.stats.save}<small>+</small></dd></div>
+              <div><dt>耐伤</dt><dd>{op.stats.wounds}<small> W</small></dd></div>
+            </dl>
+            <div className="recruit-body">
+              <div className="recruit-action">
+                {isLeader ? <button className={count ? '' : 'primary'} disabled={count > 0 || (atCapacity && !operativeIds.some(id => leaders.has(id)))} onClick={() => selectLeader(op.operativeId)}>{count ? '当前队长' : '选择为队长'}</button>
+                  : <button className={count ? '' : 'primary'} disabled={!canAdd} onClick={() => addOp(op.operativeId)} aria-label={`添加 ${name}`}>{count >= maxPerType(op.operativeId) ? '已达类型上限' : atCapacity ? '小队人数已满' : count ? '＋ 再加入一名' : '＋ 加入小队'}</button>}
+                <span>{isLeader ? '每队 1 名' : `已选 ${count} / ${maxPerType(op.operativeId)}`}</span>
+              </div>
+              {!count && <div className="recruit-preview"><span>默认武器</span>{defaultLoadoutFor(pack, op.operativeId).map(wid => <small key={wid}>{displayName(pack.weapons.find(w => w.weaponId === wid)?.name ?? wid)}</small>)}</div>}
+              {getInstances(op.operativeId).map(({ key, instance }) => {
+                const myLoadout = loadout[key] ?? []
+                const taken = takenWargearIds(key)
+                return <div className="recruit-member" key={key}>
+                  <details>
+                    <summary><span><strong>{isRepeatable ? `成员 ${String(instance + 1).padStart(2, '0')}` : '武器与配置'}</strong><small>{myLoadout.map(wid => displayName(pack.weapons.find(w => w.weaponId === wid)?.name ?? wid)).join(' · ')}</small></span><span className="recruit-expand">配置</span></summary>
+                    <div className="recruit-config">
+                      {isPerOperativeSelector && markEligible(op.keywords) && <label>{selector!.label.split('（')[0]}<select aria-label={`${name} ${instance + 1} ${selector!.label}`} value={perOperativeMarks[key] ?? ''} onChange={e => onChange({ operativeIds, loadout, perOperativeMarks: { ...perOperativeMarks, [key]: e.target.value } })}>
+                        <option value="">请选择…</option>{markOptions.map(optId => { const used = selector!.uniqueAcrossTeam && takenMarks.has(optId) && perOperativeMarks[key] !== optId; return <option key={optId} value={optId} disabled={used}>{markLabel(optId)}{used ? '（已选）' : ''}</option> })}
+                      </select></label>}
+                      {WARGEAR_SELECTION_ENABLED && <label>阵营装备<select value={(wargearAssignment[key] ?? [])[0] ?? ''} onChange={e => setWargear(key, e.target.value)}><option value="">无</option>{wargearList.map(wg => <option key={wg.id} value={wg.id} disabled={taken.has(wg.id)}>{wg.name}</option>)}</select></label>}
+                      {op.loadouts.map((slot, sIdx) => {
+                        if (!slot.options.length) return null
+                        const selectedOpt = slot.options.findIndex(opt => opt.every(wid => myLoadout.includes(wid)))
+                        return <div className="recruit-slot" key={sIdx}>
+                          {slot.options.length > 1 && <label>{slot.description}<select aria-label={`${name} ${instance + 1} ${slot.description}`} value={selectedOpt >= 0 ? String(selectedOpt) : ''} onChange={e => { if (e.target.value !== '') setSlot(op.operativeId, key, sIdx, Number(e.target.value)) }}><option value="" disabled>请选择武器…</option>{slot.options.map((opt, oIdx) => <option key={oIdx} value={String(oIdx)}>{opt.map(wid => displayName(pack.weapons.find(w => w.weaponId === wid)?.name ?? wid)).join(' + ')}</option>)}</select></label>}
+                          {(slot.options[selectedOpt] ?? []).map(wid => { const weapon = pack.weapons.find(w => w.weaponId === wid); return weapon && <div className="recruit-weapon" key={wid}><span>{weapon.kind === 'RANGED' ? '远程' : '近战'}</span><strong>{displayName(weapon.name)}</strong><small>{fmtWeapon(weapon)}</small></div> })}
+                        </div>
+                      })}
+                    </div>
+                  </details>
+                  {!isLeader && <button className="recruit-remove" aria-label={`移除 ${name} ${instance + 1}`} onClick={() => removeInstance(op.operativeId, instance)}>移除{isRepeatable ? `成员 ${instance + 1}` : '成员'}</button>}
+                </div>
+              })}
+            </div>
+          </article>
+        })}
+      </div>
+    </section>
   )
 }
 

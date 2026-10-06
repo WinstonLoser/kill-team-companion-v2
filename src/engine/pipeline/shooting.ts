@@ -1,6 +1,7 @@
 // 射击 10 步流水线（架构 §3.1，DN1 StepFn 注册表）。每步纯函数，逻辑自旧 runShooting 平移（数值不变）。
 // P22：属性经 resolveStat（两层模型，FR-2）+ 共享 resolveEffects（去重，不再自建 modsOf）。
 
+import { successPool, ruleValue } from '../weaponKeywords'
 import type { Effect } from '../../rules/types'
 import { validateTarget } from '../../geometry'
 import { parryAllocation } from '../parry'
@@ -105,11 +106,11 @@ const HIT_ROLL: StepFn<ShootingState> = {
     // P22：命中阈值经 resolveStat 两层模型（base=profile.hit）。HIT_MINUS 升阈(+)，HIT_PLUS 降阈(取负)
     const hitMods = [...hitMinus, ...hitPlus.map((m) => ({ ...m, amount: -m.amount }))]
     const hitThreshold = clampHits(resolveStat(profile.hit, hitMods).effective)
-    let attackDice = ctx.dice.roll(profile.attacks)
+    let attackDice = ctx.dice.roll(profile.attacks, {hitTarget: hitThreshold, critTarget: ruleValue(state.effectiveWeaponRules, 'Lethal', 6)})
     // D1：重掷（REROLL @ BEFORE_HIT_ROLL）——mode ALL 重掷全部攻击骰；CHOOSE 重掷失败骰（上限 count）。
     // 无分印记「无休」；此前流水线不消费 REROLL kind（Story 2.2 盘点披露）。payload 从原 effect 取。
     const rerollApplied: string[] = []
-    if (rrT.applied.length > 0) {
+    if (rrT.applied.length > 0 && !ctx.dice.finalized) {
       const appliedIds = new Set(rrT.applied.map((m) => m.id))
       const effs = effectsAt(ctx.effects, 'BEFORE_HIT_ROLL').filter((e) => e.modifier.kind === 'REROLL' && appliedIds.has(e.effectId))
       const rerollAll = effs.some((e) => (e.modifier.payload as { mode?: string }).mode === 'ALL')
@@ -128,13 +129,8 @@ const HIT_ROLL: StepFn<ShootingState> = {
       }
       rrT.applied.forEach((m) => rerollApplied.push(m.id))
     }
-    let normalSuccess = 0
-    let criticalSuccess = 0
-    for (const d of attackDice) {
-      if (d.nat === 1) continue
-      if (d.nat === 6) criticalSuccess++
-      else if (d.nat >= hitThreshold) normalSuccess++
-    }
+    const pool = successPool(attackDice, hitThreshold, state.effectiveWeaponRules, ctx.dice.finalized)
+    const normalSuccess = pool.normal, criticalSuccess = pool.critical
     return {
       state: { ...state, hitThreshold, attackDice, normalSuccess, criticalSuccess },
       summary: `命中${hitThreshold}+ → 普通${normalSuccess} 关键${criticalSuccess}${rerollApplied.length ? '（重掷）' : ''}`,
@@ -181,8 +177,9 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
   run: (state, ctx) => {
     const pierceT = resolveEffectsTraced(ctx.effects, 'BEFORE_DEFENCE_ROLL', ['PIERCE'], withPred(ctx))
     const pierce = pierceT.applied
-    const defenceDiceCount = Math.max(0, 3 - sum(pierce))
-    const defDice = ctx.dice.roll(defenceDiceCount)
+    const defenceDiceCount = Math.max(0, 3 - Math.max(sum(pierce), ruleValue(state.effectiveWeaponRules, 'Piercing'), state.criticalSuccess > 0 ? ruleValue(state.effectiveWeaponRules, 'Piercing Crits') : 0))
+    const retainsCover = ctx.hasCover && !state.effectiveWeaponRules.some(r => /^saturate$/i.test(r)) && !effectsAt(ctx.effects, 'BEFORE_DEFENCE_ROLL').some(e => e.modifier.kind === 'IMMUNITY' && (e.modifier.payload as { immuneToEffectGroup?: string }).immuneToEffectGroup === 'cover-save')
+    const defDice = ctx.dice.roll(Math.max(0, defenceDiceCount - (retainsCover && !ctx.dice.finalized ? 1 : 0)))
     // 5-1: STAT_OVERRIDE{stat:'save'} from effects → override save threshold
     const overrides = allEffects(ctx).filter((e) => e.modifier.kind === 'STAT_OVERRIDE' && (e.modifier.payload as { stat?: string }).stat === 'save')
     const effectiveSave = overrides.length ? Math.min(...overrides.map((e) => (e.modifier.payload as { value: number }).value)) : ctx.defender.save
@@ -190,6 +187,7 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
     let defNormal = 0
     let defCritical = 0
     for (const d of defDice) {
+      if (ctx.dice.finalized) { if(d.grade === 'CRITICAL') defCritical++; else if(d.grade === 'NORMAL') defNormal++; continue }
       if (d.nat === 1) continue
       if (d.nat >= saveThresh) {
         if (d.nat === 6) defCritical++
@@ -201,7 +199,7 @@ const DEFENCE_ROLL: StepFn<ShootingState> = {
     const coverRemoved = effectsAt(ctx.effects, 'BEFORE_DEFENCE_ROLL').some(
       (e) => e.modifier.kind === 'IMMUNITY' && (e.modifier.payload as { immuneToEffectGroup?: string }).immuneToEffectGroup === 'cover-save',
     )
-    if (ctx.hasCover && !coverRemoved) {
+    if (retainsCover && !coverRemoved && !ctx.dice.finalized) {
       const extra = coverEffs.length ? (coverEffs[0]?.modifier.payload as { extraNormal?: number }).extraNormal ?? 1 : 1
       defNormal += extra
     }
@@ -274,7 +272,7 @@ const DAMAGE_PER_DIE: StepFn<ShootingState> = {
     const profile = ctx.attacker.weapon.profile
     const extraT = resolveEffectsTraced(ctx.effects, 'ON_DAMAGE_PER_DIE', ['EXTRA_DAMAGE_ON_HIT'], withPred(ctx))
     const extraDmg = extraT.applied
-    const base = state.atkN * profile.normalDamage + state.atkC * profile.criticalDamage
+    const base = state.atkN * profile.normalDamage + state.atkC * profile.criticalDamage + state.criticalSuccess * ruleValue(state.effectiveWeaponRules, 'Devastating')
     // W1：EXTRA_DAMAGE cap 强制——多 effect 叠加时，总额外伤钳到最严 cap（min）。
     const caps = extraDmg.map((m) => m.cap).filter((c): c is number => typeof c === 'number')
     const limit = caps.length ? Math.min(...caps) : Infinity

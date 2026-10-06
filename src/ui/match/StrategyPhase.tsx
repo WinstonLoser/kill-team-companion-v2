@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMatchStore, packOfOp, packOfFaction, type Side } from '../../state/matchStore'
-import { loadPack, type FactionPack, type Stratagem } from '../..'
+import { type FactionPack, type Stratagem } from '../..'
 import { useRosterStore } from '../../state/rosterStore'
 import { DiceIcon } from '../components/Dice/DiceIcon'
 // 6.1 战略阶段屏幕：先手 D6（投骰按钮）→ 双方计谋同屏（剩余 CP）→ 进入交战
@@ -15,7 +15,8 @@ export function StrategyPhase() {
   const strategyUndo = useMatchStore((s) => s.strategyUndo)
   const lastPloy = useMatchStore((s) => s.lastPloy)
   const activeStratagems = useMatchStore((s) => s.activeStratagems)
-  const toggleStratagem = useMatchStore((s) => s.toggleStratagem)
+  const usePloy = useMatchStore(s => s.usePloy)
+  const usedPloys = useMatchStore(s => s.usedPloys)
   const confirmInitiative = useMatchStore((s) => s.confirmInitiative)
   const pushLog = useMatchStore((s) => s.pushLog)
   const [rollResult, setRollResult] = useState<{ a: number; b: number; winner: string } | null>(null)
@@ -50,12 +51,9 @@ export function StrategyPhase() {
   }
 
   // 使用战略计谋：标记激活 + 花 1CP + 切对方
-  function useStrat(side: Side, strat: Stratagem, pack: FactionPack) {
-    const eids = pack.effects.filter((e) => e.source === 'stratagem:' + strat.id).map((e) => e.effectId)
-    eids.forEach((eid) => {
-      if (!activeStratagems[side].includes(eid)) toggleStratagem(side, eid)
-    })
-    strategyAct(side, 'ploy')
+  function useStrat(side: Side, strat: Stratagem, _pack: FactionPack) {
+    const result = usePloy(side, strat.id)
+    if (!result.ok) useMatchStore.getState().setPushMsg(result.reason ?? '计谋不可用')
   }
 
   const phase = !initiative ? 'roll' : 'ploy'
@@ -72,7 +70,7 @@ export function StrategyPhase() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontWeight: 'bold', color: '#ff5c5c' }}>A 方</span>
               <DiceIcon 
-                dice={{ nat: tempDice.a, grade: 'NORMAL' }} 
+                dice={{ nat: tempDice.a as 1|2|3|4|5|6, grade: 'NORMAL' }}
                 theme={{ baseColor: '#ff5c5c', pipColor: '#111' }} 
                 isRolling={isRolling} 
               />
@@ -80,7 +78,7 @@ export function StrategyPhase() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontWeight: 'bold', color: '#39d98a' }}>B 方</span>
               <DiceIcon 
-                dice={{ nat: tempDice.b, grade: 'NORMAL' }} 
+                dice={{ nat: tempDice.b as 1|2|3|4|5|6, grade: 'NORMAL' }}
                 theme={{ baseColor: '#39d98a', pipColor: '#111' }} 
                 isRolling={isRolling} 
               />
@@ -104,10 +102,11 @@ export function StrategyPhase() {
                   
                   <button 
                     className="btn"
-                    disabled={!manualA || !manualB || manualA === manualB || manualA > 6 || manualA < 1 || manualB > 6 || manualB < 1}
+                    disabled={!manualA || !manualB || manualA > 6 || manualA < 1 || manualB > 6 || manualB < 1}
                     onClick={() => {
                       if (typeof manualA === 'number' && typeof manualB === 'number') {
-                        const winner = manualA > manualB ? 'a' : 'b'
+                        const previous = useMatchStore.getState().previousInitiative ?? useMatchStore.getState().deployInitiative ?? 'a'
+                        const winner = manualA === manualB ? (previous === 'a' ? 'b' : 'a') : manualA > manualB ? 'a' : 'b'
                         setRollResult({ a: manualA, b: manualB, winner })
                         setTempDice({ a: manualA, b: manualB })
                         pushLog('system', `玩家手动录入先手权掷骰：A 掷出 ${manualA}, B 掷出 ${manualB}。${winner.toUpperCase()} 方获胜！`)
@@ -116,7 +115,7 @@ export function StrategyPhase() {
                     style={{ marginLeft: '8px' }}
                   >确认点数</button>
                 </div>
-                {manualA !== '' && manualB !== '' && manualA === manualB && <p style={{ color: '#ffaa77', fontSize: '0.8rem', marginTop: '8px' }}>平局，请重新投掷</p>}
+                {manualA !== '' && manualB !== '' && manualA === manualB && <p style={{ color: '#ffaa77', fontSize: '0.8rem', marginTop: '8px' }}>平局由上一转折点没有先手权的一方选择；首回合参考部署先手。</p>}
               </div>
             </div>
           )}
@@ -124,7 +123,7 @@ export function StrategyPhase() {
           {rollResult && !isRolling && (
             <div className="sp-result" style={{ textAlign: 'center', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', width: '100%' }}>
               <h3 style={{ margin: '0 0 16px 0', color: rollResult.winner === 'a' ? '#ff5c5c' : '#39d98a' }}>
-                {rollResult.winner.toUpperCase()} 方赢得了掷骰！
+                {rollResult.winner.toUpperCase()} 方决定先手顺序
               </h3>
               <p style={{ marginBottom: '16px' }}>请 {rollResult.winner.toUpperCase()} 方选择本转折点谁先行动：</p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
@@ -141,7 +140,7 @@ export function StrategyPhase() {
       )}
 
       {phase === 'ploy' && (
-        <div className="sp-ploy">
+        <div className="sp-ploy"><p className="muted">轮流使用战略计谋或跳过；双方连续跳过后进入交战。支付 CP 后，按卡面完成选目标及特殊效果。</p>
           <div className="sp-status">
             <span>先手：<strong className={initiative ?? ''}>{initiative?.toUpperCase()}</strong></span>
             <span>轮到：<strong className={strategyTurn ?? ''}>{strategyTurn?.toUpperCase()}</strong></span>
@@ -170,7 +169,7 @@ export function StrategyPhase() {
                     {strategyStrats.length === 0 && <span className="muted">无战略计谋</span>}
                     {strategyStrats.map((s) => {
                       const eids = pack!.effects.filter((e) => e.source === 'stratagem:' + s.id).map((e) => e.effectId)
-                      const used = eids.length > 0 && eids.every((eid) => active.includes(eid))
+                      const used = (usedPloys[`${side}:${s.id}:tp${turn.turningPoint}`] ?? 0) > 0 || (eids.length > 0 && eids.every((eid) => active.includes(eid)))
                       const canUse = isTurn && cp >= s.cp && !used
                       return (
                         <button
@@ -180,7 +179,7 @@ export function StrategyPhase() {
                           onClick={() => pack && useStrat(side, s, pack)}
                           title={used ? `${s.name}（本回合已用）` : canUse ? `${s.name}（${s.cp}CP）` : isTurn ? 'CP 不足' : '非己方回合'}
                         >
-                          <span className="strat-name">{s.name}</span>
+                          <span className="strat-name">{s.name}<small className="ploy-description">{s.description}</small></span>
                           <span className="strat-cp">CP{s.cp}</span>
                           <span className={`strat-dot ${used ? 'on' : ''}`}>{used ? '✓' : '○'}</span>
                         </button>

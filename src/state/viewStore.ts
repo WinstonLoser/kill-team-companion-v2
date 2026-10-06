@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'roster' | 'match' | 'simpleMatch' | 'rules' | 'testLab' | 'abilityLab'
+export type View = 'roster' | 'match' | 'simpleMatch' | 'rules' | 'testLab' | 'abilityLab' | 'animationLab'
 
 interface ViewState {
   currentView: View

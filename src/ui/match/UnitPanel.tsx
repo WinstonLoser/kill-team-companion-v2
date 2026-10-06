@@ -1,165 +1,31 @@
-import { useMatchStore, type MatchToken, packOfFaction } from '../../state/matchStore'
-import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
+import { useMatchStore, packOfFaction } from '../../state/matchStore'
 import { ActionBar } from './ActionBar'
 import { getAvatarUrl } from '../../utils/avatars'
 
-// 1.13 单位面板 + 1.15 T4 状态反馈。
-export function UnitPanel({ startWoundsOf, sideFilter, onPortraitClick, actionBarProps }: { startWoundsOf: (uid: string) => number, sideFilter?: 'a' | 'b', onPortraitClick?: (uid: string) => void, actionBarProps?: any }) {
-  const tokens = useMatchStore((s) => s.tokens)
-  const turn = useMatchStore((s) => s.turn)
-  const selected = useMatchStore((s) => s.selected)
-  const setSelected = useMatchStore((s) => s.setSelected)
-  const setIntercept = useMatchStore((s) => s.setIntercept)
-  const vp = useMatchStore((s) => s.vp)
-  const setResource = useMatchStore((s) => s.setResource)
-
-  const sides: ('a' | 'b')[] = sideFilter ? [sideFilter] : ['a', 'b']
-  return (
-    <div className="unit-panel" style={sideFilter ? { flexDirection: 'column' } : {}}>
-      {sides.map((side) => {
-        const sideTokens = tokens.filter((t) => t.side === side)
-        const hasActivating = Boolean(turn.activeOpId && tokens.find(t => t.uid === turn.activeOpId)?.side === side)
-        
-        // Sorting: Activating (activeOpId) -> Unactivated/Ready -> Finished (ready:false)
-        const sortedTokens = [...sideTokens].sort((a, b) => {
-          const aOp = turn.operatives[a.uid]
-          const bOp = turn.operatives[b.uid]
-          const aState = turn.activeOpId === a.uid ? 0 : (!aOp || aOp.ready === true ? 1 : 2)
-          const bState = turn.activeOpId === b.uid ? 0 : (!bOp || bOp.ready === true ? 1 : 2)
-          return aState - bState
-        })
-
-        const selOp = selected ? turn.operatives[selected] : undefined
-        const isSelFinished = selOp && !selOp.ready
-        
-        const firstToken = sideTokens[0]
-        const sidePack = firstToken ? packOfFaction(firstToken.factionId) : null
-        const sideThemeRgb = sidePack?.faction.theme?.ui?.primaryRgb || '255, 255, 255'
-        const isActiveSide = side === turn.activePlayer
-
-        return (
-        <div key={side} className={`unit-side ${side}`} style={{ 
-          display: 'flex', flexDirection: 'column', gap: '8px',
-          padding: '12px',
-          borderRadius: '8px',
-          border: `2px solid ${isActiveSide ? `rgb(${sideThemeRgb})` : 'rgba(255,255,255,0.1)'}`,
-          boxShadow: isActiveSide ? `0 0 15px rgba(${sideThemeRgb}, 0.5), inset 0 0 10px rgba(${sideThemeRgb}, 0.2)` : 'none',
-          backgroundColor: isActiveSide ? `rgba(${sideThemeRgb}, 0.05)` : 'transparent',
-          transition: 'all 0.3s ease',
-          clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))' // High-tech chamfered corners
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', paddingBottom: '8px', borderBottom: `1px solid ${isActiveSide ? `rgba(${sideThemeRgb}, 0.5)` : 'rgba(255,255,255,0.1)'}` }}>
-            <h4 style={{ margin: 0, color: isActiveSide ? `rgb(${sideThemeRgb})` : '#ccc', textShadow: isActiveSide ? `0 0 8px rgba(${sideThemeRgb}, 0.5)` : 'none' }}>
-              {side.toUpperCase()} 方阵容
-            </h4>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>CP</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button onClick={() => setResource(side, 'cp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{turn.cp[side]}</span>
-                  <button onClick={() => setResource(side, 'cp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px' }}>
-                <span style={{ fontSize: '0.7rem', color: '#aaa' }}>VP</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button onClick={() => setResource(side, 'vp', -1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>◀</button>
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: `rgb(${sideThemeRgb})`, minWidth: '16px', textAlign: 'center' }}>{vp[side]}</span>
-                  <button onClick={() => setResource(side, 'vp', 1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>▶</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="unit-list" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', width: '100%' }}>
-            {sortedTokens.map((t) => {
-              const maxWounds = startWoundsOf(t.uid)
-              const isActivating = turn.activeOpId === t.uid
-              const isFinished = turn.operatives[t.uid] && !turn.operatives[t.uid].ready
-              const pack = packOfFaction(t.factionId)
-              const uiTheme = pack?.faction.theme?.ui || { primaryRgb: '255, 90, 0' }
-              const themeColor = `rgb(${uiTheme.primaryRgb})`
-              const isSelected = selected === t.uid
-              
-              let filterStyle = 'none'
-              if (!t.alive || isFinished) {
-                filterStyle = 'grayscale(1) opacity(0.4)'
-              } else if (!isActiveSide) {
-                filterStyle = 'brightness(0.5) saturate(0.6)'
-              } else if (hasActivating && !isActivating) {
-                filterStyle = 'brightness(0.7)'
-              }
-
-              const avatarUrl = getAvatarUrl(t.factionId, t.opId)
-
-              return (
-                <div 
-                  key={t.uid} 
-                  style={{ 
-                    transform: 'scale(0.9)', 
-                    transformOrigin: 'top center',
-                    marginBottom: '-8px',
-                    filter: filterStyle,
-                    position: 'relative',
-                    transition: 'all 0.3s ease',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                    <UnitPortrait
-                      name={t.name}
-                      maxWounds={maxWounds}
-                      currentWounds={t.wounds}
-                      statuses={t.markers}
-                      themeColor={themeColor}
-                      themeColorRgb={uiTheme.primaryRgb}
-                      avatarUrl={avatarUrl}
-                      selected={isSelected}
-                      onClick={() => { 
-                        setSelected(t.uid)
-                        setIntercept(null)
-                      }}
-                      onAvatarClick={() => {
-                        if (onPortraitClick) onPortraitClick(t.uid)
-                      }}
-                    />
-                    {isActivating && (
-                      <div style={{ position: 'absolute', top: '-6px', right: '-6px', background: themeColor, color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                        激活中
-                      </div>
-                    )}
-                  </div>
-                  
-                  {isSelected && isActiveSide && !isFinished && !isActivating && (
-                    <div style={{ marginTop: '12px', width: '80%' }}>
-                      <button 
-                        className="primary" 
-                        style={{ width: '100%', padding: '8px', fontSize: '0.9rem', opacity: hasActivating ? 0.5 : 1, backgroundColor: `rgba(${uiTheme.primaryRgb}, 0.8)`, border: `1px solid rgb(${uiTheme.primaryRgb})`, borderRadius: '4px', cursor: hasActivating ? 'not-allowed' : 'pointer', color: '#fff' }}
-                        disabled={hasActivating}
-                        title={hasActivating ? "请先结束当前特工的激活" : "激活该特工"}
-                        onClick={() => {
-                          useMatchStore.getState().activate(t.uid, t.side)
-                          useMatchStore.getState().pushLog('turn', `${t.name} 激活（APL ${useMatchStore.getState().effectiveAplOf(t.uid)}）`)
-                        }}
-                      >
-                        激活该特工 ▶
-                      </button>
-                    </div>
-                  )}
-                  {isActivating && actionBarProps && (
-                    <div style={{ marginTop: '12px' }}>
-                      <ActionBar {...actionBarProps} themeColor={themeColor} />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarProps}:{startWoundsOf:(uid:string)=>number;sideFilter?:'a'|'b';onPortraitClick?:(uid:string)=>void;actionBarProps?:any}) {
+  const s=useMatchStore()
+  return <div className="unit-panel">{(sideFilter ? [sideFilter] : ['a','b'] as const).map(side=>{
+    const team=s.tokens.filter(t=>t.side===side)
+    const ready=team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false).length
+    return <section key={side} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
+      <header className="team-heading"><div><strong>{side.toUpperCase()} 方阵容</strong><small>{ready} 待激活 / {team.filter(t=>t.alive).length} 存活</small></div><div className="team-resources"><span>CP <b>{s.turn.cp[side]}</b></span><span>VP <b>{s.vp[side]}</b></span></div></header>
+      <div className="team-list">{team.map(t=>{
+        const active=s.turn.activeOpId===t.uid
+        const exhausted=s.turn.operatives[t.uid]?.ready===false
+        const selected=s.selected===t.uid
+        const canActivate=t.alive && t.placed && !exhausted && !s.turn.activeOpId && !s.lastShot && s.turn.activePlayer===side
+        const status=!t.alive?'已残废':active?(s.reactionUid===t.uid?'反应中':'行动中'):exhausted?'待机':'就绪'
+        const max=startWoundsOf(t.uid)
+        return <div key={t.uid} className={`team-unit ${selected?'selected':''} ${!t.alive?'incapacitated':''}`}>
+          <button className="unit-select" aria-label={`选择 ${t.name}`} aria-pressed={selected} onClick={()=>{s.setSelected(t.uid);s.setIntercept(null)}}>
+            <img alt="" src={getAvatarUrl(t.factionId,t.opId)} />
+            <span className="unit-info"><strong>{t.name}</strong><span>{t.order==='CONCEAL'?'隐匿':'交战'} · {status}</span><span className="health-track"><span style={{width:`${Math.max(0,t.wounds)/max*100}%`}} /></span></span>
+            <span className="unit-wounds">{t.wounds}<small>/{max}</small></span>
+          </button>
+          {selected && <div className="unit-controls"><button onClick={()=>onPortraitClick?.(t.uid)}>数据卡</button>{canActivate && <button className="primary" onClick={()=>s.activate(t.uid,t.side)}>激活该特工 ▶</button>}{s.canReact(t.uid) && <button className="primary" onClick={()=>s.react(t.uid)}>反应 · 1 AP</button>}</div>}
+          {active && selected && actionBarProps && <ActionBar {...actionBarProps} themeColor={`rgb(${packOfFaction(t.factionId).faction.theme?.ui?.primaryRgb ?? '227,174,98'})`} />}
         </div>
-      )})}
-    </div>
-  )
+      })}</div>
+    </section>
+  })}</div>
 }

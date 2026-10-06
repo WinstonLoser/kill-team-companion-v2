@@ -43,7 +43,7 @@ export function MapSelect({
   return (
     <div className="map-select">
       <h2>选图开局</h2>
-      <p className="muted">载入预设模板，或选「空白板」自定义画地形（会话内有效，刷新重置 D-20）。</p>
+      <p className="muted">选择 30″ × 22″ 战场，双方部署区为边缘 3″。预设使用演示计分：每个转折点控制目标获得 1VP；也可用空白板配置你们的任务。</p>
       <div className="map-grid">
         {maps.map((m) => (
           <button key={m.mapId} className="map-card" onClick={() => onLoad(m)} title={`载入「${m.name}」`}>

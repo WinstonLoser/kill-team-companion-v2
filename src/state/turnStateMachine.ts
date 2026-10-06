@@ -38,6 +38,9 @@ export interface TurnState {
 }
 
 export interface ActionContext {
+  actionCost?: number
+  quiet?: boolean
+  chargeInEngagement?: boolean
   apl: number
   isAstartes: boolean
   inEngagementRange: boolean // 该特工位于敌方控制范围内
@@ -96,12 +99,13 @@ export function canDoAction(
   if (!op.ready) return { ok: false, reason: '特工已待机（非就绪）' }
 
   // AP ≤ APL
-  if (op.apUsed + ACTION_AP[action] > ctx.apl) {
-    return { ok: false, reason: `AP 不足（需${ACTION_AP[action]}，剩${ctx.apl - op.apUsed}）` }
+  const cost = ctx.actionCost ?? ACTION_AP[action]
+  if (op.apUsed + cost > ctx.apl) {
+    return { ok: false, reason: `AP 不足（需${cost}，剩${ctx.apl - op.apUsed}）` }
   }
 
   // 后撤后禁转移/冲锋
-  if (op.fallBackDone && (action === 'MOVE' || action === 'CHARGE' || action === 'DASH')) {
+  if (op.fallBackDone && (action === 'MOVE' || action === 'CHARGE')) {
     return { ok: false, reason: '后撤后该激活禁转移/冲锋' }
   }
   // 冲锋后禁冲刺/转移
@@ -109,8 +113,14 @@ export function canDoAction(
     return { ok: false, reason: '冲锋后禁冲刺/转移' }
   }
   // 转移/冲锋后禁冲刺（简化：moveDone 后禁 DASH）
-  if (op.moveDone && action === 'DASH') {
-    return { ok: false, reason: '转移后禁冲刺' }
+  if ((action === 'MOVE' || action === 'DASH') && ctx.inEngagementRange) {
+    return { ok: false, reason: '敌方控制范围内须后撤' }
+  }
+  if (action === 'FALL_BACK' && (op.moveDone || op.chargeDone)) {
+    return { ok: false, reason: '转移或冲锋后不能后撤' }
+  }
+  if (action === 'CHARGE' && (op.order === 'CONCEALED' || op.moveDone || op.fallBackDone || op.actionsThisActivation.includes('DASH') || (ctx.inEngagementRange && !ctx.chargeInEngagement))) {
+    return { ok: false, reason: '冲锋须交战命令，且本次未转移、冲刺或后撤；通常不能已在控制范围内' }
   }
 
   // 同激活不重复同行动（阿斯塔特双近战/双射击例外）
@@ -126,7 +136,7 @@ export function canDoAction(
     return { ok: false, reason: '后撤须正位于敌方控制范围内' }
   }
   if (action === 'SHOOT') {
-    if (op.order === 'CONCEALED') return { ok: false, reason: '隐匿命令禁射击' }
+    if (op.order === 'CONCEALED' && !ctx.quiet) return { ok: false, reason: '隐匿命令只能用安静武器射击' }
     if (ctx.inEngagementRange) return { ok: false, reason: '控制范围内禁射击' }
   }
   if (action === 'FIGHT' && !ctx.enemyInEngagement) {
@@ -156,7 +166,7 @@ export type TurnEvent =
   | { type: 'START_ENGAGEMENT' }
   | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
   | { type: 'SELECT_ORDER'; opId: string; order: Order }
-  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext; apCost?: number }
   | { type: 'END_ACTIVATION'; opId: string }
   | { type: 'END_TURNING_POINT' }
   | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
@@ -176,7 +186,7 @@ export function createInitialTurnState(): TurnState {
 export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
   switch (event.type) {
     case 'START_BATTLE':
-      return { ...state, phase: 'STRATEGY', turningPoint: 1, cp: { a: 3, b: 3 } }
+      return { ...state, phase: 'STRATEGY', turningPoint: 1, cp: { a: 2, b: 2 } }
     case 'START_ENGAGEMENT':
       return { ...state, phase: 'ENGAGEMENT' }
     case 'ACTIVATE': {
@@ -203,7 +213,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
     }
     case 'SELECT_ORDER': {
       const op = state.operatives[event.opId]
-      if (!op) return state
+      if (!op || op.apUsed > 0 || state.activeOpId !== event.opId) return state
       return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, order: event.order } } }
     }
     case 'DO_ACTION': {
@@ -214,7 +224,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       if (event.ctx && !canDoAction(state, event.opId, event.action, event.ctx).ok) return state
       const next: OperativeActivation = {
         ...op,
-        apUsed: op.apUsed + ACTION_AP[event.action],
+        apUsed: op.apUsed + (event.apCost ?? event.ctx?.actionCost ?? ACTION_AP[event.action]),
         actionsThisActivation: [...op.actionsThisActivation, event.action],
         fallBackDone: op.fallBackDone || event.action === 'FALL_BACK',
         chargeDone: op.chargeDone || event.action === 'CHARGE',

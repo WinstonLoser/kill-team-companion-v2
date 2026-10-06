@@ -3,20 +3,40 @@
   "version": "1.0.0",
   "rulesetVersion": "kt-lite-1.0",
   "faction": {
-    "id": "angels_of_death",
-    "name": "死亡天使",
-    "keywords": ["IMPERIUM", "ANGELS_OF_DEATH", "ASTARTES"],
-    "theme": {
-      "ui": {
-        "primaryRgb": "30, 64, 175",
-        "textHighlight": "#93c5fd"
-      },
-      "dice": {
-        "baseColor": "#172554",
-        "pipColor": "#bfdbfe"
-      }
+  "id": "angels_of_death",
+  "name": "死亡天使",
+  "keywords": [
+    "IMPERIUM",
+    "ANGELS_OF_DEATH",
+    "ASTARTES"
+  ],
+  "theme": {
+    "ui": {
+      "primaryRgb": "30, 64, 175",
+      "textHighlight": "#93c5fd"
+    },
+    "dice": {
+      "baseColor": "#172554",
+      "pipColor": "#bfdbfe"
     }
   },
+  "subFactionSelector": {
+    "id": "chapterTactic",
+    "label": "主要 / 次要战团战术",
+    "max": 2,
+    "scope": "team",
+    "options": [
+      "chapterTactic_relentless",
+      "chapterTactic_duelist",
+      "chapterTactic_resolute",
+      "chapterTactic_concealed",
+      "chapterTactic_mobile",
+      "chapterTactic_stalwart",
+      "chapterTactic_sharpshooter",
+      "chapterTactic_siege"
+    ]
+  }
+},
   "stratagems": [
     {
       "id": "combat_doctrines",

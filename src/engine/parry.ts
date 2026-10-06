@@ -26,7 +26,7 @@ export function subtractPool(a: Pool, b: Pool): Pool {
  * 关键抵关键 → 关键抵普通 → 普通抵普通。
  * 返回 target 未抵消剩余（survivor）与 parrier 消耗（used）+ 子决策日志。
  */
-export function parryAllocation(parrier: Pool, target: Pool): ParryAllocation {
+export function parryAllocation(parrier: Pool, target: Pool, shooting = true): ParryAllocation {
   let tN = target.normal
   let tC = target.critical
   let pN = parrier.normal
@@ -41,6 +41,10 @@ export function parryAllocation(parrier: Pool, target: Pool): ParryAllocation {
     pC--
     uC++
     log.push('关键抵关键')
+  }
+  // Shooting saves allow two normals to cancel one critical; melee parries do not.
+  while (shooting && tC > 0 && pN >= 2) {
+    tC--; pN -= 2; uN += 2; log.push('2普通抵关键')
   }
   // 关键抵普通
   while (tN > 0 && pC >= 1) {

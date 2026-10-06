@@ -1,58 +1,10 @@
+import { buildMatchTokens, canStartMatch } from '../state/setup'
 import { useEffect, useState } from 'react'
-import { useMatchStore, packOfOp, packOfFaction, type MatchToken } from '../state/matchStore'
-import { useRosterStore } from '../state/rosterStore'
+import { useMatchStore } from '../state/matchStore'
 import { PlayView } from './match/PlayView'
 import { StrategyPhase } from './match/StrategyPhase'
 import { RulesQuery, useRulesQuery } from './match/RulesQuery'
 import { ResultPage } from './match/ResultPage'
-
-function buildTokens(): MatchToken[] {
-  const rosterA = useRosterStore.getState().rosterA
-  const rosterB = useRosterStore.getState().rosterB
-  const pickedA = rosterA.operativeIds
-  const pickedB = rosterB.operativeIds
-  
-  const idsA = pickedA.length ? pickedA : []
-  const idsB = pickedB.length ? pickedB : idsA
-
-  const out: MatchToken[] = []
-  
-  const opCountsA = new Map<string, number>()
-  idsA.forEach((opId, i) => {
-    const packForOp = rosterA.factionId ? packOfFaction(rosterA.factionId) : packOfOp(opId)
-    const op = packForOp.operatives.find((o) => o.operativeId === opId) ?? packForOp.operatives[0]!
-    const baseRadius = op.base.diameterMm / 2 / 25.4
-    const count = opCountsA.get(opId) ?? 0
-    opCountsA.set(opId, count + 1)
-    const key = `${opId}#${count}`
-    const weapons = rosterA.loadout[key] || (op.loadouts[0]?.options[0] ?? [])
-    
-    out.push({
-      uid: `a${i + 1}`, side: 'a', factionId: packForOp.faction.id, opId, name: `${op.name}-A${i + 1}`,
-      pos: { x: 0, y: 0 }, facing: 0, baseRadius, wounds: op.stats.wounds, maxWounds: op.stats.wounds,
-      markers: [], alive: true, placed: true, order: 'CONCEAL', weapons // placed = true for mapless
-    })
-  })
-
-  const opCountsB = new Map<string, number>()
-  idsB.forEach((opId, i) => {
-    const packForOp = rosterB.factionId ? packOfFaction(rosterB.factionId) : packOfOp(opId)
-    const op = packForOp.operatives.find((o) => o.operativeId === opId) ?? packForOp.operatives[0]!
-    const baseRadius = op.base.diameterMm / 2 / 25.4
-    const count = opCountsB.get(opId) ?? 0
-    opCountsB.set(opId, count + 1)
-    const key = `${opId}#${count}`
-    const weapons = rosterB.loadout[key] || (op.loadouts[0]?.options[0] ?? [])
-    
-    out.push({
-      uid: `b${i + 1}`, side: 'b', factionId: packForOp.faction.id, opId, name: `${op.name}-B${i + 1}`,
-      pos: { x: 0, y: 0 }, facing: 0, baseRadius, wounds: op.stats.wounds, maxWounds: op.stats.wounds,
-      markers: [], alive: true, placed: true, order: 'CONCEAL', weapons // placed = true for mapless
-    })
-  })
-
-  return out
-}
 
 export function SimpleMatchView() {
   const phase = useMatchStore((s) => s.phase)
@@ -63,7 +15,8 @@ export function SimpleMatchView() {
   const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    if (!initialized) {
+    if (!initialized && canStartMatch()) {
+      if (useMatchStore.getState().phase !== 'map-select') { setInitialized(true); return }
       // Force empty map to prevent null errors in PlayView
       useMatchStore.setState({
         mapPack: {
@@ -77,7 +30,7 @@ export function SimpleMatchView() {
         }
       })
       
-      const tokens = buildTokens()
+      const tokens = buildMatchTokens(true)
       initTokens(tokens)
       setMaplessMode(true)
       enterStrategy()
@@ -85,7 +38,7 @@ export function SimpleMatchView() {
     }
   }, [initialized, initTokens, setMaplessMode, enterStrategy])
 
-  if (!initialized) return null
+  if (!initialized) return <div className="empty-state"><h2>先完成双方建队</h2><p>实体棋盘模式保留回合、行动和掷骰，由你们裁定距离与可见性。</p></div>
 
   if (phase === 'ended') {
     return (

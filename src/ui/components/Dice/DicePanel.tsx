@@ -23,7 +23,7 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
   // Array of boolean indicating if each die is currently rolling
   const getActiveIndices = () => animatingIndices ?? dice.map((d, i) => d.isRetained ? -1 : i).filter(i => i !== -1);
   const [rollingStates, setRollingStates] = useState<boolean[]>(
-    dice.map((d, i) => animate ? getActiveIndices().includes(i) : false)
+    dice.map((_d, i) => animate ? getActiveIndices().includes(i) : false)
   )
 
   // Reveal states for sequential display
@@ -50,7 +50,7 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
   useEffect(() => {
     if (animate) {
       const activeIndices = getActiveIndices()
-      setRollingStates(dice.map((d, i) => activeIndices.includes(i) ? true : false))
+      setRollingStates(dice.map((_d, i) => activeIndices.includes(i) ? true : false))
       onSoundEvent?.('roll_start')
       
       const BASE_DELAY = 150
@@ -65,7 +65,7 @@ export function DicePanel({ dice, theme, animate = false, statuses = {}, onSound
         setTimeout(() => setShowFails(true), 500)
         setTimeout(() => setShowConfirm(true), 700)
       } else {
-        dice.forEach((d, index) => {
+        dice.forEach((_d, index) => {
           if (!activeIndices.includes(index)) return
           
           setTimeout(() => {
