@@ -3,6 +3,7 @@ node_modules/
 dist/
 .vite/
 coverage/
+tmp/
 *.local
 
 # IP 护栏（D-29）：官方规则转 md 不入公开仓库

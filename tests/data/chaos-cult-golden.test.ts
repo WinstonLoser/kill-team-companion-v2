@@ -47,7 +47,7 @@ describe('混沌教派数据包（2025-07 勘误基线）', () => {
 
   it.each([
     ['cult_demagogue', 2, 6, 5, 8, 32],
-    ['blessed_blade', 2, 6, 5, 8, 28],
+    ['blessed_blade', 2, 6, 5, 8, 32],
     ['iconarch', 2, 6, 5, 8, 32],
     ['mindwitch', 2, 6, 5, 8, 32],
     ['chaos_devotee', 2, 6, 5, 7, 25],

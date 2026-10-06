@@ -6,15 +6,20 @@ import { getAvatarUrl } from '../../utils/avatars'
 export function TargetSelectionModal({
   attackerUid,
   kind,
+  heightOnly = false,
+  initialTargetUid = null,
   onClose,
   onConfirm
 }: {
   attackerUid: string
   kind: 'SHOOT' | 'MELEE'
+  heightOnly?: boolean
+  initialTargetUid?: string | null
   onClose: () => void
   onConfirm: (targetUid: string) => void
 }) {
   const tokens = useMatchStore((s) => s.tokens)
+  const heightMode = useMatchStore((s) => s.heightMode)
   const setOverride = useMatchStore((s) => s.setOverride)
   const attacker = tokens.find((t) => t.uid === attackerUid)
 
@@ -22,7 +27,7 @@ export function TargetSelectionModal({
   const [isObscured, setIsObscured] = useState(false)
   const [attackerFloor, setAttackerFloor] = useState<number>(0)
   const [defenderFloor, setDefenderFloor] = useState<number>(0)
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(initialTargetUid)
 
   if (!attacker) return null
 
@@ -38,13 +43,15 @@ export function TargetSelectionModal({
 
     // Set overrides for cover, obscured, and vantage
     if (kind === 'SHOOT') {
-      setOverride(`${attackerUid}>${selectedTarget}>COVER`, coverType !== 'NONE')
-      setOverride(`${attackerUid}>${selectedTarget}>COVER_TYPE`, coverType)
-      setOverride(`${attackerUid}>${selectedTarget}>OBSCURED`, isObscured)
+      if (!heightOnly) {
+        setOverride(`${attackerUid}>${selectedTarget}>COVER`, coverType !== 'NONE')
+        setOverride(`${attackerUid}>${selectedTarget}>COVER_TYPE`, coverType)
+        setOverride(`${attackerUid}>${selectedTarget}>OBSCURED`, isObscured)
+      }
       // Vantage is generally defined as attacker being on a higher floor
-      setOverride(`${attackerUid}>${selectedTarget}>VANTAGE`, attackerFloor > defenderFloor)
-      setOverride(`${attackerUid}>${selectedTarget}>ATTACKER_FLOOR`, attackerFloor)
-      setOverride(`${attackerUid}>${selectedTarget}>DEFENDER_FLOOR`, defenderFloor)
+      setOverride(`${attackerUid}>${selectedTarget}>VANTAGE`, heightMode === 'elevation' && attackerFloor > defenderFloor)
+      setOverride(`${attackerUid}>${selectedTarget}>ATTACKER_FLOOR`, heightMode === 'elevation' ? attackerFloor : 0)
+      setOverride(`${attackerUid}>${selectedTarget}>DEFENDER_FLOOR`, heightMode === 'elevation' ? defenderFloor : 0)
     }
 
     onConfirm(selectedTarget)
@@ -96,7 +103,8 @@ export function TargetSelectionModal({
               环境因素 (规则修正){selectedToken ? ` — ${selectedToken.name}` : '（请先选择目标）'}
             </h4>
 
-            <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
+            {heightMode === 'uniform' && <p className="muted" style={{ margin: '0 0 14px' }}>统一高度：双方均按地面高度处理，不触发制高点修正。</p>}
+            {heightMode === 'elevation' && <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
               <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem', flex: 1 }}>
                 <span style={{ marginBottom: '4px', color: 'var(--text-muted)' }}>进攻方楼层 (Vantage)</span>
                 <select
@@ -124,18 +132,18 @@ export function TargetSelectionModal({
                   <option value={2}>高点 (2层 / 4")</option>
                 </select>
               </label>
-            </div>
+            </div>}
 
             {/* 制高点提示：预留固定高度，切换楼层不改变弹窗尺寸 */}
-            <div style={{ minHeight: '52px', marginBottom: '10px' }}>
+            {heightMode === 'elevation' && <div style={{ minHeight: '52px', marginBottom: '10px' }}>
               {attackerFloor > defenderFloor && (
                 <div style={{ fontSize: '0.8rem', color: atkThemeColor, padding: '6px 8px', backgroundColor: `rgba(${atkUiTheme.primaryRgb}, 0.1)`, borderRadius: '4px' }}>
                   <strong>制高点 (Vantage Point) 生效</strong>: 进攻方比目标高，若目标具有隐蔽(Conceal)且在轻微掩体中，其将被视为处于交战(Engage)状态。
                 </div>
               )}
-            </div>
+            </div>}
 
-            <div style={{ marginBottom: '14px' }}>
+            {!heightOnly && <div style={{ marginBottom: '14px' }}>
               <span style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>掩体类型 (Cover)</span>
               <div style={{ display: 'flex', gap: '20px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -151,11 +159,11 @@ export function TargetSelectionModal({
                   重型掩体
                 </label>
               </div>
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            </div>}
+            {!heightOnly && <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <input type="checkbox" disabled={!selectedToken} checked={isObscured} onChange={(e) => setIsObscured(e.target.checked)} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
               <span>目标被遮挡 (Obscured)</span>
-            </label>
+            </label>}
           </div>
         )}
 

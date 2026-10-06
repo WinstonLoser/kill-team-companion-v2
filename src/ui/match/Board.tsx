@@ -8,10 +8,21 @@ export const SCALE = 20 // 像素/英寸
 export interface LosLine { target: Point; stroke: string; dash: string; opacity: number }
 export interface ObjControl { id: string; ctrl: Side | null; nA?: number; nB?: number }
 
+export function BoardLegend() {
+  return <div className="board-legend" aria-label="战场图例">
+    <span><i className="legend-zone" />己方部署区</span>
+    <span><i className="legend-stronghold" />建筑占地</span>
+    <span><i className="legend-wall" />墙体</span>
+    <span><i className="legend-door" />可通行门</span>
+    <span><i className="legend-cover" />瓦砾</span>
+  </div>
+}
+
 export function Board({
   mapPack,
   terrain,
   tokens,
+  lockedTokenUids,
   objectives,
   phase,
   selected,
@@ -20,6 +31,7 @@ export function Board({
   ownCover,
   losLines,
   objControl,
+  placementPreview,
   onBoardPointerDown,
   onBoardClick,
   onPointerMove,
@@ -33,6 +45,7 @@ export function Board({
   mapPack: MapPack | null
   terrain: TerrainFeature[]
   tokens: MatchToken[]
+  lockedTokenUids?: Set<string>
   objectives: ObjectiveMarker[]
   phase: string
   selected: string | null
@@ -41,6 +54,7 @@ export function Board({
   ownCover: 'open' | 'cover' | 'exposed' | null
   losLines: LosLine[]
   objControl: ObjControl[]
+  placementPreview?: { center: Point; radius: number; valid: boolean } | null
   onBoardPointerDown?: (p: Point) => void
   onBoardClick?: (p: Point) => void
   onPointerMove?: (p: Point) => void
@@ -83,21 +97,33 @@ export function Board({
       {/* 网格背景 */}
       <div className="grid-bg" style={{ width: W, height: H }} />
 
+      {mapPack?.scenery?.map((piece) => {
+        const xs = piece.polygon.map((p) => p.x)
+        const ys = piece.polygon.map((p) => p.y)
+        return <div key={piece.id} className={`scenery-footprint ${piece.kind}`} style={{
+          left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE,
+          width: (Math.max(...xs) - Math.min(...xs)) * SCALE,
+          height: (Math.max(...ys) - Math.min(...ys)) * SCALE,
+        }}><span aria-label={piece.label} title={piece.label}>{piece.kind === 'ruin' ? piece.id : piece.label}</span></div>
+      })}
+
       <svg className="overlay" width={W} height={H}>
         {/* 降落区 */}
         {phase === 'deploy' && mapPack && (
           <>
             <polygon
               points={mapPack.dropZones.a.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
-              fill="rgba(199,93,58,0.10)"
+              fill="rgba(199,93,58,0.19)"
               stroke="var(--side-a)"
-              strokeDasharray="4 3"
+              strokeWidth="2"
+              strokeDasharray="6 4"
             />
             <polygon
               points={mapPack.dropZones.b.map((p) => `${p.x * SCALE},${p.y * SCALE}`).join(' ')}
-              fill="rgba(58,123,199,0.10)"
+              fill="rgba(58,123,199,0.19)"
               stroke="var(--side-b)"
-              strokeDasharray="4 3"
+              strokeWidth="2"
+              strokeDasharray="6 4"
             />
           </>
         )}
@@ -144,16 +170,29 @@ export function Board({
         const top = Math.min(...ys) * SCALE
         const w = (Math.max(...xs) - Math.min(...xs)) * SCALE
         const h = (Math.max(...ys) - Math.min(...ys)) * SCALE
-        const cls = t.kind === 'BLOCKING' ? 'terrain blocking' : t.kind === 'COVER' ? 'terrain cover' : 'terrain obscuring'
+        const cls = [
+          'terrain', t.kind.toLowerCase(), t.terrainClass?.toLowerCase(),
+          t.isDoor ? 'doorway' : '',
+          t.accessible ? 'accessible' : '', t.advisoryOnly ? 'advisory' : '',
+        ].filter(Boolean).join(' ')
         return (
           <div
             key={t.id}
             className={cls}
             style={{ left, top, width: w, height: h }}
-            title={`${t.kind}${t.vantage ? ' · 制高点' : ''}${t.climbable ? ' · 可攀爬' : ''}`}
-          />
+            title={`${t.pieceId ? `${t.pieceId} · ` : ''}${t.isDoor ? '门 · 可通行；隔门近战待实现' : t.accessible ? '可穿越地形' : t.advisoryOnly ? '附件位置（玩家裁定）' : t.terrainClass === 'HEAVY' ? '重型地形' : t.terrainClass === 'LIGHT' ? '轻型地形' : t.kind}${t.vantage ? ' · 上层制高点' : ''}`}
+          >{t.kind !== 'BLOCKING' && !t.isDoor && <span className="terrain-label">{t.pieceId}</span>}</div>
         )
       })}
+
+      {placementPreview && <div className={`placement-preview ${placementPreview.valid ? 'valid' : 'invalid'}`} style={{
+        left: placementPreview.center.x * SCALE,
+        top: placementPreview.center.y * SCALE,
+        width: placementPreview.radius * 2 * SCALE,
+        height: placementPreview.radius * 2 * SCALE,
+        marginLeft: -placementPreview.radius * SCALE,
+        marginTop: -placementPreview.radius * SCALE,
+      }} aria-hidden="true">{placementPreview.valid ? '✓' : '×'}</div>}
 
       {/* 目标点（1.16 控制染色） */}
       {phase !== 'map-select' &&
@@ -192,7 +231,7 @@ export function Board({
           return (
             <button
               key={t.uid}
-              className={`token ${t.side} ${isSel ? 'sel' : ''} ${t.alive ? '' : 'dead'}`}
+              className={`token ${t.side} ${isSel ? 'sel' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''}`}
               style={{
                 left: t.pos.x * SCALE,
                 top: t.pos.y * SCALE,
@@ -205,7 +244,7 @@ export function Board({
               onPointerDown={(e) => { e.stopPropagation(); onTokenPointerDown?.(t) }}
               onDoubleClick={(e) => { e.stopPropagation(); onTokenDoubleClick?.(t) }}
               onClick={(e) => { e.stopPropagation(); onTokenClick?.(t) }}
-              title={`${t.name} · 耐伤 ${t.wounds}${!t.alive ? '（残废）' : ''}`}
+              title={`${t.name} · 耐伤 ${t.wounds}${lockedTokenUids?.has(t.uid) ? ' · 已确认部署，回退后可重新放置' : ''}${!t.alive ? '（残废）' : ''}`}
             >
               {/* 朝向三角 */}
               <svg className="facing" width={r * 2} height={r * 2} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>

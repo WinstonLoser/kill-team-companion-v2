@@ -10,6 +10,7 @@ import {
   pointInPolygon,
   circleInsidePolygon,
   circlesOverlap,
+  circleHitsBlockingTerrain,
   type Board,
   type OperativePlacement,
   type Point,
@@ -23,6 +24,16 @@ const op = (id: string, x: number, y: number, r = 0.5): OperativePlacement => ({
 })
 
 describe('LOS', () => {
+  it('仅标位置的沃库斯附件不参与自动视线、掩护与碰撞', () => {
+    const polygon = [{ x: 4, y: -2 }, { x: 6, y: -2 }, { x: 6, y: 2 }, { x: 4, y: 2 }]
+    const board: Board = { terrain: [
+      { id: 'accessory-wall', kind: 'BLOCKING', polygon, advisoryOnly: true },
+      { id: 'accessory-cover', kind: 'COVER', polygon, advisoryOnly: true },
+    ], operatives: [] }
+    expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, board).finalValue).toBe(true)
+    expect(coverFinding({ x: 5, y: 0 }, board, []).finalValue).toBe(false)
+    expect(circleHitsBlockingTerrain({ x: 5, y: 0 }, 0.5, board.terrain)).toBeNull()
+  })
   it('无地形阻挡 → 可见', () => {
     expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, noTerrain).finalValue).toBe(true)
   })

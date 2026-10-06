@@ -3,7 +3,7 @@ import { DungeonMasterOverlay } from '../components/DungeonMaster/DungeonMasterO
 import { useMatchStore, getMatchOperativeData, combatWeapon, type MatchToken } from '../../state/matchStore'
 import type { ActionType } from '../../state/turnStateMachine'
 import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
-import { Board, type LosLine, type ObjControl } from './Board'
+import { Board, BoardLegend, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { UnitPanel } from './UnitPanel'
 import { ActionBar } from './ActionBar'
@@ -17,6 +17,7 @@ import { getAvatarUrl } from '../../utils/avatars'
 import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPanel'
 import { type RollContext } from '../../dice/source'
 import { playerRulingRules } from '../weaponDisplay'
+import { VolkusTerrainPanel } from './VolkusTerrainPanel'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -28,6 +29,7 @@ function clampPos(p: Point): Point {
 
 export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void }) {
   const mapPack = useMatchStore((s) => s.mapPack)
+  const heightMode = useMatchStore((s) => s.heightMode)
   const maplessMode = useMatchStore((s) => s.maplessMode)
   const tokens = useMatchStore((s) => s.tokens)
   const turn = useMatchStore((s) => s.turn)
@@ -116,6 +118,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const [previewPosition, setPreviewPosition] = useState<{uid:string;pos:Point}|null>(null)
   const [pendingMove, setPendingMove] = useState<ActionType | null>(null)
   const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
+  const [heightTargetUid, setHeightTargetUid] = useState<string | null>(null)
   const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
   const [movePreview, setMovePreview] = useState<boolean>(false) // 拖动后待确认
   const [showDataCardUid, setShowDataCardUid] = useState<string | null>(null)
@@ -246,6 +249,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     }
     // 已装填射击/近战 → 直接走该 kind
     if (pendingAttack) {
+      if (pendingAttack === 'SHOOT' && heightMode === 'elevation') { setHeightTargetUid(t.uid); return }
       runKind(active, t, pendingAttack === 'SHOOT' ? 'SHOOT' : 'MELEE')
       setPendingAttack(null)
       return
@@ -259,6 +263,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       setPendingAsk({ attacker, target })
       return
     }
+    if (heightMode === 'elevation') { setHeightTargetUid(target.uid); setPendingAttack('SHOOT'); return }
     runKind(attacker, target, 'SHOOT')
   }
 
@@ -435,6 +440,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   return (
     <div className="play-view">
       <StatusStrip prompt={promptStr} isError={!!intercept} onConfirm={confirmCasualties} onQueryRule={onQueryRule} onEndTP={() => scoreAndEndTP()} />
+      {!maplessMode && <p className="map-mode-indicator">{heightMode === 'elevation' ? '高低差已启用 · 射击前选择双方楼层' : '统一高度 · 所有单位按同一高度裁定'}<span>门可通行；隔门近战待实现，现由玩家裁定</span></p>}
+      <VolkusTerrainPanel mapId={mapPack?.mapId ?? null} />
+      {!maplessMode && <BoardLegend />}
       {showViz && <FindingStrip active={active!} targets={viz.targets} />}
       {lastShot && (() => {
         const attacker = tokens.find(t => t.uid === lastShot.attackerUid)
@@ -609,7 +617,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       {pendingAsk && (
         <div className="chips-ask">
           <span>{pendingAsk.attacker.name} 控制范围内有 {pendingAsk.target.name}：</span>
-          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'SHOOT') }}>射击 ▸</button>
+          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); if (heightMode === 'elevation') { setHeightTargetUid(target.uid); setPendingAttack('SHOOT') } else runKind(attacker, target, 'SHOOT') }}>射击 ▸</button>
           <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'MELEE') }}>近战 ▸</button>
           <button onClick={() => setPendingAsk(null)}>取消</button>
         </div>
@@ -739,15 +747,18 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         🎲
       </button>
 
-      {maplessMode && pendingAttack && active && (
+      {(maplessMode || (heightMode === 'elevation' && pendingAttack === 'SHOOT')) && pendingAttack && active && (
         <TargetSelectionModal
           attackerUid={active.uid}
           kind={pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT'}
-          onClose={() => setPendingAttack(null)}
+          heightOnly={!maplessMode}
+          initialTargetUid={heightTargetUid}
+          onClose={() => { setPendingAttack(null); setHeightTargetUid(null) }}
           onConfirm={(targetUid) => {
             const t = tokens.find((x) => x.uid === targetUid)
             if (t) {
               setPendingAttack(null)
+              setHeightTargetUid(null)
               runKind(active, t, pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT')
             }
           }}

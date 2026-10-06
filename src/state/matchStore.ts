@@ -2,7 +2,7 @@ import { applyUnitRules, isAstartes } from '../rules/unitRules'
 import { create, type UseBoundStore, type StoreApi } from 'zustand'
 import type { Point, TerrainFeature, OperativePlacement, Board as BoardT } from '../geometry'
 import { losFinding, engagementFinding, validateTarget, coverFinding, obscuredFinding } from '../geometry'
-import type { ObjectiveMarker, MapPack } from '../data/maps'
+import type { ObjectiveMarker, MapPack, DeploymentMode } from '../data/maps'
 import { createInitialTurnState, turnReducer, type TurnState, effectiveApl, effectiveMove, canDoAction, ACTION_AP, type ActionType } from './turnStateMachine'
 import { runShooting, runMelee, buildShootingLog, buildMeleeLog, type ResolutionLog } from '../engine'
 import { rollbackTo as logRollbackTo, stepBack as logStepBack } from '../engine'
@@ -138,6 +138,7 @@ function grantedMarkersOf(log: ResolutionLog | null): { marker: string; target: 
 export type Phase = 'map-select' | 'deploy' | 'strategy' | 'play' | 'ended'
 export type Side = 'a' | 'b'
 export type DiceSourceKind = 'electronic' | 'manual'
+export type HeightMode = 'uniform' | 'elevation'
 
 export interface MatchToken {
   uid: string
@@ -215,6 +216,9 @@ function overrideKey(aUid: string, tUid: string, kind: string): string {
 interface MatchState {
   phase: Phase
   mapPack: MapPack | null
+  /** 地图高度裁定：统一高度或逐次射击时由玩家指定双方楼层。 */
+  heightMode: HeightMode
+  deploymentMode: DeploymentMode
   customTerrain: TerrainFeature[] // 自定义板会话内（D-20）
   tokens: MatchToken[]
   turn: TurnState
@@ -248,10 +252,15 @@ interface MatchState {
   initiative: 'a' | 'b' | null
   /** 部署前先手权（随机掷骰定，驱动部署顺序；与每 TP 战略先手区分）。null=未掷 */
   deployInitiative: 'a' | 'b' | null
+  /** 先手方选择的地图降落区模板；另一方自动使用对侧。 */
+  deployZoneChoice: 'a' | 'b' | null
   /** 部署先手骰结果（展示用）。 */
   deployDice: { a: number; b: number } | null
   /** 部署先手骰重掷计数（每次点击 +1，使结果变化）。 */
   deployRollNonce: number
+  /** 部署批次进度与每批已放置特工；与棋子位置一同保留，避免界面重挂后丢失锁定状态。 */
+  deployBatchIndex: number
+  deployBatchUids: Record<number, string[]>
   /** 6.1 战略阶段：双方是否已跳过（连续两次跳过 → 进交战） */
   strategyPasses: { a: boolean; b: boolean }
   /** 6.1 战略阶段：当前轮到谁使用计谋 */
@@ -265,7 +274,8 @@ interface MatchState {
 
   // actions
   setPhase: (p: Phase) => void
-  loadMap: (m: MapPack) => void
+  loadMap: (m: MapPack, heightMode?: HeightMode, deploymentMode?: DeploymentMode) => void
+  refreshMapTemplate: (m: MapPack, deploymentMode?: DeploymentMode) => void
   startBlank: (bounds: { w: number; h: number }) => void
   addTerrain: (t: TerrainFeature) => void
   removeTerrain: (id: string) => void
@@ -275,6 +285,10 @@ interface MatchState {
   initTokens: (tokens: MatchToken[]) => void
   /** 仅重置部署：所有 token 取消放置 + 清部署先手，保留地图与 token 阵容。 */
   resetDeploy: () => void
+  recordDeployPlacement: (uid: string) => void
+  advanceDeployBatch: () => void
+  rewindDeployBatch: () => void
+  restoreDeployBatches: (index: number, batches: Record<number, string[]>) => void
   placeToken: (uid: string, pos: Point, facing: number) => void
   moveToken: (uid: string, pos: Point) => void
   rotateToken: (uid: string) => void
@@ -302,6 +316,7 @@ interface MatchState {
   enterStrategy: () => void
   /** 部署前掷先手权（按钮触发，即时出结果；动画后续补）。 */
   rollDeployInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
+  chooseDeployZone: (zone: Side) => void
   /** 6.1：掷 D6 定先手权（仅返回结果不生效，UI 负责动画及让胜者选择） */
   rollInitiative: () => { a: number; b: number; winner: 'a' | 'b' }
   confirmInitiative: (side: 'a' | 'b') => void
@@ -409,6 +424,8 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
   reactionUid: null, reacted: [], previousInitiative: null, usedPloys: {},
   phase: 'map-select',
   mapPack: null,
+  heightMode: 'uniform',
+  deploymentMode: 'rules',
   customTerrain: [],
   tokens: [],
   turn: createInitialTurnState(),
@@ -434,8 +451,11 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
   intercept: null,
   initiative: null,
   deployInitiative: null,
+  deployZoneChoice: null,
   deployDice: null,
   deployRollNonce: 0,
+  deployBatchIndex: 0,
+  deployBatchUids: {},
   strategyPasses: { a: false, b: false },
   strategyTurn: null,
   lastPloy: null,
@@ -443,15 +463,33 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
   maplessMode: false,
 
   setPhase: (phase) => set({ phase }),
-  loadMap: (m) =>
+  loadMap: (m, heightMode = 'uniform', deploymentMode = 'rules') =>
     set({
       mapPack: m,
+      heightMode,
+      deploymentMode,
       customTerrain: [...m.terrain],
       phase: 'deploy',
+      deployInitiative: null,
+      deployZoneChoice: null,
+      deployDice: null,
+      deployBatchIndex: 0,
+      deployBatchUids: {},
       log: [{ id: nextLogId(), kind: 'system', text: `载入地图「${m.name}」· 部署阶段` }],
     }),
+  refreshMapTemplate: (m, deploymentMode = 'rules') => set((s) => {
+    if (s.phase !== 'deploy' || s.mapPack?.mapId !== m.mapId || s.mapPack.version === m.version) return s
+    return {
+      mapPack: m,
+      deploymentMode,
+      customTerrain: [...m.terrain],
+      log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `部署地图已更新至 ${m.version}，小队与已放置特工保留` }, ...s.log],
+    }
+  }),
   startBlank: (bounds) =>
     set({
+      heightMode: 'uniform',
+      deploymentMode: 'rules',
       mapPack: {
         mapId: 'blank',
         name: '自定义板',
@@ -476,6 +514,11 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
       },
       customTerrain: [],
       phase: 'deploy',
+      deployInitiative: null,
+      deployZoneChoice: null,
+      deployDice: null,
+      deployBatchIndex: 0,
+      deployBatchUids: {},
       log: [{ id: nextLogId(), kind: 'system', text: '自定义板 · 画地形后部署' }],
     }),
   addTerrain: (t) => set((s) => ({ customTerrain: [...s.customTerrain, t] })),
@@ -493,11 +536,41 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
     set((s) => ({
       tokens: s.tokens.map((t) => ({ ...t, placed: false, pos: { x: -1, y: -1 }, facing: 0 })),
       deployInitiative: null,
+      deployZoneChoice: null,
       deployDice: null,
       deployRollNonce: 0,
+      deployBatchIndex: 0,
+      deployBatchUids: {},
       intercept: null,
       log: [{ id: nextLogId(), kind: 'system' as LogKind, text: '部署已重置（地图保留）' }, ...s.log],
     })),
+  recordDeployPlacement: (uid) => set((s) => {
+    const index = s.deployBatchIndex ?? 0
+    const batches = s.deployBatchUids ?? {}
+    if (Object.values(batches).some((uids) => uids.includes(uid))) return {}
+    return { deployBatchUids: { ...batches, [index]: [...(batches[index] ?? []), uid] } }
+  }),
+  advanceDeployBatch: () => set((s) => ({ deployBatchIndex: (s.deployBatchIndex ?? 0) + 1 })),
+  rewindDeployBatch: () => set((s) => {
+    if (s.phase !== 'deploy' || (s.deployBatchIndex ?? 0) === 0) return {}
+    const target = s.deployBatchIndex - 1
+    const removed = new Set(Object.entries(s.deployBatchUids ?? {})
+      .filter(([index]) => Number(index) >= target)
+      .flatMap(([, uids]) => uids))
+    const kept = Object.fromEntries(Object.entries(s.deployBatchUids ?? {})
+      .filter(([index]) => Number(index) < target)) as Record<number, string[]>
+    return {
+      deployBatchIndex: target,
+      deployBatchUids: kept,
+      tokens: s.tokens.map((token) => removed.has(token.uid)
+        ? { ...token, placed: false, pos: { x: -1, y: -1 }, facing: 0 }
+        : token),
+      dragging: null,
+      dragOrigin: null,
+      intercept: null,
+    }
+  }),
+  restoreDeployBatches: (index, batches) => set({ deployBatchIndex: index, deployBatchUids: batches }),
   placeToken: (uid, pos, facing) =>
     set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, placed: true, pos, facing } : t)) })),
   moveToken: (uid, pos) => set((s) => ({ tokens: s.tokens.map((t) => (t.uid === uid ? { ...t, pos } : t)) })),
@@ -554,11 +627,18 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
     const winner: 'a' | 'b' = a === b ? (dice.roll(1)[0]!.nat <= 3 ? 'a' : 'b') : a > b ? 'a' : 'b'
     set((s) => ({
       deployInitiative: winner,
+      deployZoneChoice: null,
       deployDice: { a, b },
       deployRollNonce: nonce,
       log: [{ id: nextLogId(), kind: 'system' as LogKind, text: `部署先手 D6：A=${a} B=${b} → ${winner.toUpperCase()} 方先部署` }, ...s.log],
     }))
     return { a, b, winner }
+  },
+  chooseDeployZone: (zone) => {
+    const s = get()
+    if (s.phase !== 'deploy' || !s.deployInitiative || s.tokens.some((t) => t.placed)) return
+    set({ deployZoneChoice: zone })
+    s.pushLog('deploy', `${s.deployInitiative.toUpperCase()} 方选择地图 ${zone.toUpperCase()} 区作为己方降落区`)
   },
 
   // ===== 6.1 战略阶段 =====
@@ -566,6 +646,7 @@ export const useMatchStore: UseBoundStore<StoreApi<MatchState>> = create<MatchSt
     const s = get()
     // 全员就绪
     if (s.phase !== 'deploy' && s.phase !== 'map-select') return
+    if (s.phase === 'deploy' && (!s.deployInitiative || !s.deployZoneChoice || !s.tokens.length || s.tokens.some((t) => !t.placed))) return
     const turn = turnReducer(s.turn, { type: 'START_BATTLE' })
     for (const t of s.tokens) turn.operatives[t.uid] = { order: t.order === 'ENGAGE' ? 'ENGAGED' : 'CONCEALED', ready: true, apUsed: 0, actionsThisActivation: [], fallBackDone: false, chargeDone: false, moveDone: false }
     set({ phase: 'strategy', turn, initiative: null, strategyPasses: { a: false, b: false }, strategyTurn: null })
@@ -1348,6 +1429,8 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     set({
       phase: 'map-select',
       mapPack: null,
+      heightMode: 'uniform',
+      deploymentMode: 'rules',
       customTerrain: [],
       tokens: [],
       turn: createInitialTurnState(),
@@ -1371,8 +1454,11 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
       intercept: null,
       initiative: null,
       deployInitiative: null,
+      deployZoneChoice: null,
       deployDice: null,
       deployRollNonce: 0,
+      deployBatchIndex: 0,
+      deployBatchUids: {},
       strategyPasses: { a: false, b: false },
       strategyTurn: null,
       lastPloy: null,

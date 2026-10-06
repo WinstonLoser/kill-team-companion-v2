@@ -1,8 +1,8 @@
 import { buildMatchTokens, canStartMatch } from '../state/setup'
 import { useState } from 'react'
-import { useMatchStore } from '../state/matchStore'
+import { useMatchStore, type HeightMode } from '../state/matchStore'
 import type { Point, TerrainFeature } from '../geometry'
-import { loadMapPack, type MapPack, type ObjectiveMarker } from '../data/maps'
+import { loadMapPack, mapWithDeploymentMode, type DeploymentMode, type MapPack, type ObjectiveMarker } from '../data/maps'
 import { MapSelect } from './match/MapSelect'
 import { TerrainEditor } from './match/TerrainEditor'
 import { DeployPhase } from './match/DeployPhase'
@@ -13,8 +13,9 @@ import { RulesQuery, useRulesQuery } from './match/RulesQuery'
 import openMap from '../data/packs/maps/open.v1.json'
 import ruinMap from '../data/packs/maps/ruin.v1.json'
 import corridorMap from '../data/packs/maps/corridor.v1.json'
+import { VOLKUS_MAPS } from '../data/packs/maps/volkus'
 
-const MAPS: MapPack[] = [openMap, ruinMap, corridorMap].map((m) => loadMapPack(m))
+const MAPS: MapPack[] = [...VOLKUS_MAPS, ...[openMap, ruinMap, corridorMap].map((m) => loadMapPack(m))]
 
 export function MatchView() {
   const phase = useMatchStore((s) => s.phase)
@@ -28,9 +29,9 @@ export function MatchView() {
   const [blankEditing, setBlankEditing] = useState(false)
   const rulesQuery = useRulesQuery()
 
-  function onLoadMap(m: MapPack) {
+  function onLoadMap(m: MapPack, heightMode: HeightMode, deploymentMode: DeploymentMode) {
     if (!canStartMatch()) return
-    loadMap(m)
+    loadMap(mapWithDeploymentMode(m, deploymentMode), heightMode, deploymentMode)
     initTokens(buildMatchTokens())
   }
   function onBlank() {

@@ -22,6 +22,24 @@ export interface MapPack {
   terrain: TerrainFeature[]
   objectives: ObjectiveMarker[]
   dropZones: DropZones
+  /** 双方约定后可采用的非标准宽部署区；默认始终使用 dropZones。 */
+  expandedDropZones?: DropZones
+  /** 仅用于展示建筑占地；碰撞与视线由 terrain 中的墙体决定。 */
+  scenery?: { id: string; label: string; kind: 'stronghold' | 'ruin'; polygon: Polygon }[]
+}
+
+export type DeploymentMode = 'rules' | 'expanded'
+
+/** 只有显式提供宽部署区的地图才允许启用约定方案。 */
+export function mapWithDeploymentMode(map: MapPack, mode: DeploymentMode): MapPack {
+  return mode === 'expanded' && map.expandedDropZones
+    ? { ...map, dropZones: map.expandedDropZones }
+    : map
+}
+
+/** 将地图模板的两个降落区按先手玩家的选择分配给 A/B 队。 */
+export function assignedDropZones(map: MapPack, initiative: 'a' | 'b', choice: 'a' | 'b'): DropZones {
+  return choice === initiative ? map.dropZones : { a: map.dropZones.b, b: map.dropZones.a }
 }
 
 /** 结构校验：必填字段缺失 → 抛错，绝不静默降级（NFR-5）。 */
@@ -35,6 +53,7 @@ export function loadMapPack(raw: unknown): MapPack {
   }
   if (!Array.isArray(m.terrain) || !Array.isArray(m.objectives)) throw new Error('MapPack: terrain/objectives must be arrays')
   if (!Array.isArray(m.dropZones.a) || !Array.isArray(m.dropZones.b)) throw new Error('MapPack: dropZones.a/b must be polygons')
+  if (m.expandedDropZones && (!Array.isArray(m.expandedDropZones.a) || !Array.isArray(m.expandedDropZones.b) || m.expandedDropZones.a.length < 3 || m.expandedDropZones.b.length < 3)) throw new Error('MapPack: expandedDropZones.a/b must be polygons')
   // P9：bounds 正值 + 降落区多边形 ≥3 顶点（NFR-5 不静默降级）
   if (!(m.bounds.w > 0) || !(m.bounds.h > 0)) throw new Error('MapPack: bounds.w/h must be positive')
   if (m.dropZones.a.length < 3 || m.dropZones.b.length < 3) throw new Error('MapPack: dropZones must have ≥3 vertices')

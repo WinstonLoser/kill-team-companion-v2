@@ -1,64 +1,88 @@
-import type { MapPack } from '../../data/maps'
+import { useState } from 'react'
+import { mapWithDeploymentMode, type DeploymentMode, type MapPack } from '../../data/maps'
+import type { HeightMode } from '../../state/matchStore'
 
-// 1.12 T1：地图选择视图。预设模板网格（缩略图 + 名称 + 预览）+ 「空白板」进自定义画地形。
 function Thumb({ map }: { map: MapPack }) {
-  const tw = 120
-  const th = (map.bounds.h / map.bounds.w) * tw
-  const sx = tw / map.bounds.w
-  const sy = th / map.bounds.h
+  const width = 300
+  const height = map.bounds.h / map.bounds.w * width
+  const scale = width / map.bounds.w
+  const points = (polygon: { x: number; y: number }[]) => polygon.map((p) => `${p.x * scale},${p.y * scale}`).join(' ')
+  const volkus = map.mapId.startsWith('volkus-')
+
   return (
-    <svg width={tw} height={th} className="map-thumb">
-      {/* 降落区底色 */}
-      <polygon points={map.dropZones.a.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(199,93,58,0.18)" />
-      <polygon points={map.dropZones.b.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')} fill="rgba(58,123,199,0.18)" />
-      {/* 地形 */}
-      {map.terrain.map((t) => {
-        const fill = t.kind === 'BLOCKING' ? '#5a4030' : t.kind === 'COVER' ? '#3a5a3a' : '#4a4a6a'
-        return (
-          <polygon
-            key={t.id}
-            points={t.polygon.map((p) => `${p.x * sx},${p.y * sy}`).join(' ')}
-            fill={fill}
-            opacity={0.8}
-          />
-        )
+    <svg className="map-thumb" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${map.name} 战场预览`}>
+      <defs>
+        <linearGradient id="map-ground" x2="1" y2="1"><stop stopColor="#28342f" /><stop offset="1" stopColor="#171d1a" /></linearGradient>
+        <pattern id="map-grid-pattern" width={scale} height={scale} patternUnits="userSpaceOnUse"><path d={`M ${scale} 0 L 0 0 0 ${scale}`} fill="none" stroke="#a9b8aa" strokeOpacity=".13" strokeWidth=".7" /></pattern>
+      </defs>
+      <rect width={width} height={height} fill="url(#map-ground)" />
+      <rect width={width} height={height} fill="url(#map-grid-pattern)" />
+      <polygon points={points(map.dropZones.a)} fill="#d77845" fillOpacity=".19" stroke="#f8ad6d" strokeOpacity=".7" strokeDasharray="3 3" />
+      <polygon points={points(map.dropZones.b)} fill="#5b9db8" fillOpacity=".19" stroke="#8dd0eb" strokeOpacity=".7" strokeDasharray="3 3" />
+      {map.scenery?.map((piece) => <polygon key={piece.id} points={points(piece.polygon)} fill={piece.kind === 'stronghold' ? '#56645d' : '#485952'} stroke={piece.kind === 'stronghold' ? '#c6bc98' : '#9cae9a'} strokeWidth="2" opacity=".88" />)}
+      {map.terrain.map((feature) => <polygon key={feature.id} points={points(feature.polygon)} fill={feature.accessible ? '#f2b56f' : feature.advisoryOnly ? '#798e7e' : feature.kind === 'BLOCKING' ? '#cab391' : feature.terrainClass === 'HEAVY' ? '#9c866c' : '#809783'} opacity={feature.accessible ? 1 : .86} />)}
+      {map.scenery?.map((piece) => {
+        const x = piece.polygon.reduce((sum, point) => sum + point.x, 0) / piece.polygon.length * scale
+        const y = piece.polygon.reduce((sum, point) => sum + point.y, 0) / piece.polygon.length * scale
+        return <text key={piece.id} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="map-thumb-label">{piece.id}</text>
       })}
-      {/* 目标点 */}
-      {map.objectives.map((o) => (
-        <circle key={o.id} cx={o.pos.x * sx} cy={o.pos.y * sy} r={2.5} fill="var(--accent)" />
-      ))}
+      {map.objectives.map((objective) => <circle key={objective.id} cx={objective.pos.x * scale} cy={objective.pos.y * scale} r="3" fill="#f9d583" stroke="#fff1cb" />)}
+      {volkus && <><text x="9" y="16" className="map-thumb-corner">VOLKUS</text><text x={width - 9} y={height - 9} textAnchor="end" className="map-thumb-corner">30 × 22″</text></>}
     </svg>
   )
 }
 
-export function MapSelect({
-  maps,
-  onLoad,
-  onBlank,
-}: {
+export function MapSelect({ maps, onLoad, onBlank }: {
   maps: MapPack[]
-  onLoad: (m: MapPack) => void
+  onLoad: (map: MapPack, heightMode: HeightMode, deploymentMode: DeploymentMode) => void
   onBlank: () => void
 }) {
-  return (
-    <div className="map-select">
-      <h2>选图开局</h2>
-      <p className="muted">选择 30″ × 22″ 战场，双方部署区为边缘 3″。预设使用演示计分：每个转折点控制目标获得 1VP；也可用空白板配置你们的任务。</p>
-      <div className="map-grid">
-        {maps.map((m) => (
-          <button key={m.mapId} className="map-card" onClick={() => onLoad(m)} title={`载入「${m.name}」`}>
-            <Thumb map={m} />
-            <div className="map-card-name">
-              <strong>{m.name}</strong>
-              <span className="muted"> {m.objectives.length} 目标点 · {m.terrain.length} 地形</span>
-            </div>
-          </button>
-        ))}
-        <button className="map-card blank" onClick={onBlank} title="空白板，自定义画地形">
-          <div className="blank-thumb">＋</div>
-          <div className="map-card-name"><strong>空白板</strong><span className="muted"> 自定义地形</span></div>
-        </button>
-      </div>
+  const [heightMode, setHeightMode] = useState<HeightMode>('uniform')
+  const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>('rules')
+
+  return <div className="map-select">
+    <div className="map-select-heading">
+      <div><span className="map-select-eyebrow">战场准备 / 01</span><h2>选择战场</h2><p>先约定高度与部署范围，再挑选战场。</p></div>
+      <span className="map-select-size">30″ × 22″</span>
     </div>
-  )
+
+    <fieldset className="height-mode-choice">
+      <legend>高度裁定</legend>
+      <label className={heightMode === 'uniform' ? 'selected' : ''}>
+        <input type="radio" name="height-mode" checked={heightMode === 'uniform'} onChange={() => setHeightMode('uniform')} />
+        <span><strong>统一高度</strong><small>所有单位视作同一高度，射击不使用楼层与制高点修正。</small></span>
+      </label>
+      <label className={heightMode === 'elevation' ? 'selected' : ''}>
+        <input type="radio" name="height-mode" checked={heightMode === 'elevation'} onChange={() => setHeightMode('elevation')} />
+        <span><strong>启用高低差</strong><small>后续射击时由玩家选择双方楼层；立体视线与攀爬仍现场裁定。</small></span>
+      </label>
+    </fieldset>
+
+    <fieldset className="height-mode-choice deployment-mode-choice">
+      <legend>布局 1 部署范围</legend>
+      <label className={deploymentMode === 'rules' ? 'selected' : ''}>
+        <input type="radio" name="deployment-mode" checked={deploymentMode === 'rules'} onChange={() => setDeploymentMode('rules')} />
+        <span><strong>规则部署 · 3″</strong><small>默认。沿左右棋盘边缘各 3″，底座必须完整位于区内。</small></span>
+      </label>
+      <label className={deploymentMode === 'expanded' ? 'selected' : ''}>
+        <input type="radio" name="deployment-mode" checked={deploymentMode === 'expanded'} onChange={() => setDeploymentMode('expanded')} />
+        <span><strong>要塞部署 · 自定义</strong><small>双方约定后使用；边缘区域约 7″，局部延伸至要塞内部，最远约 10–11″。</small></span>
+      </label>
+    </fieldset>
+
+    <div className="map-select-section-heading"><strong>预设战场</strong><span>选择卡片进入部署</span></div>
+    <div className="map-grid">
+      {maps.map((map, index) => <button key={map.mapId} type="button" className="map-card" onClick={() => onLoad(map, heightMode, map.expandedDropZones ? deploymentMode : 'rules')} title={`载入「${map.name}」`}>
+        <span className="map-card-art"><Thumb map={mapWithDeploymentMode(map, deploymentMode)} /><span className="map-card-number">{String(index + 1).padStart(2, '0')}</span></span>
+        <span className="map-card-name"><strong>{map.name}</strong><small>{map.expandedDropZones ? deploymentMode === 'expanded' ? '约定玩法 · 要塞部署' : 'Lite 规则 · 3″ 边缘部署' : map.scenery ? '沃库斯地形 · 边缘部署' : `${map.terrain.length} 处地形 · ${map.objectives.length} 个目标`}</small></span>
+        <span className="map-card-action">进入战场 <span aria-hidden="true">↗</span></span>
+      </button>)}
+      <button type="button" className="map-card blank" onClick={onBlank} title="空白板，自定义画地形">
+        <span className="blank-thumb"><span>＋</span><strong>绘制自己的战场</strong></span>
+        <span className="map-card-name"><strong>空白板</strong><small>自定义地形与部署区 · 默认统一高度</small></span>
+        <span className="map-card-action">开始绘制 <span aria-hidden="true">↗</span></span>
+      </button>
+    </div>
+    <p className="map-select-note">沃库斯地形按布置图近似转录，不含任务目标。部署范围选择只影响布局 1；门已标示，隔门近战暂由玩家裁定。</p>
+  </div>
 }

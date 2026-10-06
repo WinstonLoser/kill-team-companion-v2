@@ -154,7 +154,7 @@
       "type": "blessed_blade",
       "keywords": ["CHAOS CULT", "CHAOS", "DARK COMMUNE", "BLESSED BLADE"],
       "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 8 },
-      "base": { "diameterMm": 28 },
+      "base": { "diameterMm": 32 },
       "loadouts": [
         {
           "description": "Standard Equipment / 标准装备",

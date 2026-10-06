@@ -12,6 +12,16 @@ export interface TerrainFeature {
   id: string
   polygon: Polygon
   kind: TerrainKind
+  /** 沃库斯地形原本的轻/重类型；二维几何仍保留简化判定。 */
+  terrainClass?: 'HEAVY' | 'LIGHT'
+  /** 地图图例中的地形编号。 */
+  pieceId?: string
+  /** 门可穿越；其视线、近战等特殊规则由玩家现场裁定。 */
+  accessible?: boolean
+  /** 明确标记门，供后续隔门近战与门状态规则识别。 */
+  isDoor?: boolean
+  /** 只标位置，不自动参与二维裁定（复杂/不确定附件）。 */
+  advisoryOnly?: boolean
   vantage?: boolean
   climbable?: boolean
   difficult?: boolean // 困难地形（移动修正；D2 AC2）
@@ -20,7 +30,7 @@ export interface TerrainFeature {
 export interface OperativePlacement {
   operativeId: string
   pos: Point
-  baseRadius: number // = base.diameterMm/2 (D-27)
+  baseRadius: number // 英寸；底座直径毫米 ÷ 50.8
   facing?: number
 }
 
@@ -119,7 +129,7 @@ export function distanceToPolygon(p: Point, poly: Polygon): number {
  */
 export function circleHitsBlockingTerrain(center: Point, radius: number, terrain: TerrainFeature[]): TerrainFeature | null {
   for (const tf of terrain) {
-    if (tf.kind !== 'BLOCKING') continue
+    if (tf.kind !== 'BLOCKING' || tf.advisoryOnly) continue
     if (pointInPoly(center, tf.polygon) || nearestPoly(center, tf.polygon) < radius - 1e-9) return tf
   }
   return null
@@ -159,7 +169,7 @@ function minVertexDistToSeg(poly: Polygon, a: Point, b: Point): number {
 
 /** 单条视线段被 BLOCKING 阻断情况：{blocked, clearance}。 */
 function losSegment(a: Point, b: Point, board: Board): { blocked: boolean; clearance: number } {
-  const blockers = board.terrain.filter((t) => t.kind === 'BLOCKING')
+  const blockers = board.terrain.filter((t) => t.kind === 'BLOCKING' && !t.advisoryOnly)
   let blocked = false
   let clearance = Infinity
   for (const blk of blockers) {
@@ -228,7 +238,7 @@ export function losFinding(attacker: Point, target: Point, board: Board, options
 
 /** 掩护：目标 1" 内有 COVER 地形 → 有掩护；2" 内有他特工 → 无掩护。 */
 export function coverFinding(target: Point, board: Board, otherOperatives: Point[]): GeometryFinding {
-  const coverTerrain = board.terrain.filter((t) => t.kind === 'COVER')
+  const coverTerrain = board.terrain.filter((t) => t.kind === 'COVER' && !t.advisoryOnly)
   let nearestCover = Infinity
   for (const c of coverTerrain) nearestCover = Math.min(nearestCover, nearestPoly(target, c.polygon))
   let nearestOther = Infinity
@@ -243,7 +253,7 @@ export function coverFinding(target: Point, board: Board, otherOperatives: Point
 
 /** 遮挡：目标在 OBSCURING 地形内 → 被遮挡。 */
 export function obscuredFinding(target: Point, board: Board): GeometryFinding {
-  const obscured = board.terrain.some((t) => t.kind === 'OBSCURING' && pointInPoly(target, t.polygon))
+  const obscured = board.terrain.some((t) => t.kind === 'OBSCURING' && !t.advisoryOnly && pointInPoly(target, t.polygon))
   return finding('OBSCURED', obscured, obscured ? -1 : 1)
 }
 

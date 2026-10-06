@@ -8,6 +8,9 @@ import { parryAllocation } from '../../src/engine/parry'
 import { runShooting } from '../../src/engine'
 import { ManualDiceSource } from '../../src/dice'
 import type { Weapon } from '../../src/rules'
+import { loadMapPack, mapWithDeploymentMode } from '../../src/data/maps'
+import openMap from '../../src/data/packs/maps/open.v1.json'
+import { VOLKUS_MAPS } from '../../src/data/packs/maps/volkus'
 
 const state = () => useMatchStore.getState()
 function teams() {
@@ -27,6 +30,78 @@ function begin() {
 beforeEach(() => {state().reset();useRosterStore.getState().reset()})
 
 describe('Lite 游玩闭环', () => {
+  it('回退撤销上一批及其后落子，保留更早批次并可重新部署', () => {
+    teams()
+    state().loadMap(loadMapPack(openMap))
+    state().initTokens(buildMatchTokens())
+    const first = state().tokens[0]!
+    state().placeToken(first.uid, { x: 2, y: 2 }, 0)
+    state().recordDeployPlacement(first.uid)
+    state().advanceDeployBatch()
+    state().recordDeployPlacement(first.uid)
+    const second = state().tokens.find((token) => token.side === 'b')!
+    state().placeToken(second.uid, { x: 28, y: 2 }, 45)
+    state().recordDeployPlacement(second.uid)
+    state().advanceDeployBatch()
+    const third = state().tokens.find((token) => token.side === 'a' && token.uid !== first.uid)!
+    state().placeToken(third.uid, { x: 2, y: 3 }, 90)
+    state().recordDeployPlacement(third.uid)
+    expect(state().deployBatchIndex).toBe(2)
+    expect(state().deployBatchUids[0]).toEqual([first.uid])
+    state().rewindDeployBatch()
+    expect(state().deployBatchIndex).toBe(1)
+    expect(state().deployBatchUids[0]).toEqual([first.uid])
+    expect(state().deployBatchUids[1]).toBeUndefined()
+    expect(state().tokens.find((token) => token.uid === first.uid)?.placed).toBe(true)
+    for (const uid of [second.uid, third.uid]) {
+      const token = state().tokens.find((item) => item.uid === uid)!
+      expect(token.placed).toBe(false)
+      expect(token.pos).toEqual({ x: -1, y: -1 })
+      expect(token.facing).toBe(0)
+    }
+    state().rewindDeployBatch()
+    expect(state().deployBatchIndex).toBe(0)
+    expect(state().deployBatchUids).toEqual({})
+    expect(state().tokens.find((token) => token.uid === first.uid)?.placed).toBe(false)
+    state().resetDeploy()
+    expect(state().deployBatchIndex).toBe(0)
+    expect(state().deployBatchUids).toEqual({})
+  })
+  it('部署中更新地图模板时保留小队与落子', () => {
+    teams()
+    const current = VOLKUS_MAPS[0]!
+    state().loadMap({ ...mapWithDeploymentMode(current, 'expanded'), version: '1.1.0' }, 'uniform', 'expanded')
+    state().initTokens(buildMatchTokens())
+    const first = state().tokens[0]!
+    state().placeToken(first.uid, { x: 5, y: 18 }, 0)
+    const tokenCount = state().tokens.length
+    state().refreshMapTemplate(mapWithDeploymentMode(current, 'expanded'), 'expanded')
+    expect(state().mapPack?.version).toBe(current.version)
+    expect(state().deploymentMode).toBe('expanded')
+    expect(Math.max(...state().mapPack!.dropZones.a.map((point) => point.x))).toBe(10)
+    expect(state().tokens).toHaveLength(tokenCount)
+    expect(state().tokens[0]?.placed).toBe(true)
+    expect(state().tokens[0]?.pos).toEqual({ x: 5, y: 18 })
+  })
+  it('部署必须先选降落区并放完双方特工，落子后不可改选', () => {
+    teams()
+    state().loadMap(loadMapPack(openMap), 'elevation')
+    expect(state().heightMode).toBe('elevation')
+    state().initTokens(buildMatchTokens())
+    state().rollDeployInitiative()
+    state().enterStrategy()
+    expect(state().phase).toBe('deploy')
+    state().chooseDeployZone('b')
+    state().enterStrategy()
+    expect(state().phase).toBe('deploy')
+    const first = state().tokens[0]!
+    state().placeToken(first.uid, { x: 28, y: 2 }, 0)
+    state().chooseDeployZone('a')
+    expect(state().deployZoneChoice).toBe('b')
+    for (const token of state().tokens.filter((t) => !t.placed)) state().placeToken(token.uid, { x: 28, y: 3 }, 0)
+    state().enterStrategy()
+    expect(state().phase).toBe('strategy')
+  })
   it('双方合法之前不生成棋子；14 人队伍的每个实例都有自己的武器', () => {
     expect(canStartMatch()).toBe(false); expect(buildMatchTokens()).toEqual([])
     teams(); expect(canStartMatch()).toBe(true)
