@@ -24,6 +24,7 @@ function begin() {
   state().initTokens(buildMatchTokens(true))
   state().setMaplessMode(true)
   state().enterStrategy()
+  state().recordInitiativeRoll(4, 2)
   state().confirmInitiative('a')
   state().strategyAct('a','pass'); state().strategyAct('b','pass')
 }
@@ -115,6 +116,60 @@ describe('Lite 游玩闭环', () => {
     begin(); expect(state().turn.cp).toEqual({a:3,b:3})
     state().confirmInitiative('b'); expect(state().turn.cp).toEqual({a:3,b:3})
   })
+  it('战略准备需先录入合法骰点；平局由上轮后手决定', () => {
+    teams(); state().initTokens(buildMatchTokens(true)); state().enterStrategy()
+    state().confirmInitiative('a')
+    expect(state().initiative).toBeNull()
+    expect(state().recordInitiativeRoll(0, 7)).toBeNull()
+    expect(state().recordInitiativeRoll(3, 3)?.winner).toBe('b')
+    state().confirmInitiative('a')
+    expect(state().turn.cp).toEqual({ a: 3, b: 3 })
+    expect(state().initiative).toBe('a')
+  })
+  it('后续转折点平局由上轮后手选择，CP 按本轮先后手发放', () => {
+    teams(); state().initTokens(buildMatchTokens(true)); state().enterStrategy()
+    useMatchStore.setState(s => ({ turn: { ...s.turn, turningPoint: 2 }, previousInitiative: 'a' }))
+    expect(state().recordInitiativeRoll(2, 2)?.winner).toBe('b')
+    state().confirmInitiative('b')
+    expect(state().turn.cp).toEqual({ a: 4, b: 3 })
+    expect(state().strategyTurn).toBe('b')
+  })
+  it('战略计谋及跳过可回退，并只在连续两次跳过后交战', () => {
+    teams(); state().initTokens(buildMatchTokens(true)); state().enterStrategy()
+    state().recordInitiativeRoll(5, 2); state().confirmInitiative('a')
+    const ploy = ALL_PACKS.find(p => p.faction.id === 'plague_marines')!.stratagems!.find(p => p.phase === 'STRATEGY')!
+    state().strategyAct('b', 'pass')
+    expect(state().strategyTurn).toBe('a')
+    state().strategyAct('a', 'pass')
+    expect(state().strategyTurn).toBe('b')
+    expect(state().strategyPasses.a).toBe(true)
+    state().strategyUndo()
+    expect(state().strategyTurn).toBe('a')
+    expect(state().strategyPasses.a).toBe(false)
+    expect(state().usePloy('a', ploy.id).ok).toBe(true)
+    expect(state().turn.cp.a).toBe(3 - ploy.cp)
+    expect(state().strategyTurn).toBe('b')
+    state().strategyUndo()
+    expect(state().turn.cp.a).toBe(3)
+    expect(state().strategyTurn).toBe('a')
+    expect(state().usePloy('a', ploy.id).ok).toBe(true)
+    state().strategyAct('b', 'pass')
+    expect(state().phase).toBe('strategy')
+    state().strategyAct('a', 'pass')
+    expect(state().phase).toBe('play')
+  })
+  it('阵营战略计划不扣 CP，装备计划只对已选装备开放', () => {
+    teams(); state().initTokens(buildMatchTokens(true)); state().enterStrategy()
+    state().recordInitiativeRoll(5, 2); state().confirmInitiative('a')
+    state().strategyAct('a', 'pass')
+    expect(state().useStrategicGambit('b', 'wargear', 'cc_dark_grimoire').ok).toBe(false)
+    expect(state().useStrategicGambit('b', 'factionRule', 'mutation').ok).toBe(true)
+    expect(state().turn.cp.b).toBe(3)
+    expect(state().strategyTurn).toBe('a')
+    state().strategyUndo()
+    expect(state().strategyTurn).toBe('b')
+    expect(state().useStrategicGambit('b', 'factionRule', 'mutation').ok).toBe(true)
+  })
   it('隐匿不能冲锋；转移后可以冲刺；消耗AP后命令锁定', () => {
     begin();state().activate('a1','a')
     expect(state().checkAction('a1','CHARGE').ok).toBe(false)
@@ -133,7 +188,7 @@ describe('Lite 游玩闭环', () => {
   it('双方人数不同仍可经反应/让过走完四个转折点，终态不能重复计分', () => {
     begin()
     for(let tp=1;tp<=4;tp++) {
-      if(tp>1) {state().confirmInitiative('a');state().strategyAct('a','pass');state().strategyAct('b','pass')}
+      if(tp>1) {state().recordInitiativeRoll(4, 2);state().confirmInitiative('a');state().strategyAct('a','pass');state().strategyAct('b','pass')}
       let turns=0
       while(!state().canEndTP().ok && turns++ < 70) {
         const s=state();const side=s.turn.activePlayer
@@ -148,7 +203,7 @@ describe('Lite 游玩闭环', () => {
     state().scoreAndEndTP();expect(state().vp).toEqual(vp)
   })
   it('计谋按卡面扣费，次数限制有效，下个转折点清除持续战略计谋', () => {
-    teams();state().initTokens(buildMatchTokens(true));state().enterStrategy();state().confirmInitiative('a')
+    teams();state().initTokens(buildMatchTokens(true));state().enterStrategy();state().recordInitiativeRoll(4, 2);state().confirmInitiative('a')
     const pack=ALL_PACKS.find(p=>p.faction.id==='plague_marines')!
     const p=pack.stratagems!.find(p=>p.phase==='STRATEGY')!
     expect(state().usePloy('a',p.id).ok).toBe(true)

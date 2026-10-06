@@ -8,11 +8,15 @@ type Rect = [number, number, number, number]
 const polygon = ([x1, y1, x2, y2]: Rect): Polygon => [
   { x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 },
 ]
-const wall = (id: string, box: Rect, vantage = false): TerrainFeature => ({ id, kind: 'BLOCKING', terrainClass: 'HEAVY', pieceId: id[0], polygon: polygon(box), vantage, climbable: true })
-const door = (id: string, box: Rect): TerrainFeature => ({ id, kind: 'COVER', terrainClass: 'HEAVY', pieceId: id[0], accessible: true, isDoor: true, polygon: polygon(box) })
-const rubble = (id: string, box: Rect, terrainClass: 'HEAVY' | 'LIGHT' = 'LIGHT'): TerrainFeature => ({ id, kind: 'COVER', terrainClass, pieceId: id[0], polygon: polygon(box) })
+const wallHeight = (id: string) => 'AB'.includes(id[0]!) ? 3 : 'CD'.includes(id[0]!) ? 3.5 : 2.5
+const wall = (id: string, box: Rect, vantage = false): TerrainFeature => ({ id, kind: 'BLOCKING', terrainClass: 'HEAVY', pieceId: id[0], polygon: polygon(box), vantage, climbable: true, bottom: 0, top: wallHeight(id) })
+const door = (id: string, box: Rect): TerrainFeature => ({ id, kind: 'COVER', terrainClass: 'HEAVY', pieceId: id[0], accessible: true, isDoor: true, polygon: polygon(box), bottom: 0, top: wallHeight(id) })
+const rubble = (id: string, box: Rect, terrainClass: 'HEAVY' | 'LIGHT' = 'LIGHT'): TerrainFeature => ({ id, kind: 'COVER', terrainClass, pieceId: id[0], polygon: polygon(box), bottom: 0, top: terrainClass === 'HEAVY' ? 1.5 : 0.75 })
 const accessory = (id: string, box: Rect): TerrainFeature => ({ id, kind: 'COVER', pieceId: id[0], advisoryOnly: true, polygon: polygon(box) })
 const footprint = (id: string, label: string, kind: 'stronghold' | 'ruin', box: Rect) => ({ id, label, kind, polygon: polygon(box) })
+// 高台平面仅在大件地形上标示；小废墟/瓦砾没有可站立的上层。
+// 沃库斯实体地形约为：要塞首层 3"，大型废墟上层 3.5"。
+const platform = (id: string, label: string, box: Rect, height: number) => ({ id: `${id}-upper`, label, pieceId: id, height, targetingHeight: 'CD'.includes(id) ? 3 : height, polygon: polygon(box) })
 
 const dropZones = {
   a: polygon([0, 0, 3, 22]),
@@ -41,6 +45,12 @@ export const VOLKUS_MAPS: MapPack[] = [
       footprint('D', 'D · 大型废墟', 'ruin', [3, 3, 7, 9]),
       footprint('E', 'E · 小型废墟', 'ruin', [13, 14, 16, 19]),
       footprint('F', 'F · 小型废墟', 'ruin', [13, 3, 15, 7.5]),
+    ],
+    platforms: [
+      platform('A', 'A · 要塞上层', [19, 3, 27, 9], 3),
+      platform('B', 'B · 要塞上层', [2, 14, 10, 22], 3),
+      platform('C', 'C · 大型废墟上层', [20.5, 14.5, 27, 19], 3.5),
+      platform('D', 'D · 大型废墟上层', [3, 3, 7, 9], 3.5),
     ],
     terrain: [
       wall('A-top', [19, 3, 27, 3.3], true), wall('A-left-upper', [19, 3, 19.3, 4.7], true),
@@ -72,6 +82,12 @@ export const VOLKUS_MAPS: MapPack[] = [
       footprint('D', 'D · 大型废墟', 'ruin', [16, 14, 20, 20]),
       footprint('E', 'E · 小型废墟', 'ruin', [6, 0, 9, 8]),
       footprint('F', 'F · 小型废墟', 'ruin', [6, 13, 7.5, 19]),
+    ],
+    platforms: [
+      platform('A', 'A · 要塞上层', [24, 3, 30, 11], 3),
+      platform('B', 'B · 要塞上层', [11, 3, 19, 11], 3),
+      platform('C', 'C · 大型废墟上层', [9.8, 14, 14, 20], 3.5),
+      platform('D', 'D · 大型废墟上层', [16, 14, 20, 20], 3.5),
     ],
     terrain: [
       wall('A-top-left', [24, 3, 27.4, 3.3], true), door('A-door', [27.4, 3, 28.8, 3.3]),

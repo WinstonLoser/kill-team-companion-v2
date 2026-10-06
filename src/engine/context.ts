@@ -26,6 +26,8 @@ export interface ShootInput {
   defenderEffects?: Effect[] // 防御方 effect 栈（防御计谋/装备影响攻击方掷骰等）
   dice: DiceSource
   hasCover: boolean
+  obscured?: boolean
+  coverRetainCount?: number
   geometry?: ShootGeometry
   predicate?: PredicateContext
 }

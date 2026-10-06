@@ -5,7 +5,7 @@ import { getAvatarUrl } from '../../utils/avatars'
 
 export const SCALE = 20 // 像素/英寸
 
-export interface LosLine { target: Point; stroke: string; dash: string; opacity: number }
+export interface LosLine { uid: string; target: Point; stroke: string; dash: string; opacity: number; fromHeight?: number; toHeight?: number }
 export interface ObjControl { id: string; ctrl: Side | null; nA?: number; nB?: number }
 
 export function BoardLegend() {
@@ -23,10 +23,15 @@ export function Board({
   terrain,
   tokens,
   lockedTokenUids,
+  showPlatforms = false,
+  shotFocus = false,
+  shotTargetUid = null,
   objectives,
   phase,
   selected,
   rangeRing,
+  movementReach,
+  movementPath,
   controlRing,
   ownCover,
   losLines,
@@ -40,16 +45,22 @@ export function Board({
   onTokenPointerDown,
   onTokenDoubleClick,
   onTokenClick,
+  onTokenHover,
   onObjectiveHover,
 }: {
   mapPack: MapPack | null
   terrain: TerrainFeature[]
   tokens: MatchToken[]
   lockedTokenUids?: Set<string>
+  showPlatforms?: boolean
+  shotFocus?: boolean
+  shotTargetUid?: string | null
   objectives: ObjectiveMarker[]
   phase: string
   selected: string | null
   rangeRing: { center: Point; r: number } | null
+  movementReach?: Point[]
+  movementPath?: { points: Point[]; valid: boolean } | null
   controlRing: { center: Point; r: number } | null
   ownCover: 'open' | 'cover' | 'exposed' | null
   losLines: LosLine[]
@@ -63,6 +74,7 @@ export function Board({
   onTokenPointerDown?: (t: MatchToken) => void
   onTokenDoubleClick?: (t: MatchToken) => void
   onTokenClick?: (t: MatchToken) => void
+  onTokenHover?: (uid: string | null) => void
   onObjectiveHover?: (o: ObjectiveMarker | null) => void
 }) {
   const bounds = mapPack?.bounds ?? { w: 30, h: 20 }
@@ -82,7 +94,7 @@ export function Board({
 
   return (
     <div
-      className={`board ${phase === 'deploy' ? 'deploying' : ''}`}
+      className={`board ${phase === 'deploy' ? 'deploying' : ''} ${showPlatforms ? 'board-elevated' : ''}`}
       style={{ width: W, height: H }}
       onPointerMove={(e) => onPointerMove?.(evtPoint(e))}
       onPointerUp={() => onPointerUp?.()}
@@ -104,10 +116,24 @@ export function Board({
           left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE,
           width: (Math.max(...xs) - Math.min(...xs)) * SCALE,
           height: (Math.max(...ys) - Math.min(...ys)) * SCALE,
-        }}><span aria-label={piece.label} title={piece.label}>{piece.kind === 'ruin' ? piece.id : piece.label}</span></div>
+        }}><span aria-label={piece.label} title={piece.label}>{piece.kind === 'ruin' ? piece.id : piece.label}</span>{showPlatforms && mapPack.platforms?.find(platform => platform.pieceId === piece.id) && <span className="platform-height-label" title="可站立的上层高台">↑{mapPack.platforms.find(platform => platform.pieceId === piece.id)!.height}″</span>}</div>
+      })}
+
+      {showPlatforms && mapPack?.platforms?.map(platform => {
+        const xs = platform.polygon.map(p => p.x), ys = platform.polygon.map(p => p.y)
+        return <div key={platform.id} className="platform-surface" style={{
+          left: Math.min(...xs) * SCALE, top: Math.min(...ys) * SCALE,
+          width: (Math.max(...xs) - Math.min(...xs)) * SCALE,
+          height: (Math.max(...ys) - Math.min(...ys)) * SCALE,
+        }} aria-hidden="true" />
       })}
 
       <svg className="overlay" width={W} height={H}>
+        {movementReach?.map((point, index) => <rect key={index} className="movement-reach-cell" x={(point.x - .25) * SCALE} y={(point.y - .25) * SCALE} width={.5 * SCALE} height={.5 * SCALE} />)}
+        {movementPath && movementPath.points.length > 1 && <polyline
+          className={`movement-path ${movementPath.valid ? 'valid' : 'invalid'}`}
+          points={movementPath.points.map(point => `${point.x * SCALE},${point.y * SCALE}`).join(' ')}
+        />}
         {/* 降落区 */}
         {phase === 'deploy' && mapPack && (
           <>
@@ -147,19 +173,23 @@ export function Board({
         )}
 
         {/* LOS 射线 */}
-        {losLines.map((l, i) => (
-          <line
-            key={i}
-            x1={rangeRing ? rangeRing.center.x * SCALE : 0}
-            y1={rangeRing ? rangeRing.center.y * SCALE : 0}
-            x2={l.target.x * SCALE}
-            y2={l.target.y * SCALE}
-            stroke={l.stroke}
-            strokeWidth={2}
-            strokeDasharray={l.dash}
-            opacity={l.opacity}
-          />
-        ))}
+        {losLines.map((l, i) => {
+          const x1 = rangeRing ? rangeRing.center.x * SCALE : 0
+          const y1 = rangeRing ? rangeRing.center.y * SCALE : 0
+          const x2 = l.target.x * SCALE, y2 = l.target.y * SCALE
+          const delta = (l.toHeight ?? 0) - (l.fromHeight ?? 0)
+          const crossLevel = showPlatforms && shotFocus && Math.abs(delta) > 0.05
+          const focused = !shotTargetUid || l.uid === shotTargetUid
+          return <g key={l.uid ?? i} className={crossLevel ? 'elevation-shot-line' : undefined} opacity={focused ? l.opacity : 0.22}>
+            {crossLevel && <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#101b17" strokeWidth={7} />}
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={l.stroke} strokeWidth={crossLevel ? 3 : 2} strokeDasharray={crossLevel ? '7 4' : l.dash} />
+            {crossLevel && focused && <g transform={`translate(${(x1 + x2) / 2},${(y1 + y2) / 2 - 13})`} className="elevation-shot-marker">
+              <rect x={-24} y={-10} width={48} height={20} rx={10} />
+              <text textAnchor="middle" dominantBaseline="middle">{delta > 0 ? '↗' : '↘'} {Math.abs(delta)}″</text>
+            </g>}
+            {crossLevel && focused && <circle cx={x2} cy={y2} r={12} fill="none" stroke={l.stroke} strokeWidth={2} strokeDasharray="3 3" />}
+          </g>
+        })}
       </svg>
 
       {/* 地形 */}
@@ -231,7 +261,7 @@ export function Board({
           return (
             <button
               key={t.uid}
-              className={`token ${t.side} ${isSel ? 'sel' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''}`}
+              className={`token ${t.side} ${isSel ? 'sel' : ''} ${showPlatforms ? (t.height ?? 0) > 0 ? 'on-upper' : 'on-ground' : ''} ${shotFocus && t.uid === shotTargetUid ? 'shot-target' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''}`}
               style={{
                 left: t.pos.x * SCALE,
                 top: t.pos.y * SCALE,
@@ -244,7 +274,9 @@ export function Board({
               onPointerDown={(e) => { e.stopPropagation(); onTokenPointerDown?.(t) }}
               onDoubleClick={(e) => { e.stopPropagation(); onTokenDoubleClick?.(t) }}
               onClick={(e) => { e.stopPropagation(); onTokenClick?.(t) }}
-              title={`${t.name} · 耐伤 ${t.wounds}${lockedTokenUids?.has(t.uid) ? ' · 已确认部署，回退后可重新放置' : ''}${!t.alive ? '（残废）' : ''}`}
+              onMouseEnter={() => onTokenHover?.(t.uid)}
+              onMouseLeave={() => onTokenHover?.(null)}
+              title={`${t.name} · 高度 ${t.height ?? 0}″ · 耐伤 ${t.wounds}${lockedTokenUids?.has(t.uid) ? ' · 已确认部署，回退后可重新放置' : ''}${!t.alive ? '（残废）' : ''}`}
             >
               {/* 朝向三角 */}
               <svg className="facing" width={r * 2} height={r * 2} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
@@ -266,6 +298,7 @@ export function Board({
                 {t.side.toUpperCase()}
               </span>
               {t.order && <span className={`token-order ${t.order === 'CONCEAL' ? 'conceal' : 'engage'}`} title={t.order === 'CONCEAL' ? '隐匿命令' : '交战命令'}>{t.order === 'CONCEAL' ? '隐' : '交'}</span>}
+              {showPlatforms && <span className="token-height" aria-label={`${(t.height ?? 0) > 0 ? '上层' : '地面'}，高度 ${t.height ?? 0} 英寸`}>{(t.height ?? 0) > 0 ? `上层 ${t.height}″` : '地面 0″'}</span>}
             </button>
           )
         })}

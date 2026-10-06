@@ -26,6 +26,8 @@ export interface MapPack {
   expandedDropZones?: DropZones
   /** 仅用于展示建筑占地；碰撞与视线由 terrain 中的墙体决定。 */
   scenery?: { id: string; label: string; kind: 'stronghold' | 'ruin'; polygon: Polygon }[]
+  /** 可站立的高台表面；高度为距战场地面的实际英寸数。 */
+  platforms?: { id: string; label: string; pieceId: string; height: number; targetingHeight?: number; polygon: Polygon }[]
 }
 
 export type DeploymentMode = 'rules' | 'expanded'
@@ -59,6 +61,9 @@ export function loadMapPack(raw: unknown): MapPack {
   if (m.dropZones.a.length < 3 || m.dropZones.b.length < 3) throw new Error('MapPack: dropZones must have ≥3 vertices')
   for (const t of m.terrain) {
     if (!Array.isArray(t.polygon) || t.polygon.length < 3) throw new Error(`MapPack: terrain '${t.id}' polygon must have ≥3 vertices`)
+  }
+  for (const p of m.platforms ?? []) {
+    if (!(p.height > 0) || (p.targetingHeight !== undefined && !(p.targetingHeight > 0)) || !Array.isArray(p.polygon) || p.polygon.length < 3) throw new Error(`MapPack: invalid platform '${p.id}'`)
   }
   return m
 }
