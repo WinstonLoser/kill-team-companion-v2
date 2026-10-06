@@ -1,26 +1,18 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { sandboxAbilityResolver } from '../../state/AbilityResolver'
-import type { FactionPack, Stratagem, Operative } from '../../rules/types'
-import { loadPack } from '../..'
-import angelsPack from '../../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../../data/packs/legionaries.v1.json'
-import plaguePack from '../../data/packs/plague_marines.v1.json'
-import chaosCultPack from '../../data/packs/chaos_cult.v1.json'
+import type { Stratagem, Operative } from '../../rules/types'
+import type { FactionPack } from '../../rules'
+import { FACTION_REGISTRY } from '../../data/packs'
 
 import { CombatResolver, type CombatAction } from '../components/Combat/CombatResolver'
 import { ActionBar } from '../match/ActionBar'
 import type { ActionType, Order } from '../../state/turnStateMachine'
 
-const TESTLAB_PACKS = [
-  { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack as any) },
-  { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack as any) },
-  { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack as any) },
-  { id: 'chaos_cult', name: '混沌教派', pack: loadPack(chaosCultPack as any) },
-]
+const TESTLAB_PACKS: { id: string; name: string; pack: FactionPack }[] = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, pack: f.pack }))
 
 export function AbilityLab() {
   const [logs, setLogs] = useState<string[]>([...sandboxAbilityResolver.getLogs()])
-  const [refresh, setRefresh] = useState(0)
+  const [, setRefresh] = useState(0)
 
   // Attacker state
   const [atkFactionId, setAtkFactionId] = useState<string>('angels_of_death')
@@ -233,7 +225,7 @@ export function AbilityLab() {
               order={order}
               apl={atkOp?.stats.apl || 2}
               apUsed={apUsed}
-              canDo={{ MOVE: true, DASH: true, FALL_BACK: true, CHARGE: true, SHOOT: true, FIGHT: true, PASS: true }}
+              canDo={{ MOVE: true, DASH: true, FALL_BACK: true, CHARGE: true, SHOOT: true, FIGHT: true }}
               pendingMove={pendingMove}
               pendingAttack={pendingAttack}
               hasLastShot={false}
@@ -307,7 +299,7 @@ export function AbilityLab() {
         <div className="overlay-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', maxWidth: '1000px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column' }}>
             <CombatResolver
-              mode={combatKind}
+              mode={combatKind === 'FIGHT' ? 'MELEE' : 'SHOOT'}
               attackerName={atkOp?.name || 'Attacker'}
               attackerPortrait={{
                 name: atkOp?.name || 'Attacker',

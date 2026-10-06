@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAnimationStore } from '../../state/animationStore'
 import { getAvatarUrl } from '../../utils/avatars'
-import { loadPack } from '../..'
 
 export function AnimationLab({ packs }: { packs: { id: string; name: string; pack: any }[] }) {
   const [packId, setPackId] = useState<string>(packs[0]?.id ?? '')

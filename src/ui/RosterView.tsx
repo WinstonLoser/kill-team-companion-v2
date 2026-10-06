@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { loadPack, evaluateLegality, type FactionPack } from '../'
+import { evaluateLegality, type FactionPack } from '../'
 import { useViewStore } from '../state/viewStore'
 import { useRosterStore, type Side } from '../state/rosterStore'
 import { FactionSelect, type FactionOption } from './roster/FactionSelect'
@@ -7,22 +7,10 @@ import { OperativePicker, computeDefaultRoster } from './roster/OperativePicker'
 import { SubFactionSelect } from './roster/SubFactionSelect'
 import { LegalityPanel } from './roster/LegalityPanel'
 import { FactionOverview } from './roster/FactionOverview'
-import angelsPack from '../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../data/packs/legionaries.v1.json'
-import plaguePack from '../data/packs/plague_marines.v1.json'
-import chaosCultPack from '../data/packs/chaos_cult.v1.json'
+import { FACTION_REGISTRY } from '../data/packs'
 
-// 四阵营全部可用。
-const angelsLoaded: FactionPack = loadPack(angelsPack)
-const legionariesLoaded: FactionPack = loadPack(legionariesPack)
-const plagueLoaded: FactionPack = loadPack(plaguePack)
-const chaosCultLoaded: FactionPack = loadPack(chaosCultPack)
-const FACTIONS: FactionOption[] = [
-  { id: 'angels_of_death', name: '死亡天使', available: true, pack: angelsLoaded },
-  { id: 'legionaries', name: '军团兵', available: true, pack: legionariesLoaded },
-  { id: 'plague_marines', name: '瘟疫战士', available: true, pack: plagueLoaded },
-  { id: 'chaos_cult', name: '混沌教派', available: true, pack: chaosCultLoaded },
-]
+// 阵营列表来自统一注册表（src/data/packs/index.ts），全部可用。
+const FACTIONS: FactionOption[] = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, available: true, pack: f.pack }))
 
 function packFor(factionId: string | null): FactionPack | null {
   if (!factionId) return null
@@ -39,6 +27,7 @@ function legalityOf(side: Side) {
     operativeIds: entry.operativeIds,
     loadout: entry.loadout,
     subFactionSelection: entry.subFactionSelection,
+    perOperativeMarks: entry.perOperativeMarks,
   })
 }
 
@@ -72,7 +61,7 @@ export function RosterView() {
 
   return (
     <section className="roster">
-      <h2>建队（无点数 D-30 · 双方各建一队）</h2>
+      <div className="roster-intro"><div><span className="eyebrow">MISSION PREPARATION / 任务准备</span><h2>选择阵营，组建你的小队。</h2><p className="muted">为双方配置特工与武器。完成右侧检查后，即可进入战场。</p></div><span className="rules-badge">LITE RULES · 4 转折点</span></div>
 
       {/* A/B 双方建队切换 */}
       <div className="row side-toggle">
@@ -85,7 +74,7 @@ export function RosterView() {
               className={`side-btn ${side} ${editing === side ? 'active' : ''}`}
               onClick={() => setEditing(side)}
             >
-              {sideLabel(side)}{e.factionId ? ` · ${e.factionId}` : ' · 未选阵营'}
+              {sideLabel(side)}{e.factionId ? ` · ${FACTIONS.find(f => f.id === e.factionId)?.name ?? e.factionId}` : ' · 未选阵营'}
               <span className={`dot ${r.legal ? 'ok' : 'warn'}`}>{r.legal ? '✓' : '!'}</span>
             </button>
           )

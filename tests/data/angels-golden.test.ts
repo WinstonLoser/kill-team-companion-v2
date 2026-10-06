@@ -13,7 +13,7 @@ function effect(id: string): Effect {
 }
 
 function boltRifle(): Weapon {
-  const w = pack.weapons.find((x) => x.weaponId === 'angels_bolt_rifle')
+  const w = pack.weapons.find((x) => x.weaponId === 'bolt_rifle')
   if (!w) throw new Error('weapon not found')
   return w as Weapon
 }

@@ -1,22 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
-import { RulesQuery, useRulesQuery } from './RulesQuery'
 import { DungeonMasterOverlay } from '../components/DungeonMaster/DungeonMasterOverlay'
-import { useMatchStore, getMatchOperativeData, type MatchToken } from '../../state/matchStore'
+import { useMatchStore, getMatchOperativeData, combatWeapon, type MatchToken } from '../../state/matchStore'
 import type { ActionType } from '../../state/turnStateMachine'
 import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { UnitPanel } from './UnitPanel'
 import { ActionBar } from './ActionBar'
-import { PipelineDrawer } from './PipelineDrawer'
 import { LogPanel } from './LogPanel'
-import { InterceptorCard } from './InterceptorCard'
 import { CombatResolver } from '../components/Combat/CombatResolver'
-import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { OperativeCard } from '../components/OperativeCard/OperativeCard'
 import { TargetSelectionModal } from './TargetSelectionModal'
 import { StratagemPanel } from './StratagemPanel'
-import { packOfOp, packOfFaction, weaponOfPack } from '../../state/matchStore'
+import { packOfFaction } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
 import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPanel'
 import { type RollContext } from '../../dice/source'
@@ -57,7 +53,6 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const pushMsg = useMatchStore((s) => s.pushMsg)
   const setPushMsg = useMatchStore((s) => s.setPushMsg)
   const viewport = useMatchStore((s) => s.viewport)
-  const zoomAt = useMatchStore((s) => s.zoomAt)
   const setInteracting = useMatchStore((s) => s.setInteracting)
   const interacting = useMatchStore((s) => s.interacting) // P2：响应式订阅
   const setViewport = useMatchStore((s) => s.setViewport)
@@ -111,10 +106,13 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     defContext: any;
     defTheme: any
     defDamage?: { normal: number, critical: number }
+    defModifiers?: string[];
+    defRetainedDice?: import("../../dice/source").DiceRoll[];
     defSave: number;
     defWounds: number;
   } | null>(null)
   const [hoverInch, setHoverInch] = useState<string | null>(null)
+  const [previewPosition, setPreviewPosition] = useState<{uid:string;pos:Point}|null>(null)
   const [pendingMove, setPendingMove] = useState<ActionType | null>(null)
   const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
   const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
@@ -123,6 +121,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const [showDungeonMaster, setShowDungeonMaster] = useState(false)
   const [showFullLog, setShowFullLog] = useState<boolean>(false)
 
+  useEffect(() => { setPreviewPosition(null); setPendingMove(null); setMoveOrigin(null); setMovePreview(false) }, [selected])
   const active = tokens.find((t) => t.uid === selected) ?? null
   const selectedOp = active ? turn.operatives[active.uid] : undefined
   const activated = active ? turn.activeOpId === active.uid : false
@@ -131,7 +130,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const promptStr = intercept
     ? `⚠️ ${intercept.title}：${intercept.reasons.join(', ')}`
     : !active
-      ? `轮到 ${turn.activePlayer.toUpperCase()}：点一名己方特工`
+      ? useMatchStore.getState().canEndTP().ok ? '双方全部待机：可以结束转折点' : !tokens.some(t=>t.side===turn.activePlayer && t.alive && turn.operatives[t.uid]?.ready) ? '选择待机特工进行反应，或放弃反应交给对手' : `轮到 ${turn.activePlayer.toUpperCase()}：点一名己方特工`
       : !canSelect
         ? `选中了${active.side === 'a' ? 'A' : 'B'}方特工（仅查看）；请激活 ${turn.activePlayer.toUpperCase()} 方`
         : !activated
@@ -157,10 +156,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     selectedName: active?.name ?? null,
     selectedSide: active?.side ?? null,
     activated,
+    orderLocked: useMatchStore.getState().reactionUid === active?.uid,
     order: selectedOp?.order ?? null,
     apl,
     apUsed: selectedOp?.apUsed ?? 0,
     canDo,
+    actionCosts: Object.fromEntries(Object.keys(canDo).map(a => [a, active ? useMatchStore.getState().actionCostOf(active.uid,a as ActionType) : 1])) as Record<ActionType,number>,
     pendingMove,
     pendingAttack,
     hasLastShot: Boolean(lastShot),
@@ -176,14 +177,15 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     onConfirmMove: confirmMove,
     onCancelMove: cancelMove,
     onPickAttack: (k: 'SHOOT' | 'FIGHT') => {
-      if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
+      setPreviewPosition(null)
       setPendingAttack((prev) => (prev === k ? null : k))
       setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
     },
-    onUndoAction: () => undoAction(),
+    onUndoAction: () => {cancelMove();undoAction()},
     canUndoAction: activationUndo.length > 0,
     onEndActivation: () => { 
       if (active) { 
+        setPreviewPosition(null);
         endActivation(active.uid); 
         pushLog('turn', `${active.name} 结束激活`); 
         setSelected(null); setPendingMove(null); setPendingAttack(null); setMoveOrigin(null); setMovePreview(false) 
@@ -195,6 +197,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
   /** 行动最大移动距离（英寸）。 */
   function actionMaxDist(uid: string, action: ActionType): number {
+    if (useMatchStore.getState().reactionUid === uid) return 2
     const m = effectiveMoveOf(uid)
     if (action === 'DASH') return 3
     if (action === 'CHARGE') return m + 2
@@ -273,8 +276,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     // 获取攻击者的武器和属性，唤出 DiceInterface
     const atkData = getMatchOperativeData(attacker.uid)
     const atkPack = atkData?.pack
-    const weapon = atkData?.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
-    if (!weapon) { setIntercept({ title: '无武器', reasons: [`阵营包缺 ${kind} 武器`] }); return }
+    const weapon = combatWeapon(attacker.uid, kind === 'SHOOT' ? 'RANGED' : 'MELEE')
+    if (!weapon) { undoAction(); setIntercept({ title: '无武器', reasons: [`阵营包缺 ${kind} 武器`] }); return }
 
     const lethalRule = weapon.profile.weaponRules?.find((r: string) => r.startsWith('Lethal '))
     const critTarget = lethalRule ? parseInt(lethalRule.replace('Lethal ', '')) || 6 : 6;
@@ -282,10 +285,10 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
     const defData = getMatchOperativeData(target.uid)
     const defPack = defData?.pack
-    const defWeapon = defData?.weapons.find(w => w.kind === (kind === 'SHOOT' ? 'RANGED' : 'MELEE'))
+    const defWeapon = combatWeapon(target.uid, 'MELEE')
 
     // 防御方数据准备 (近战时使用其武器；射击时防御方使用 save 值作为目标，防守骰数固定3或根据规则)
-    const defCount = kind === 'SHOOT' ? 3 : (defWeapon?.profile.attacks ?? 0)
+    const defCount = kind === 'SHOOT' ? Math.max(0,3 - Number(weapon.profile.weaponRules.find(r => /^Piercing \d/i.test(r))?.match(/\d+/)?.[0] ?? 0)) : (defWeapon?.profile.attacks ?? 0)
     let defContext: any = { hitTarget: 3, critTarget: 6 }
     if (kind === 'MELEE' && defWeapon) {
       const defLethal = defWeapon.profile.weaponRules?.find((r: string) => r.startsWith('Lethal '))
@@ -316,7 +319,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       }
       
       const retainsCover = (coverType === 'HEAVY') || (coverType === 'LIGHT' && !isVantage)
-      if (retainsCover) {
+      if (retainsCover && !weapon.profile.weaponRules.some(r => /^saturate$/i.test(r))) {
         defRetainedDice.push({ nat: defContext.hitTarget, grade: 'NORMAL', isRetained: true })
       }
 
@@ -356,7 +359,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       const dx = p.x - moveOrigin.x, dy = p.y - moveOrigin.y
       const dist = Math.hypot(dx, dy)
       const cl = dist > max ? { x: moveOrigin.x + (dx / dist) * max, y: moveOrigin.y + (dy / dist) * max } : p
-      moveToken(dragging, clampPos(cl))
+      setPreviewPosition({uid:dragging,pos:clampPos(cl)})
       setHoverInch(`${pendingMove === 'DASH' ? '冲刺' : pendingMove === 'CHARGE' ? '冲锋' : pendingMove === 'FALL_BACK' ? '后撤' : '转移'} ${Math.min(dist, max).toFixed(1)}/${max}"`)
     }
   }
@@ -364,7 +367,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (dragging) {
       const t = tokens.find((x) => x.uid === dragging)
       if (t && moveOrigin && pendingMove) {
-        const d = Math.hypot(t.pos.x - moveOrigin.x, t.pos.y - moveOrigin.y)
+        const d = previewPosition ? Math.hypot(previewPosition.pos.x - moveOrigin.x, previewPosition.pos.y - moveOrigin.y) : 0
         if (d > 0.1) setMovePreview(true) // 待确认：不立即消费 AP，可再拖
       }
       setDragging(null)
@@ -374,14 +377,26 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   // 确认移动：校验落点 → 消费 AP；失败回退到起点
   function confirmMove() {
     if (!active || !pendingMove || !moveOrigin) return
-    const t = active
+    const t = previewPosition?.uid === active.uid ? {...active,pos:previewPosition.pos} : active
     const isMapless = useMatchStore.getState().maplessMode
     
     if (!isMapless) {
+      const distance = Math.hypot(t.pos.x - moveOrigin.x, t.pos.y - moveOrigin.y)
+      const steps = Math.max(1,Math.ceil(distance / 0.1))
+      for(let i=1;i<=steps;i++) {
+        const p={x:moveOrigin.x+(t.pos.x-moveOrigin.x)*i/steps,y:moveOrigin.y+(t.pos.y-moveOrigin.y)*i/steps}
+        if(mapPack && (p.x < t.baseRadius || p.y < t.baseRadius || p.x > mapPack.bounds.w-t.baseRadius || p.y > mapPack.bounds.h-t.baseRadius || circleHitsBlockingTerrain(p,t.baseRadius,mapPack.terrain))) {
+          setIntercept({title:'移动路径不可通行',reasons:['请沿无墙体的直线路径移动，并保持底座完全位于战场内']});return
+        }
+        if(pendingMove !== 'CHARGE' && pendingMove !== 'FALL_BACK' && tokens.some(e=>e.alive && e.placed && e.side!==t.side && Math.hypot(e.pos.x-p.x,e.pos.y-p.y)<=e.baseRadius+t.baseRadius+1)) {
+          setIntercept({title:'移动进入敌方控制范围',reasons:['转移与冲刺不能穿过敌方控制范围；接敌请使用冲锋']});return
+        }
+      }
       if (pendingMove === 'CHARGE') {
         const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
         if (!inEng) { setIntercept({ title: '冲锋非法', reasons: ['冲锋须结束在敌方 1" 控制范围内'] }); return }
       }
+      if (pendingMove === 'FALL_BACK' && tokens.some(e => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x-t.pos.x,e.pos.y-t.pos.y)<=e.baseRadius+t.baseRadius+1)) {setIntercept({title:'后撤尚未脱离',reasons:['后撤必须结束在所有敌方控制范围以外']});return}
       const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
       const wall = mapPack ? circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain) : false
       if (overlap || wall) {
@@ -390,12 +405,15 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       }
     }
 
+    const destination = { ...t.pos }
+    // Validate action and capture undo at its committed origin, not the drag preview.
     const r = doAction(t.uid, pendingMove)
+    if (r.ok) {moveToken(t.uid, destination);setPreviewPosition(null)}
     if (!r.ok) { setIntercept({ title: '行动不可用', reasons: [r.reason ?? '未知'] }); return }
     setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
   }
   function cancelMove() {
-    if (active && moveOrigin) moveToken(active.uid, moveOrigin)
+    setPreviewPosition(null)
     setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
   }
   /** 选移动行动：切换行动时先把上一次预览回退到真实起点，避免累计距离。 */
@@ -403,15 +421,16 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     setPendingAttack(null)
     const truePos = movePreview && moveOrigin ? moveOrigin : active?.pos ?? null
     if (pendingMove === a) { // 再点当前行动 → 取消（回退预览）
-      if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin)
+      setPreviewPosition(null)
       setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
       return
     }
-    if (movePreview && active && moveOrigin) moveToken(active.uid, moveOrigin) // 切换：回退旧预览
+    setPreviewPosition(null) // 切换：回退旧预览
     const isMapless = useMatchStore.getState().maplessMode
-    setMoveOrigin(truePos); setMovePreview(isMapless); setPendingMove(a)
+    setMoveOrigin(truePos); setMovePreview(Boolean(isMapless)); setPendingMove(a)
   }
 
+  if (!mapPack && !maplessMode) return <div className="empty-state">请先在对局页面选择战场。</div>
   return (
     <div className="play-view">
       <StatusStrip prompt={promptStr} isError={!!intercept} onConfirm={confirmCasualties} onQueryRule={onQueryRule} onEndTP={() => scoreAndEndTP()} />
@@ -484,6 +503,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <StratagemPanel />
+                {active && <WeaponPicker uid={active.uid} />}
               </div>
             </div>
           </div>
@@ -513,7 +533,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                     <Board
                       mapPack={mapPack!}
                       terrain={mapPack!.terrain}
-                      tokens={tokens}
+                      tokens={tokens.map(t => previewPosition?.uid === t.uid ? {...t,pos:previewPosition.pos} : t)}
                       objectives={mapPack!.objectives}
                       phase="play"
                       selected={selected}
@@ -676,7 +696,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                     operative={operative} 
                     pack={{ ...opPack, weapons }} // Pass the overridden weapons array via pack to the card
                     selectedWeaponIds={opToken.weapons || []} 
-                    factionRuleSelections={{}} 
+                    factionRuleSelections={Object.fromEntries((opPack.factionRules ?? []).map(rule => [rule.ruleId, selectedRuleOptions(opToken.selections ?? [])]))}
                     avatarUrl={avatarUrl}
                   />
                 </div>
@@ -721,13 +741,13 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       {maplessMode && pendingAttack && active && (
         <TargetSelectionModal
           attackerUid={active.uid}
-          kind={pendingAttack}
+          kind={pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT'}
           onClose={() => setPendingAttack(null)}
           onConfirm={(targetUid) => {
             const t = tokens.find((x) => x.uid === targetUid)
             if (t) {
               setPendingAttack(null)
-              runKind(active, t, pendingAttack)
+              runKind(active, t, pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT')
             }
           }}
         />
@@ -883,4 +903,20 @@ function FindingStrip({
       })}
     </div>
   )
+}
+
+function WeaponPicker({ uid }: { uid: string }) {
+  const data = getMatchOperativeData(uid)
+  const setWeapon = useMatchStore(s => s.setCombatWeapon)
+  const pending = useMatchStore(s => s.lastShot)
+  if (!data) return null
+  return <div className="weapon-picker"><span className="muted">{data.token.name} · 本次武器</span>{(['RANGED','MELEE'] as const).map(kind => {
+    const list = data.weapons.filter(w => w.kind === kind)
+    return list.length ? <label key={kind}>{kind === 'RANGED' ? '射击' : '近战'}<select aria-label={kind === 'RANGED' ? '射击武器' : '近战武器'} disabled={!!pending} value={combatWeapon(uid, kind)?.weaponId} onChange={e => setWeapon(uid,kind,e.target.value)}>{list.map(w => <option key={w.weaponId} value={w.weaponId}>{w.name} · {w.profile.attacks}骰 / {w.profile.hit}+</option>)}</select></label> : null
+  })}</div>
+}
+
+function selectedRuleOptions(ids: string[]) {
+  const aliases: Record<string,string> = {chapterTactic_relentless:'tactic_aggressive',chapterTactic_duelist:'tactic_dueller',chapterTactic_resolute:'tactic_resolute',chapterTactic_concealed:'tactic_stealthy',chapterTactic_mobile:'tactic_mobile',chapterTactic_stalwart:'tactic_hardy',chapterTactic_sharpshooter:'tactic_sharpshooter',chapterTactic_siege:'tactic_siege_specialist'}
+  return ids.map(id => aliases[id] ?? id)
 }

@@ -28,7 +28,7 @@ interface AnimationState {
 
 let nextId = 1
 
-export const useAnimationStore = create<AnimationState>((set, get) => ({
+export const useAnimationStore = create<AnimationState>((set) => ({
   queue: [],
   activeAnimation: null,
 

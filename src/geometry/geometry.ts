@@ -322,7 +322,7 @@ export function validateTarget(
     if (!rangeF.finalValue) missing.push('超出射程')
     if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
     // P13：目标隐匿命令不可射击
-    if (options?.targetOrder === 'CONCEALED') missing.push('目标隐匿命令（不可射击）')
+    if (options?.targetOrder === 'CONCEALED' && cover.finalValue) missing.push('目标隐匿且有掩护（不可射击）')
     // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
     const friendlies = options?.friendlyPositions ?? []
     const friendlyEngaged = friendlies.some((fp) => {

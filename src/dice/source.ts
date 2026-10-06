@@ -15,6 +15,8 @@ export interface RollContext {
 }
 
 export interface DiceSource {
+  /** Dice already retained or rerolled by the interactive collector. */
+  finalized?: boolean
   roll(n: number, context?: RollContext): DiceRoll[]
 }
 

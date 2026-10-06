@@ -112,4 +112,46 @@ describe('packLoader', () => {
     }
     expect(() => loadPack(bad)).toThrow(PackValidationError)
   })
+
+  // ===== 阶段A护栏：ID 唯一性 + 引用完整性 =====
+
+  const weapon = { weaponId: 'w1', name: 'Test Gun', kind: 'RANGED', profile: { attacks: 4, hit: 3, normalDamage: 3, criticalDamage: 4, range: 8, weaponRules: [] }, keywords: [] }
+  const operative = {
+    operativeId: 'op1', name: 'Tester', keywords: ['TEST'],
+    stats: { apl: 3, move: 6, save: 3, wounds: 10 },
+    base: { diameterMm: 32 },
+    loadouts: [{ description: 'Standard', options: [['w1']] }],
+  }
+
+  it('重复 weaponId 拒绝（如混沌教派旧版同名 autopistol）', () => {
+    const bad = { ...corePack, operatives: [operative], weapons: [weapon, { ...weapon, profile: { ...weapon.profile, attacks: 3 } }] }
+    expect(() => loadPack(bad)).toThrow(PackValidationError)
+  })
+
+  it('重复 operativeId / effectId / stratagem id / wargear id 拒绝', () => {
+    expect(() => loadPack({ ...corePack, operatives: [operative, { ...operative }] })).toThrow(PackValidationError)
+    expect(() => loadPack({ ...corePack, effects: [validEffect, { ...validEffect }] })).toThrow(PackValidationError)
+    expect(() => loadPack({ ...corePack, stratagems: [{ id: 's1', name: 'S', cp: 1, useLimit: {}, phase: 'STRATEGY' }, { id: 's1', name: 'S2', cp: 1, useLimit: {}, phase: 'STRATEGY' }] })).toThrow(PackValidationError)
+    expect(() => loadPack({ ...corePack, wargear: [{ id: 'g1', name: 'G' }, { id: 'g1', name: 'G2' }] })).toThrow(PackValidationError)
+  })
+
+  it('loadouts 武器引用悬空拒绝', () => {
+    const bad = { ...corePack, operatives: [operative], weapons: [] }
+    expect(() => loadPack(bad)).toThrow(PackValidationError)
+  })
+
+  it('abilityRefs / factionRuleRefs 悬空拒绝', () => {
+    const withAbilityRef = { ...corePack, operatives: [{ ...operative, abilityRefs: ['nope'] }], weapons: [weapon] }
+    expect(() => loadPack(withAbilityRef)).toThrow(PackValidationError)
+    const withRuleRef = { ...corePack, operatives: [{ ...operative, factionRuleRefs: ['nope'] }], weapons: [weapon] }
+    expect(() => loadPack(withRuleRef)).toThrow(PackValidationError)
+  })
+
+  it('subFactionSelector 选项悬空拒绝（须指向 effect 或 factionRule）', () => {
+    const bad = {
+      ...corePack,
+      faction: { ...corePack.faction, subFactionSelector: { id: 'sel', label: '选择', options: ['ghost'], max: 1 } },
+    }
+    expect(() => loadPack(bad)).toThrow(PackValidationError)
+  })
 })

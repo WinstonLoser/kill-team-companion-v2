@@ -21,6 +21,11 @@ export interface RosterLegalityInput {
   /** 子阵营选择器已选项 id 列表（战团战术/印记） */
   subFactionSelection: string[]
   /**
+   * perOperative 选择器的逐特工选择（键为 `${opId}#${instance}`，值为选项 id）。
+   * 校验 requiredPerEligible / uniqueAcrossTeam / eligibleKeywords 时必须提供。
+   */
+  perOperativeMarks?: Record<string, string>
+  /**
    * 合成武器 keyword 覆盖（测试/扩展用）：weaponId → keywords。
    * 未列出则回退到 pack.weapons 里的 keywords。UI 正常路径留空。
    */
@@ -70,12 +75,13 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
   const leaderFrom = constraints?.leaderFrom
   if (leaderFrom && leaderFrom.length > 0) {
     const leadSet = new Set(leaderFrom)
-    const hasLeader = operativeIds.some((id) => leadSet.has(id))
+    const leaderCount = operativeIds.filter((id) => leadSet.has(id)).length
+    const hasLeader = leaderCount === 1
     checks.push({
       key: 'leader',
       label: '队长',
       status: hasLeader ? 'ok' : 'warn',
-      detail: hasLeader ? `有队长（${leaderFrom.join('/')}）` : `需 ≥1 名队长（${leaderFrom.join('/')}）`,
+      detail: hasLeader ? '已选择 1 名队长' : `必须恰好 1 名队长，当前 ${leaderCount} 名`,
     })
   }
 
@@ -94,16 +100,118 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
     })
   }
 
+  // ===== 按 operativeId 的数量区间（固定组成，如混沌教派 14 人结构） =====
+  const typeLimits = constraints?.operativeTypeLimits
+  if (typeLimits && Object.keys(typeLimits).length > 0) {
+    const counts2 = new Map<string, number>()
+    for (const id of operativeIds) counts2.set(id, (counts2.get(id) ?? 0) + 1)
+    const bad: string[] = []
+    for (const [id, lim] of Object.entries(typeLimits)) {
+      const n = counts2.get(id) ?? 0
+      if (lim.min !== undefined && n < lim.min) bad.push(`${id}: ${n}<${lim.min}`)
+      else if (lim.max !== undefined && n > lim.max) bad.push(`${id}: ${n}>${lim.max}`)
+    }
+    checks.push({
+      key: 'type-limits',
+      label: '固定组成',
+      status: bad.length === 0 ? 'ok' : 'warn',
+      detail: bad.length === 0 ? '符合各类型数量要求' : `不符：${bad.join('; ')}`,
+    })
+  }
+
+  // ===== 初始建队不可选（变异者/受难者仅由对局中变异产生） =====
+  const ineligible = constraints?.initialRosterIneligible
+  if (ineligible && ineligible.length > 0) {
+    const badSet = new Set(ineligible)
+    const picked = operativeIds.filter((id) => badSet.has(id))
+    checks.push({
+      key: 'initial-ineligible',
+      label: '初始可选',
+      status: picked.length === 0 ? 'ok' : 'warn',
+      detail: picked.length === 0 ? `初始不可选（${ineligible.join('/')}）未入队` : `初始建队含不可选特工：${picked.join(', ')}`,
+    })
+  }
+
+  // ===== 点数制建队（次元密会：恰好 5 点；奸角兽 0.5） =====
+  const points = constraints?.selectionPoints
+  if (points) {
+    const costs = constraints?.operativeCosts ?? {}
+    const total = operativeIds.reduce((sum, id) => sum + (costs[id] ?? 1), 0)
+    let pStatus: RosterLegalityStatus = 'ok'
+    const bad: string[] = []
+    if (points.exact !== undefined && total !== points.exact) bad.push(`须恰好 ${points.exact}`)
+    if (points.min !== undefined && total < points.min) bad.push(`至少 ${points.min}`)
+    if (points.max !== undefined && total > points.max) bad.push(`至多 ${points.max}`)
+    if (bad.length > 0) pStatus = 'warn'
+    checks.push({
+      key: 'selection-points',
+      label: '选择点数',
+      status: pStatus,
+      detail: bad.length === 0 ? `${total}/${points.exact ?? points.max ?? points.min} 点` : `${total} 点（${bad.join('、')}）`,
+    })
+  }
+
+  // ===== 关键词最低数量（如至少 1 名 SORCERER） =====
+  const minByKw = constraints?.minimumByKeyword
+  if (minByKw && Object.keys(minByKw).length > 0) {
+    const opById = new Map(pack.operatives.map((o) => [o.operativeId, o]))
+    const kwBad: string[] = []
+    for (const [kw, need] of Object.entries(minByKw)) {
+      const n = operativeIds.filter((id) => opById.get(id)?.keywords.includes(kw)).length
+      if (n < need) kwBad.push(`${kw}: ${n}/${need}`)
+    }
+    checks.push({
+      key: 'keyword-min',
+      label: '关键词下限',
+      status: kwBad.length === 0 ? 'ok' : 'warn',
+      detail: kwBad.length === 0 ? '满足关键词数量要求' : `不足：${kwBad.join('; ')}`,
+    })
+  }
+
   // ===== 子阵营选择 =====
   const selector = pack.faction.subFactionSelector
   if (selector) {
     if (selector.scope === 'perOperative') {
-      // 每特工各选（军团兵混沌印记）：不校验整队 subFactionSelection，默认印记兜底，在特工列表逐名选。
+      // 每特工各选（军团兵混沌印记 / 次元密会奸奇恩惠）：按 selector 元数据通用校验，
+      // 不再依赖 selector.id === 'markOfChaos' 之类的阵营特判。
+      const required = selector.requiredPerEligible ?? 0
+      const eligibleKws = selector.eligibleKeywords
+      const opById = new Map(pack.operatives.map((o) => [o.operativeId, o]))
+      const marks = input.perOperativeMarks ?? {}
+      const validOptions = new Set(selector.options)
+      const problems: string[] = []
+      const taken = new Map<string, number>()
+      operativeIds.forEach((id, position) => {
+        const op = opById.get(id)
+        if (!op) return
+        const eligible = !eligibleKws || eligibleKws.length === 0 || op.keywords.some((k) => eligibleKws.includes(k))
+        const instance = operativeIds.slice(0, position).filter((x) => x === id).length
+        const key = `${id}#${instance}`
+        const mark = marks[key]
+        if (pack.faction.id === 'legionaries' && id === 'balefire_acolyte' && mark === 'mark_khorne') problems.push('邪火使徒不能选择恐虐印记')
+        if (eligible) {
+          if (required > 0 && (!mark || !validOptions.has(mark))) {
+            problems.push(`${op.name}需选 ${required} 项`)
+          }
+        } else if (mark) {
+          problems.push(`${op.name}不符合选择资格`)
+        }
+        if (mark && validOptions.has(mark)) taken.set(mark, (taken.get(mark) ?? 0) + 1)
+      })
+      if (selector.uniqueAcrossTeam) {
+        for (const [opt, n] of taken) if (n > 1) problems.push(`${opt} 被选 ${n} 次`)
+      }
+      const eligibleCount = operativeIds.filter((id) => {
+        const op = opById.get(id)
+        return op && (!eligibleKws || eligibleKws.length === 0 || op.keywords.some((k) => eligibleKws.includes(k)))
+      }).length
       checks.push({
         key: 'sub-faction',
         label: selector.label.split('（')[0] ?? selector.label,
-        status: 'ok',
-        detail: `每特工各选（默认 ${selector.default ?? '—'}，见特工列表）`,
+        status: problems.length === 0 ? 'ok' : 'warn',
+        detail: problems.length === 0
+          ? `${eligibleCount} 名合格特工已配置（${selector.label}）`
+          : problems.slice(0, 4).join('；'),
       })
     } else {
       // 整队选 max 项（死亡天使战团战术）：选满 max 且选项合法
@@ -111,7 +219,7 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
       const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
       let sfStatus: RosterLegalityStatus = 'ok'
       let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
-      if (subFactionSelection.length !== selector.max) {
+      if (subFactionSelection.length !== selector.max || new Set(subFactionSelection).size !== selector.max) {
         sfStatus = 'warn'
         sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
       } else if (invalid.length > 0) {

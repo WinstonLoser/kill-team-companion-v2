@@ -1,87 +1,28 @@
 import { useState } from 'react'
-import { useMatchStore, packOfOp, packOfFaction, type Side } from '../../state/matchStore'
-import { loadPack, type FactionPack, type Stratagem } from '../..'
-import { useRosterStore } from '../../state/rosterStore'
-// 计谋面板：显示当前激活方的阵营计谋（战略/交战），点击激活/取消。
-// 激活后 effectId 进 activeStratagems → buildEffectStack 自动包含。
+import { useMatchStore, packOfFaction, type Side } from '../../state/matchStore'
 
 export function StratagemPanel() {
-  const turn = useMatchStore((s) => s.turn)
-  const activeStratagems = useMatchStore((s) => s.activeStratagems)
-  const toggleStratagem = useMatchStore((s) => s.toggleStratagem)
-  const tokens = useMatchStore((s) => s.tokens)
+  const state = useMatchStore()
   const [expanded, setExpanded] = useState(false)
-
-  const side: Side = turn.activePlayer
-  const active = activeStratagems[side]
-
-  // 从 token 解析阵营包
-  const sampleOp = tokens.find((t) => t.side === side && t.alive)
-  if (!sampleOp) return null
-  const roster = side === 'a' ? useRosterStore.getState().rosterA : useRosterStore.getState().rosterB
-  const pack = roster.factionId ? packOfFaction(roster.factionId) : packOfOp(sampleOp.opId)
-  const stratagems = pack.stratagems ?? []
-
-  // 映射 stratagem id → effectIds
-  function effectIdsOf(stratId: string): string[] {
-    return pack.effects.filter((e) => e.source === 'stratagem:' + stratId).map((e) => e.effectId)
-  }
-
-  function isStratActive(stratId: string): boolean {
-    return effectIdsOf(stratId).every((eid) => active.includes(eid))
-  }
-
-  function toggle(strat: Stratagem) {
-    const eids = effectIdsOf(strat.id)
-    const isActive = isStratActive(strat.id)
-    eids.forEach((eid) => {
-      if (isActive === active.includes(eid)) {
-        toggleStratagem(side, eid)
-      }
-    })
-  }
-
-  const strategyStrats = stratagems.filter((s) => s.phase === 'STRATEGY')
-  const engagementStrats = stratagems.filter((s) => s.phase === 'ENGAGEMENT')
-
-  function renderGroup(title: string, list: Stratagem[]) {
-    if (list.length === 0) return null
-    return (
-      <>
-        <div className="strat-group-title">{title}</div>
-        {list.map((s) => {
-          const on = isStratActive(s.id)
-          return (
-            <button
-              key={s.id}
-              className={`strat-card ${on ? 'on' : ''}`}
-              onClick={() => toggle(s)}
-              title={`${s.name}（${s.phase === 'STRATEGY' ? '战略' : '交战'}·CP${s.cp}）`}
-            >
-              <span className="strat-name">{s.name}</span>
-              <span className={`strat-phase ${s.phase === 'STRATEGY' ? 'strat' : 'eng'}`}>
-                {s.phase === 'STRATEGY' ? '战略' : '交战'}
-              </span>
-              <span className="strat-cp">CP{s.cp}</span>
-              <span className={`strat-dot ${on ? 'on' : ''}`}>{on ? '✓' : '○'}</span>
-            </button>
-          )
-        })}
-      </>
-    )
-  }
-
-  return (
-    <div className="stratagem-panel">
-      <button className="strat-toggle-btn" onClick={() => setExpanded(!expanded)}>
-        计谋（{active.length} 激活）{expanded ? '▾' : '▸'}
-      </button>
-      {expanded && (
-        <div className="strat-list">
-          {renderGroup('战略计谋', strategyStrats)}
-          {renderGroup('交战计谋', engagementStrats)}
-        </div>
-      )}
-    </div>
-  )
+  const [side, setSide] = useState<Side>(state.turn.activePlayer)
+  const [message, setMessage] = useState('')
+  const token = state.tokens.find(t => t.side === side)
+  if (!token) return null
+  const ploys = packOfFaction(token.factionId).stratagems?.filter(p => p.phase === 'ENGAGEMENT') ?? []
+  return <div className="stratagem-panel">
+    <button className="strat-toggle-btn" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>交战计谋 · 查看与使用 {expanded ? '▾' : '▸'}</button>
+    {expanded && <div className="strat-list">
+      <div className="row">{(['a','b'] as const).map(s => <button key={s} className={s === side ? 'active' : ''} onClick={() => {setSide(s);setMessage('')}}>{s.toUpperCase()} 方 · {state.turn.cp[s]} CP</button>)}</div>
+      <p className="muted">先核对卡面的触发时机与对象。使用后扣除 CP；特殊效果按规则说明及裁判面板处理。</p>
+      {message && <p role="status">{message}</p>}
+      {ploys.map(p => {
+        const used = (state.usedPloys[`${side}:${p.id}:tp${state.turn.turningPoint}`] ?? 0) >= (p.useLimit.perTurningPoint ?? 1)
+        const spent = (state.usedPloys[`${side}:${p.id}:battle`] ?? 0) >= (p.useLimit.perBattle ?? Infinity)
+        return <button key={p.id} className={`strat-card ${used ? 'on' : ''}`} disabled={used || spent || state.turn.cp[side] < p.cp} onClick={() => {
+          const result = state.usePloy(side,p.id)
+          setMessage(result.ok ? `已使用 ${p.name}，支付 ${p.cp} CP。请完成卡面效果。` : result.reason ?? '不可用')
+        }}><span className="strat-name">{p.name}<small className="ploy-description">{p.description}</small></span><span className="strat-cp">{used || spent ? '已用' : `${p.cp} CP`}</span></button>
+      })}
+    </div>}
+  </div>
 }

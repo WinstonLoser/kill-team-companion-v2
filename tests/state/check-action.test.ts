@@ -8,8 +8,8 @@ import type { Effect } from '../../src/rules'
 beforeEach(() => {
   useMatchStore.getState().reset()
   useRosterStore.setState({
-    rosterA: { factionId: 'angels_of_death', operativeIds: ['angels_intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
-    rosterB: { factionId: 'angels_of_death', operativeIds: ['angels_intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
+    rosterA: { factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
+    rosterB: { factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
     editing: 'a',
   })
   useMatchStore.setState({
@@ -19,7 +19,7 @@ beforeEach(() => {
       dropZones: { a: [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 6, y: 20 }, { x: 0, y: 20 }], b: [{ x: 24, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 20 }, { x: 24, y: 20 }] },
     },
     tokens: [
-      { factionId: "angels_of_death", weapons: [], uid: 'a1', side: 'a', opId: 'angels_tactical', name: 'A1', pos: { x: 2, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true, order: 'CONCEAL' },
+      { factionId: "angels_of_death", weapons: [], uid: 'a1', side: 'a', opId: 'intercessor_warrior', name: 'A1', pos: { x: 2, y: 5 }, facing: 0, baseRadius: 0.63, wounds: 13, maxWounds: 13, markers: [], alive: true, placed: true, order: 'CONCEAL' },
     ],
   })
 })
@@ -49,7 +49,7 @@ describe('effectiveApl / effectiveMove / effectiveActionAp 纯函数', () => {
 })
 
 describe('matchStore effectiveAplOf / effectiveMoveOf 接线', () => {
-  it('angels_tactical APL 3, move 6', () => {
+  it('intercessor_warrior APL 3, move 6', () => {
     const s = useMatchStore.getState()
     expect(s.effectiveAplOf('a1')).toBe(3)
     expect(s.effectiveMoveOf('a1')).toBe(6)
@@ -65,6 +65,9 @@ describe('matchStore checkAction', () => {
 
   it('激活后 MOVE → ok', () => {
     const s = useMatchStore.getState()
+    s.enterStrategy()
+    s.confirmInitiative('a')
+    s.strategyAct('a','pass'); s.strategyAct('b','pass')
     s.activate('a1', 'a')
     const r = s.checkAction('a1', 'MOVE')
     expect(r.ok).toBe(true)

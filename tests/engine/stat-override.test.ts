@@ -5,7 +5,7 @@ import { effectiveActionAp } from '../../src/state/turnStateMachine'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
 
 const pack = loadPack(angels)
-const boltRifle = pack.weapons.find((w) => w.weaponId === 'angels_bolt_rifle')!
+const boltRifle = pack.weapons.find((w) => w.weaponId === 'bolt_rifle')!
 
 const saveOverride: Effect = {
   effectId: 'test_warding',

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useMatchStore, getMatchOperativeData, packOfFaction, type MatchToken } from '../../../state/matchStore'
+import { useState, useEffect } from 'react'
+import { useMatchStore, getMatchOperativeData, packOfFaction } from '../../../state/matchStore'
 import { type OperativeStats, type WeaponProfile } from '../../../rules/types'
 import { t } from '../../../utils/i18n'
 import { useLocaleStore } from '../../../state/localeStore'

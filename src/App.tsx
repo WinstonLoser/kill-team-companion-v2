@@ -1,28 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useViewStore, type View } from './state/viewStore'
 import { useRosterStore } from './state/rosterStore'
 import { useMatchStore } from './state/matchStore'
 import { useLocaleStore } from './state/localeStore'
-import { loadPack } from '.'
 import { MatchView } from './ui/MatchView'
 import { SimpleMatchView } from './ui/SimpleMatchView'
 import { RosterView } from './ui/RosterView'
-import { TestLab } from './ui/test-lab/TestLab'
-import { AbilityLab } from './ui/test-lab/AbilityLab'
-import { AnimationLab } from './ui/test-lab/AnimationLab'
+const TestLab = lazy(() => import('./ui/test-lab/TestLab').then(m => ({ default: m.TestLab })))
+const AbilityLab = lazy(() => import('./ui/test-lab/AbilityLab').then(m => ({ default: m.AbilityLab })))
+const AnimationLab = lazy(() => import('./ui/test-lab/AnimationLab').then(m => ({ default: m.AnimationLab })))
 import { RulesSearch } from './ui/match/RulesQuery'
 import { AnimationEngine } from './ui/components/Animation/AnimationEngine'
-import angelsPack from './data/packs/angels_of_death.v1.json'
-import legionariesPack from './data/packs/legionaries.v1.json'
-import plaguePack from './data/packs/plague_marines.v1.json'
-import chaosCultPack from './data/packs/chaos_cult.v1.json'
+import { FACTION_REGISTRY } from './data/packs'
 
-const TESTLAB_PACKS = [
-  { id: 'angels_of_death', name: '死亡天使', pack: loadPack(angelsPack as any) },
-  { id: 'legionaries', name: '军团兵', pack: loadPack(legionariesPack as any) },
-  { id: 'plague_marines', name: '瘟疫战士', pack: loadPack(plaguePack as any) },
-  { id: 'chaos_cult', name: '混沌教派', pack: loadPack(chaosCultPack as any) },
-]
+const TESTLAB_PACKS = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, pack: f.pack }))
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'roster', label: '建队' },
@@ -40,11 +31,22 @@ export function App() {
   const locale = useLocaleStore((s) => s.locale)
   const setLocale = useLocaleStore((s) => s.setLocale)
 
+  const [showTools, setShowTools] = useState(false)
+  const phase = useMatchStore(s => s.phase)
+  const mapless = useMatchStore(s => s.maplessMode)
+  const mainRef = useRef<HTMLElement>(null)
+  useEffect(() => {mainRef.current?.scrollTo({top:0})},[currentView,phase])
+  const steps = ['组建小队', '战场与部署', '战略准备', '交替行动', '战斗结果']
+  const step = currentView === 'roster' ? 0 : phase === 'map-select' || phase === 'deploy' ? 1 : phase === 'strategy' ? 2 : phase === 'ended' ? 4 : 3
+  function navigate(view: View) {
+    if ((view === 'match' || view === 'simpleMatch') && phase !== 'map-select') setView(mapless ? 'simpleMatch' : 'match')
+    else setView(view)
+  }
   return (
     <div className="app">
       <AnimationEngine />
       <header className="topbar">
-        <h1>Kill Team 战棋助手</h1>
+        <h1><span className="brand-mark">KT</span><span>战棋助手<small>KILL TEAM COMPANION</small></span></h1>
         <div style={{ marginLeft: '1rem' }}>
           <button 
             onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
@@ -55,12 +57,13 @@ export function App() {
           </button>
         </div>
         <nav>
-          {VIEWS.map((v) => (
-            <button key={v.key} className={currentView === v.key ? 'active' : ''} onClick={() => setView(v.key)}>
+          {VIEWS.filter(v => ['roster','match','simpleMatch','rules'].includes(v.key)).map((v) => (
+            <button key={v.key} className={currentView === v.key ? 'active' : ''} onClick={() => navigate(v.key)}>
               {v.label}
             </button>
           ))}
         </nav>
+        <div className="tools-menu"><button aria-expanded={showTools} onClick={() => setShowTools(!showTools)}>更多工具 ▾</button>{showTools && <div className="tools-popover">{VIEWS.filter(v => v.key.endsWith('Lab')).map(v => <button key={v.key} onClick={() => {setView(v.key);setShowTools(false)}}>{v.label}</button>)}</div>}</div>
         <button
           className="reset-btn"
           onClick={() => {
@@ -75,7 +78,8 @@ export function App() {
           ⟳ 重置
         </button>
       </header>
-      <main className="main-content">
+      <ol className="journey" aria-label="游玩流程">{steps.map((label,i) => <li key={label} className={i === step ? 'current' : i < step ? 'complete' : ''} aria-current={i === step ? 'step' : undefined}><span>{i < step ? '✓' : String(i + 1).padStart(2, '0')}</span>{label}</li>)}</ol>
+      <main ref={mainRef} className="main-content"><Suspense fallback={<div className="empty-state">正在载入工具…</div>}>
         {currentView === 'roster' && <RosterView />}
         {currentView === 'match' && <MatchView />}
         {currentView === 'simpleMatch' && <SimpleMatchView />}
@@ -83,7 +87,7 @@ export function App() {
         {currentView === 'testLab' && <TestLab packs={TESTLAB_PACKS} />}
         {currentView === 'animationLab' && <AnimationLab packs={TESTLAB_PACKS} />}
         {currentView === 'rules' && <RulesSearch />}
-      </main>
+      </Suspense></main>
       <PortraitLockHint />
     </div>
   )

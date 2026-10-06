@@ -21,22 +21,24 @@ export function ActionBar({
   apl,
   apUsed,
   canDo,
+  actionCosts = ACTION_AP,
   pendingMove,
   pendingAttack,
   hasLastShot,
   canUndoAction,
-  onActivate,
+  onActivate: _onActivate,
   onSelectOrder,
   onPickMove,
   onPickAttack,
   onUndoAction,
   onEndActivation,
-  onEndTP,
+  onEndTP: _onEndTP,
   onUndo,
   movePreview,
   onConfirmMove,
   onCancelMove,
   themeColor,
+  orderLocked = false,
 }: {
   active: Side
   activated: boolean
@@ -44,6 +46,7 @@ export function ActionBar({
   apl: number
   apUsed: number
   canDo: Record<ActionType, boolean>
+  actionCosts?: Record<ActionType,number>
   pendingMove: ActionType | null
   pendingAttack: 'SHOOT' | 'FIGHT' | null
   hasLastShot: boolean
@@ -59,6 +62,7 @@ export function ActionBar({
   onEndActivation: () => void
   onEndTP: () => void
   onUndo: () => void
+  orderLocked?: boolean
   themeColor?: string
 }) {
   const apLeft = apl - apUsed
@@ -92,14 +96,14 @@ export function ActionBar({
             <span className="muted ab-label">命令</span>
             <button 
               className={`order-btn eng ${order === 'ENGAGED' ? 'on' : ''}`} 
-              onClick={() => onSelectOrder('ENGAGED')}
+              disabled={orderLocked || apUsed > 0 || hasLastShot} onClick={() => onSelectOrder('ENGAGED')}
               style={order === 'ENGAGED' && themeColor 
                 ? { backgroundColor: themeColor, borderColor: themeColor } 
                 : { borderColor: themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined }}
             >交战</button>
             <button 
               className={`order-btn con ${order === 'CONCEALED' ? 'on' : ''}`} 
-              onClick={() => onSelectOrder('CONCEALED')}
+              disabled={orderLocked || apUsed > 0 || hasLastShot} onClick={() => onSelectOrder('CONCEALED')}
               style={order === 'CONCEALED' && themeColor 
                 ? { backgroundColor: themeColor.replace('rgb', 'rgba').replace(')', ', 0.6)'), borderColor: themeColor } 
                 : { borderColor: themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined }}
@@ -113,14 +117,14 @@ export function ActionBar({
                 className={`action-chip ${pendingMove === a ? 'armed move' : ''}`}
                 disabled={!canDo[a]}
                 onClick={() => onPickMove(a)}
-                title={`${label}（${ACTION_AP[a]}AP）`}
+                title={`${label}（${actionCosts[a]}AP）`}
                 style={{
                   borderColor: pendingMove === a ? themeColor : (themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined),
                   backgroundColor: pendingMove === a && themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.2)') : undefined,
                   boxShadow: pendingMove === a && themeColor ? `0 0 0 2px ${themeColor}` : undefined
                 }}
               >
-                {label}<span className="chip-ap">{ACTION_AP[a]}</span>
+                {label}<span className="chip-ap">{actionCosts[a]}</span>
               </button>
             ))}
             {ATTACK_ACTIONS.map(({ a, label, k }) => (
@@ -129,14 +133,14 @@ export function ActionBar({
                 className={`action-chip ${pendingAttack === k ? 'armed atk' : ''}`}
                 disabled={!canDo[a]}
                 onClick={() => onPickAttack(k)}
-                title={`${label}（${ACTION_AP[a]}AP）`}
+                title={`${label}（${actionCosts[a]}AP）`}
                 style={{
                   borderColor: pendingAttack === k ? themeColor : (themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.3)') : undefined),
                   backgroundColor: pendingAttack === k && themeColor ? themeColor.replace('rgb', 'rgba').replace(')', ', 0.2)') : undefined,
                   boxShadow: pendingAttack === k && themeColor ? `0 0 0 2px ${themeColor}` : undefined
                 }}
               >
-                {label}<span className="chip-ap">{ACTION_AP[a]}</span>
+                {label}<span className="chip-ap">{actionCosts[a]}</span>
               </button>
             ))}
           </div>
@@ -150,7 +154,7 @@ export function ActionBar({
               <>
                 <button 
                   className={`main-btn ${active}`} 
-                  onClick={onEndActivation} 
+                  disabled={hasLastShot} onClick={onEndActivation}
                   title="结束后该特工本回合不能再行动"
                   style={themeColor ? { borderColor: themeColor, color: themeColor } : {}}
                 >结束激活</button>

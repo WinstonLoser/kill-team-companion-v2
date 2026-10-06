@@ -54,7 +54,7 @@ export function FactionOverview({ pack }: { pack: FactionPack }) {
                 <div key={w.id} className="fo-item">
                   <span className="fo-item-name">{w.name}</span>
                   <span className="fo-tag equip">装备</span>
-                  <span className="fo-desc">{effectLabel('wargear:' + w.id)}</span>
+                  <span className="fo-desc">{w.description ?? effectLabel('wargear:' + w.id)}</span>
                 </div>
               ))}
             </div>

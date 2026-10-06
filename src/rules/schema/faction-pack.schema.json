@@ -24,7 +24,10 @@
             "options": { "type": "array", "items": { "type": "string" } },
             "max": { "type": "integer", "minimum": 1 },
             "default": { "type": "string" },
-            "scope": { "type": "string", "enum": ["team", "perOperative"] }
+            "scope": { "type": "string", "enum": ["team", "perOperative"] },
+            "eligibleKeywords": { "type": "array", "items": { "type": "string" } },
+            "requiredPerEligible": { "type": "integer", "minimum": 0 },
+            "uniqueAcrossTeam": { "type": "boolean" }
           }
         }
       }
@@ -50,6 +53,8 @@
           },
           "base": { "type": "object", "required": ["diameterMm"], "properties": { "diameterMm": { "type": "number", "minimum": 1 } } },
           "abilities": { "type": "array", "items": { "type": "string" } },
+          "abilityRefs": { "type": "array", "items": { "type": "string" } },
+          "factionRuleRefs": { "type": "array", "items": { "type": "string" } },
           "loadouts": {
             "type": "array",
             "items": {
@@ -57,6 +62,7 @@
               "required": ["description", "options"],
               "properties": {
                 "description": { "type": "string" },
+                "count": { "type": "integer", "minimum": 1 },
                 "options": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }
               }
             }
@@ -92,9 +98,88 @@
     "effects": {
       "type": "array",
       "items": { "$ref": "#/$defs/effect" }
-    }
+    },
+    "factionRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ruleId", "name"],
+        "properties": {
+          "ruleId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "abilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["abilityId", "name"],
+        "properties": {
+          "abilityId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "wargear": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "buildConstraints": { "$ref": "#/$defs/buildConstraints" }
   },
   "$defs": {
+    "buildConstraints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "operatives": {
+          "type": "object",
+          "properties": { "min": { "type": "integer", "minimum": 0 }, "max": { "type": "integer", "minimum": 0 } }
+        },
+        "leaderFrom": { "type": "array", "items": { "type": "string" } },
+        "maxPerTypeExcept": { "type": "array", "items": { "type": "string" } },
+        "operativeTypeLimits": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": { "min": { "type": "integer", "minimum": 0 }, "max": { "type": "integer", "minimum": 0 } }
+          }
+        },
+        "initialRosterIneligible": { "type": "array", "items": { "type": "string" } },
+        "selectionPoints": {
+          "type": "object",
+          "properties": {
+            "exact": { "type": "number", "minimum": 0 },
+            "min": { "type": "number", "minimum": 0 },
+            "max": { "type": "number", "minimum": 0 }
+          }
+        },
+        "operativeCosts": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0 }
+        },
+        "minimumByKeyword": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "equipmentLimits": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "equipmentLimitScope": { "type": "string", "enum": ["weaponId", "keyword"] },
+        "notes": { "type": "string" }
+      }
+    },
     "triggerPoint": {
       "type": "string",
       "enum": ["BEFORE_PIPELINE","BEFORE_HIT_ROLL","ON_HIT_ROLL","AFTER_HIT_ROLL","BEFORE_DEFENCE_ROLL","ON_DEFENCE_ROLL","AFTER_DEFENCE_ROLL","ON_PARRY_ALLOCATION","ON_DAMAGE_PER_DIE","ON_DAMAGE_TOTAL","BEFORE_WOUNDS_REDUCE","AT_PIPELINE_END","ON_ACTIVATION_START","ON_ACTIVATION_END","ON_REACTION","ON_INCAPACITATED","ON_TURNING_POINT_END"]

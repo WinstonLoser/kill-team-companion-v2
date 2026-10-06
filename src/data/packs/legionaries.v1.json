@@ -3,20 +3,39 @@
   "version": "1.0.0",
   "rulesetVersion": "kt-lite-1.0",
   "faction": {
-    "id": "legionaries",
-    "name": "军团 / Legionaries",
-    "keywords": ["CHAOS", "HERETIC ASTARTES", "LEGIONARY"],
-    "theme": {
-      "ui": {
-        "primaryRgb": "185, 28, 28",
-        "textHighlight": "#fca5a5"
-      },
-      "dice": {
-        "baseColor": "#7f1d1d",
-        "pipColor": "#fca5a5"
-      }
+  "id": "legionaries",
+  "name": "军团 / Legionaries",
+  "keywords": [
+    "CHAOS",
+    "HERETIC ASTARTES",
+    "LEGIONARY"
+  ],
+  "theme": {
+    "ui": {
+      "primaryRgb": "185, 28, 28",
+      "textHighlight": "#fca5a5"
+    },
+    "dice": {
+      "baseColor": "#7f1d1d",
+      "pipColor": "#fca5a5"
     }
   },
+  "subFactionSelector": {
+    "id": "markOfChaos",
+    "label": "混沌印记",
+    "max": 1,
+    "scope": "perOperative",
+    "requiredPerEligible": 1,
+    "default": "mark_undivided",
+    "options": [
+      "mark_khorne",
+      "mark_nurgle",
+      "mark_slaanesh",
+      "mark_tzeentch",
+      "mark_undivided"
+    ]
+  }
+},
   "stratagems": [
     {
       "id": "blood_for_the_blood_god",
@@ -577,7 +596,103 @@
       "keywords": ["MELEE"]
     }
   ],
-  "effects": [],
+  "effects": [
+  {
+    "effectId": "mark_khorne",
+    "label": "Khorne / 恐虐",
+    "source": "markOfChaos:mark_khorne",
+    "trigger": {
+      "point": "BEFORE_PIPELINE"
+    },
+    "pipelineStep": "WEAPON_SELECT",
+    "modifier": {
+      "kind": "CUSTOM_HOOK",
+      "payload": {
+        "hookId": "mark_khorne",
+        "prompt": "Wrathful Onslaught: This operative’s melee weapons have the Severe weapon rule. / 狂怒攻势：该特工的近战武器拥有“严重”武器规则。"
+      }
+    },
+    "stacking": {
+      "policy": "UNIQUE_PER_SOURCE"
+    }
+  },
+  {
+    "effectId": "mark_nurgle",
+    "label": "Nurgle / 纳垢",
+    "source": "markOfChaos:mark_nurgle",
+    "trigger": {
+      "point": "BEFORE_PIPELINE"
+    },
+    "pipelineStep": "WEAPON_SELECT",
+    "modifier": {
+      "kind": "CUSTOM_HOOK",
+      "payload": {
+        "hookId": "mark_nurgle",
+        "prompt": "Disgusting Vigour: Whenever Normal Dmg of 3 or more is inflicted on this operative, roll one D6: on a 5+, subtract 1 from that inflicted damage. / 恼人生命力：每当该特工受到一次大于等于 3 的普通伤害时，掷一枚 D6：若结果为 5+，特工受到的伤害减少 1 点。"
+      }
+    },
+    "stacking": {
+      "policy": "UNIQUE_PER_SOURCE"
+    }
+  },
+  {
+    "effectId": "mark_slaanesh",
+    "label": "Slaanesh / 色孽",
+    "source": "markOfChaos:mark_slaanesh",
+    "trigger": {
+      "point": "BEFORE_PIPELINE"
+    },
+    "pipelineStep": "WEAPON_SELECT",
+    "modifier": {
+      "kind": "CUSTOM_HOOK",
+      "payload": {
+        "hookId": "mark_slaanesh",
+        "prompt": "Unnatural Agility: Add 1\" to this operative’s Move stat. / 超凡敏捷：该特工的移动属性增加 1\"。"
+      }
+    },
+    "stacking": {
+      "policy": "UNIQUE_PER_SOURCE"
+    }
+  },
+  {
+    "effectId": "mark_tzeentch",
+    "label": "Tzeentch / 奸奇",
+    "source": "markOfChaos:mark_tzeentch",
+    "trigger": {
+      "point": "BEFORE_PIPELINE"
+    },
+    "pipelineStep": "WEAPON_SELECT",
+    "modifier": {
+      "kind": "CUSTOM_HOOK",
+      "payload": {
+        "hookId": "mark_tzeentch",
+        "prompt": "Empyreal Guidance: This operative’s ranged weapons have the Severe weapon rule. / 亚空间指引：该特工的远程武器拥有“严重”武器规则。"
+      }
+    },
+    "stacking": {
+      "policy": "UNIQUE_PER_SOURCE"
+    }
+  },
+  {
+    "effectId": "mark_undivided",
+    "label": "Undivided / 无分",
+    "source": "markOfChaos:mark_undivided",
+    "trigger": {
+      "point": "BEFORE_PIPELINE"
+    },
+    "pipelineStep": "WEAPON_SELECT",
+    "modifier": {
+      "kind": "CUSTOM_HOOK",
+      "payload": {
+        "hookId": "mark_undivided",
+        "prompt": "Vicious Reavers: Whenever this operative is shooting against, fighting against or retaliating against an enemy operative within 6\" of it, this operative’s weapons have the Ceaseless weapon rule. / 凶恶劫掠者：每当该特工对一名位于其 6\" 内的敌方特工进行射击、近战或者反击时，该特工的武器拥有“无休”武器规则。"
+      }
+    },
+    "stacking": {
+      "policy": "UNIQUE_PER_SOURCE"
+    }
+  }
+],
   "stratagems": [
     {
       "id": "blood_for_the_blood_god",
@@ -635,6 +750,12 @@
       "useLimit": { "perTurningPoint": 1 },
       "phase": "FIREFIGHT"
     }
+  ],
+  "wargear": [
+    {"id": "warding_armour", "name": "Warding Armour / 守护护甲", "description": "战略计划。选择一名己方军团特工。将那名特工的豁免属性变为 2+，持续至下一个战略阶段的就绪步骤。"},
+    {"id": "corrupted_ammo", "name": "Corrupted Ammo / 腐化弹药", "description": "每个转折点限一次，在一名己方军团特工执行射击行动时，如果您选择使用爆矢手枪或者爆矢枪，那么可以使用本规则。若使用，直到那次行动结束前，那件武器拥有“撕裂”武器规则。"},
+    {"id": "chaos_talisman", "name": "Chaos Talisman / 混沌护身符", "description": "战略计划。选择一个混沌印记关键词。每次激活限一次，当拥有对应关键词的己方军团特工进行射击、近战或反击时，如果您掷出了两次或更多失败，那么您可以对这名己方特工造成 D3 处伤害，舍弃其中一次失败并将另一次失败作为普通成功进行保留。如果这是一次射击行动，并且那次伤害足够将己方特工残废，那次行动也不会结束。"},
+    {"id": "malefic_blade", "name": "Malefic Blade / 凶恶利刃", "description": "己方军团特工装备有以下近战武器：凶恶利刃（5 攻击、3+ 命中、3/4 伤害）。"}
   ],
   "buildConstraints": {
     "operatives": { "max": 6, "min": 6 },
