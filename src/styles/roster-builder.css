@@ -1,0 +1,113 @@
+.roster-builder { overflow: visible; min-width: 0; }
+.builder-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin: 12px 0 18px; }
+.builder-eyebrow { color: var(--accent); font-size: 10px; letter-spacing: 2px; }
+.operative-picker .builder-heading h3 { font-size: 21px; color: var(--fg); margin: 6px 0; }
+.builder-heading p { color: var(--muted); font-size: 12px; margin: 0; }
+.builder-count { text-align: right; flex-shrink: 0; display: grid; gap: 3px; }
+.builder-count strong { font-size: 30px; color: var(--accent); }
+.builder-count strong small { font-size: 17px; color: var(--muted); }
+.builder-count > span { color: var(--muted); font-size: 11px; }
+.builder-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 18px; }
+.builder-toolbar button[aria-pressed="true"] { background: #e3ae621a; border-color: var(--accent); color: #f0c587; }
+.builder-toolbar > span { font-size: 11px; color: var(--muted); margin-left: auto; }
+.builder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 275px), 1fr)); gap: 18px; align-items: start; }
+.recruit-card { min-width: 0; overflow: hidden; background: #161e28; border: 1px solid #354151; border-radius: 14px; box-shadow: 0 8px 24px #0002; }
+.recruit-card.recruited { border: 2px solid #e3ae62; background: #1d2732; box-shadow: 0 0 0 2px #e3ae6220, 0 10px 28px #0005; }
+.recruit-card:not(.recruited) .recruit-portrait img { filter: saturate(.55) brightness(.7); }
+.recruit-portrait { height: 232px; position: relative; overflow: hidden; background: #202936; }
+.recruit-portrait::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0b111b30 0%, transparent 35%, #121a25ef 100%); pointer-events: none; }
+.recruit-portrait img { width: 100%; height: 100%; object-fit: contain; position: relative; }
+.recruit-art-fallback { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; background: repeating-linear-gradient(135deg, #ffffff03 0 1px, transparent 1px 16px), radial-gradient(ellipse, #414763, #16212f); }
+.recruit-art-fallback > span { font-size: 64px; letter-spacing: 10px; color: #ffffff24; font-weight: 900; }
+.recruit-art-fallback > small { color: #a6b1c1; font-size: 11px; }
+.recruit-role { position: absolute; z-index: 1; top: 12px; font-size: 10px; padding: 5px 8px; border-radius: 5px; background: #111925e8; }
+.recruit-role { left: 12px; color: #d9e3ef; }
+.recruit-status-group { position: absolute; z-index: 2; top: 10px; right: 10px; display: flex; gap: 5px; }
+.recruit-status, .recruit-add-one { padding: 6px 8px; border-radius: 6px; background: #111925ee; font-size: 10px; font-weight: 700; cursor: pointer; }
+.recruit-status { color: #c4d0df; border: 1px solid #8291a0; }
+.recruit-status[aria-pressed="true"] { color: #17202b; background: #e3ae62; border-color: #f4ce91; }
+.recruit-status:disabled, .recruit-add-one:disabled { opacity: .5; cursor: not-allowed; }
+.recruit-add-one { color: #f2c985; border: 1px solid #e3ae6266; }
+.recruit-title { position: absolute; bottom: 15px; left: 18px; right: 18px; z-index: 1; }
+.recruit-title small { color: #bac6d7; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+.recruit-title h4 { font-size: 21px; color: #fff; margin: 5px 0 0; }
+.recruit-stats { display: grid; grid-template-columns: repeat(4, 1fr); padding: 13px 8px; margin: 0; border-bottom: 1px solid #303a48; background: #111923; }
+.recruit-stats div { text-align: center; border-right: 1px solid #303a48; }
+.recruit-stats div:last-child { border: 0; }
+.recruit-stats dt { color: var(--muted); font-size: 10px; }
+.recruit-stats dd { margin: 4px 0 0; font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.recruit-stats dd small { color: var(--muted); font-size: 9px; font-weight: 400; }
+.recruit-body { padding: 14px; }
+.recruit-count-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.recruit-member-menu { display: grid; gap: 6px; margin-top: 10px; padding: 10px; border: 1px solid #e3ae6266; border-radius: 8px; background: #0e151f; }
+.recruit-member-menu strong { color: #e8bd78; font-size: 11px; }
+.recruit-member-menu button { padding: 7px 9px; text-align: left; color: var(--fg); font-size: 11px; border: 1px solid #354151; border-radius: 5px; background: #192330; }
+.recruit-member-menu button:hover { border-color: var(--accent); }
+.recruit-preview { display: grid; gap: 5px; margin-top: 14px; color: var(--muted); font-size: 11px; }
+.recruit-preview > span { color: #79879b; font-size: 10px; }
+.recruit-member { margin-top: 12px; border-top: 1px solid #303a48; padding-top: 10px; }
+.recruit-member summary { display: flex; gap: 10px; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; border-radius: 4px; padding: 5px 0; }
+.recruit-member summary::-webkit-details-marker { display: none; }
+.recruit-member summary strong { font-size: 12px; font-weight: 600; }
+.recruit-member summary small { display: block; color: var(--muted); font-size: 10px; line-height: 1.7; margin-top: 4px; overflow-wrap: anywhere; }
+.recruit-expand { flex-shrink: 0; color: var(--accent); font-size: 11px; }
+.recruit-expand::after { content: ' ＋'; }
+.recruit-member details[open] .recruit-expand::after { content: ' −'; }
+.recruit-config { display: grid; gap: 12px; padding-top: 12px; }
+.recruit-config label { display: grid; gap: 6px; font-size: 11px; color: var(--muted); }
+.recruit-config select { width: 100%; min-width: 0; max-width: 100%; padding: 9px 6px; font-size: 12px; }
+.recruit-slot { min-width: 0; display: grid; gap: 7px; }
+.recruit-guided-weapons { display: grid; gap: 15px; }
+.recruit-weapon-step { display: grid; gap: 8px; }
+.recruit-weapon-step h5 { margin: 0; color: var(--accent); font-size: 12px; }
+.recruit-weapon-step p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.recruit-weapon-choices { display: grid; gap: 7px; }
+.recruit-weapon-choice { width: 100%; padding: 10px; text-align: left; background: #0e151f; border: 1px solid #354151; border-radius: 7px; color: var(--fg); cursor: pointer; }
+.recruit-weapon-choice[aria-pressed="true"] { border-color: var(--accent); background: #e3ae6218; }
+.recruit-weapon-choice strong, .recruit-weapon-choice small { display: block; }
+.recruit-weapon-choice strong { font-size: 11px; line-height: 1.5; }
+.recruit-weapon-choice small { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.recruit-pairing-hint { color: #e8bd78; font-size: 10px; line-height: 1.5; }
+.recruit-weapon-groups { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.recruit-weapon-group { min-width: 0; display: grid; align-content: start; gap: 6px; padding: 10px; border: 1px solid #354151; border-radius: 8px; }
+.recruit-weapon-group h5 { margin: 0 0 3px; color: var(--accent); font-size: 11px; }
+.recruit-weapon-group p { margin: 0; color: var(--muted); font-size: 10px; }
+.recruit-weapon-profile-group { display: grid; gap: 5px; }
+.recruit-weapon-profile-heading { display: grid; gap: 2px; margin: 3px 0; }
+.recruit-weapon-profile-heading strong { color: var(--fg); font-size: 11px; }
+.recruit-weapon-profile-heading small { color: #e8bd78; font-size: 10px; }
+.recruit-weapon { padding: 10px; background: #0e151f; border-radius: 6px; display: grid; grid-template-columns: auto 1fr; gap: 6px; }
+.recruit-weapon-group .recruit-weapon { display: block; }
+.recruit-weapon-group .recruit-weapon + .recruit-weapon { border-top: 1px solid #303a48; }
+.recruit-weapon-group .recruit-weapon small { display: block; margin-top: 5px; }
+.recruit-weapon > span { color: var(--accent); font-size: 9px; padding-top: 2px; }
+.recruit-weapon strong { font-size: 11px; }
+.recruit-weapon > small { grid-column: 1 / -1; color: var(--muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+.builder-empty { padding: 24px; border: 1px dashed var(--border); color: var(--muted); }
+.roster-builder :is(button, select, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 560px) { .builder-heading { align-items: start; gap: 12px; } .builder-toolbar > span { width: 100%; margin: 3px 0; } .recruit-portrait { height: 250px; } }
+.roster-rule-mode { display: grid; gap: 14px; padding: 20px; margin: 18px 0; background: #192330; border: 1px solid #44536a; border-radius: 12px; }
+.roster-rule-mode h3, .roster-rule-section h3 { margin: 5px 0; color: var(--fg); font-size: 17px; }
+.roster-rule-mode p, .roster-rule-section p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.roster-personal-toggle { display: flex; flex-direction: row; align-items: center; gap: 12px; cursor: pointer; color: var(--fg); }
+.roster-personal-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.roster-personal-toggle strong { display: block; font-size: 15px; }
+.roster-personal-toggle small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.roster-rule-mode:has(.roster-personal-toggle input:checked) { border-color: var(--accent); background: #e3ae6212; }
+.roster-rule-section { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 4px; }
+.recruit-abilities { display: grid; gap: 7px; border-top: 1px solid var(--border); padding-top: 12px; }
+.recruit-abilities > strong { font-size: 12px; }
+.recruit-abilities > small { font-size: 10px; color: var(--muted); }
+.recruit-config .recruit-ability { display: flex; align-items: flex-start; gap: 9px; padding: 8px; background: #0e151f; border-radius: 5px; cursor: pointer; }
+.recruit-ability input { flex: none; margin-top: 2px; accent-color: var(--accent); }
+.recruit-ability b { color: var(--fg); font-size: 11px; }
+.recruit-ability small { display: block; color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 3px; }
+.faction-wargear { border-top: 1px solid var(--border); padding-top: 18px; }
+.faction-wargear .builder-heading { align-items: center; }
+.faction-wargear-count { white-space: nowrap; color: #f3c784; font-size: 12px; }
+.faction-wargear-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.faction-wargear-card { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; min-width: 0; padding: 13px; background: #17212d; border: 1px solid #354151; border-radius: 9px; cursor: pointer; }
+.faction-wargear-card.selected { border-color: #e3ae62; background: #e3ae6218; }
+.faction-wargear-card input { flex: none; margin-top: 3px; accent-color: #e3ae62; }
+.faction-wargear-card strong { display: block; color: var(--fg); font-size: 12px; }
+.faction-wargear-card small { display: block; margin-top: 6px; color: var(--muted); line-height: 1.5; font-size: 10px; }

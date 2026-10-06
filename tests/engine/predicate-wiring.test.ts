@@ -5,7 +5,7 @@ import type { PredicateContext } from '../../src/rules/predicates'
 import angels from '../../src/data/packs/angels_of_death.v1.json'
 
 const pack = loadPack(angels)
-const boltgun = pack.weapons.find((w) => w.weaponId === 'angels_bolt_rifle')!
+const boltgun = pack.weapons.find((w) => w.weaponId === 'bolt_rifle')!
 
 // 基线：4 攻击骰 [4,5,2,3]=3 命中，3 防御骰 [1,1,1] → 2×3=6
 function shoot(effects: Effect[], predicate?: PredicateContext) {

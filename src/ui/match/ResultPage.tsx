@@ -1,19 +1,18 @@
 import { useMatchStore } from '../../state/matchStore'
+import { useViewStore } from '../../state/viewStore'
 
-// 1.16 T5：胜负结果页。4 TP 结束 → 全屏结果（VP 总高者胜 / 平局）；
-// [再开一局] = window.location.reload()（D-20 刷新重置，无存档清理）。
-export function ResultPage({ onQueryRule }: { onQueryRule: () => void }) {
-  const winner = useMatchStore((s) => s.winner)
-  const vp = useMatchStore((s) => s.vp)
-
-  return (
-    <div className="result-page">
-      <h2>战斗结束</h2>
-      <p className="outcome">胜负：<strong>{winner}</strong> — VP A:{vp.a} B:{vp.b}</p>
-      {winner === '平局' && (
-        <p className="muted">平局规则要点：<button className="link-btn" onClick={onQueryRule}>查看 ▸</button>（VP 总分相同）</p>
-      )}
-      <button className="primary main-btn" onClick={() => window.location.reload()}>再开一局</button>
-    </div>
-  )
+export function ResultPage({onQueryRule}:{onQueryRule:()=>void}) {
+  const s=useMatchStore()
+  function exportLog() {
+    const text=['# Kill Team 对局记录',`结果：${s.winner}`,`VP A:${s.vp.a} / B:${s.vp.b}`,'',...s.log.slice().reverse().map(l=>`- ${l.text}`)].join('\n')
+    const url=URL.createObjectURL(new Blob([text],{type:'text/markdown;charset=utf-8'}))
+    const a=document.createElement('a');a.href=url;a.download='kill-team-battle.md';a.click();URL.revokeObjectURL(url)
+  }
+  return <section className="result-page">
+    <span className="eyebrow">MISSION COMPLETE / 战斗结束</span>
+    <h2>{s.winner ?? '四个转折点已完成'}</h2>
+    <p className="muted">双方完成了这场战斗。查看队伍情况，保存记录，或用当前阵容再来一局。</p>
+    <div className="result-teams">{(['a','b'] as const).map(side=><div className={`result-team ${side}`} key={side}><span>{side.toUpperCase()} 方</span><strong>{s.vp[side]}<small> VP</small></strong><p>存活 {s.tokens.filter(t=>t.side===side && t.alive).length} / {s.tokens.filter(t=>t.side===side).length} 名特工</p></div>)}</div>
+    <div className="row"><button className="primary" onClick={()=>{s.reset();useViewStore.getState().setView('roster')}}>保留阵容 · 再开一局</button><button onClick={exportLog}>导出战斗记录</button><button onClick={onQueryRule}>查看胜负规则</button></div>
+  </section>
 }

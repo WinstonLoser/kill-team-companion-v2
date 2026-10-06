@@ -29,11 +29,11 @@ export function FactionSelect({
           <button
             key={f.id}
             className={`faction-card ${selectedId === f.id ? 'sel' : ''}`}
-            disabled={!f.available}
+            aria-pressed={selectedId === f.id} disabled={!f.available}
             onClick={() => onSelect(f)}
             title={f.available ? f.name : `${f.name}（${f.epic ?? '待定'}）`}
           >
-            <strong>{f.name}</strong>
+            <span className="faction-number">0{factions.indexOf(f) + 1} / KILL TEAM</span><strong>{f.name}</strong><span className="faction-description">{({angels_of_death:'精锐战士 · 战团战术',legionaries:'混沌印记 · 近战突击',plague_marines:'坚韧防线 · 瘟疫毒素',chaos_cult:'群体行动 · 战场变异',warpcoven:'灵能法术 · 诅咒之礼'} as Record<string,string>)[f.id]}</span>
             <span className="muted">{f.available ? (selectedId === f.id ? '✓ 已选' : '可选') : `${f.epic ?? '待定'}`}</span>
           </button>
         ))}

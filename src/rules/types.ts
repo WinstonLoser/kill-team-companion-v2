@@ -95,6 +95,12 @@ export interface SubFactionSelector {
   default?: string
   /** 选择器作用域：team=整队选 max 项（战团战术）；perOperative=每名特工各选（混沌印记，存 perOperativeMarks）。默认 team。 */
   scope?: 'team' | 'perOperative'
+  /** perOperative 时：仅拥有这些关键词之一的特工参与选择（如奸奇恩惠仅 SORCERER）。缺省=全员。 */
+  eligibleKeywords?: string[]
+  /** perOperative 时：每名合格特工必须选满的数量（如恩惠=1）。缺省=0（可选不强制）。 */
+  requiredPerEligible?: number
+  /** perOperative 时：整队不得重复选择同一选项（如奸奇恩惠整队唯一）。 */
+  uniqueAcrossTeam?: boolean
 }
 
 export interface OperativeStats {
@@ -107,7 +113,32 @@ export interface OperativeStats {
 /** 装备选配槽：从 `options` 里选一个 option（每个 option 是一束 weaponId，多数单项 [id]）。 */
 export interface Loadout {
   description: string // 槽位名（远程武器/近战武器/…）
+  count?: number // 同类槽位数量（默认 1）
   options: string[][] // 互斥选项；每项 = 一束 weaponId
+}
+
+/** 阵营规则正文（如变异、混沌印记、阿斯塔特），特工经 factionRuleRefs 引用。 */
+export interface FactionRuleOption {
+  id: string
+  name: string
+  description?: string
+}
+
+export interface FactionRule {
+  ruleId: string
+  name: string
+  description?: string
+  /** 可选：如诅咒之礼的选择型规则（type=SELECTION） */
+  type?: string
+  selectionLimit?: number
+  options?: FactionRuleOption[]
+}
+
+/** 特工能力正文（如诱使杀戮），特工经 abilityRefs 引用。 */
+export interface Ability {
+  abilityId: string
+  name: string
+  description?: string
 }
 
 export interface Operative {
@@ -117,7 +148,12 @@ export interface Operative {
   stats: OperativeStats
   base: { diameterMm: number } // D-27：规则源不提供，GW 约定
   loadouts: Loadout[] // 装备选配槽（替换原扁平 weaponRefs）
-  abilities?: string[] // 该特工拥有的 ability effectId 列表（数据卡展示用）
+  /** 引用 pack.abilities 的 abilityId 列表（数据卡展示用） */
+  abilityRefs?: string[]
+  /** 引用 pack.factionRules 的 ruleId 列表（数据卡展示用） */
+  factionRuleRefs?: string[]
+  /** 兼容旧字段：直接内嵌 ability effectId 列表 */
+  abilities?: string[]
 }
 
 export type WeaponKind = 'RANGED' | 'MELEE'
@@ -145,11 +181,13 @@ export interface Stratagem {
   cp: number
   useLimit: { perBattle?: number; perTurningPoint?: number }
   phase: 'STRATEGY' | 'ENGAGEMENT'
+  description?: string
 }
 
 export interface Wargear {
   id: string
   name: string
+  description?: string
 }
 
 export interface BuildConstraints {
@@ -159,10 +197,28 @@ export interface BuildConstraints {
   leaderFrom?: string[]
   /** AC3 每类限 1：除该例外列表（如 [战士]）外，每个 operativeId 全队最多 1 名。 */
   maxPerTypeExcept?: string[]
+  /** 按 operativeId 的数量区间约束（如混沌教派：祝福战刃恰好 2、虔信者恰好 9）。 */
+  operativeTypeLimits?: Record<string, { min?: number; max?: number }>
+  /** 初始建队不可选的 operativeId（如变异者/受难者，仅由对局中变异产生）。 */
+  initialRosterIneligible?: string[]
+  /** 点数制建队：选择点总数约束（次元密会：恰好 5；奸角兽 0.5/名）。 */
+  selectionPoints?: { exact?: number; min?: number; max?: number }
+  /** 每个 operativeId 占用的选择点（缺省 1）。 */
+  operativeCosts?: Record<string, number>
+  /** 关键词级最低数量（如次元密会：至少 1 名 SORCERER）。 */
+  minimumByKeyword?: Record<string, number>
   // 装备限制：key 为 weaponId 或武器 keyword（按 equipmentLimitScope 判定），value 为全队上限数量
   equipmentLimits?: Record<string, number>
   equipmentLimitScope?: 'weaponId' | 'keyword'
   notes?: string
+}
+
+export interface ThemeConfig {
+  ui?: Record<string, string>
+  dice?: {
+    baseColor: string
+    pipColor: string
+  }
 }
 
 export interface Faction {
@@ -170,6 +226,7 @@ export interface Faction {
   name: string
   keywords: string[]
   subFactionSelector?: SubFactionSelector
+  theme?: ThemeConfig
 }
 
 export interface FactionPack {
@@ -177,6 +234,8 @@ export interface FactionPack {
   version: string
   rulesetVersion: string
   faction: Faction
+  factionRules?: FactionRule[]
+  abilities?: Ability[]
   operatives: Operative[]
   weapons: Weapon[]
   effects: Effect[]

@@ -1,56 +1,33 @@
-import { useMatchStore, type MatchToken } from '../../state/matchStore'
+import { useMatchStore, packOfFaction } from '../../state/matchStore'
+import { ActionBar } from './ActionBar'
+import { getAvatarUrl } from '../../utils/avatars'
+import { TeamWargearSummary } from './TeamWargearSummary'
 
-// 1.13 单位面板 + 1.15 T4 状态反馈。
-// 特工卡：耐伤阈值视觉（黄<起始 / 橙<一半=受创 / 灰阶=残废）+ 激活态。
-// effect 剩余 TP / 受创自动修正由引擎两层属性模型产出（FR-2），本面板读引擎结果（v1 显示耐伤态）。
-function woundClass(t: MatchToken, startWounds: number): string {
-  if (!t.alive) return 'dead'
-  if (t.wounds < startWounds / 2) return 'injured'
-  if (t.wounds < startWounds) return 'hurt'
-  return 'fresh'
-}
-
-export function UnitPanel({ startWoundsOf }: { startWoundsOf: (uid: string) => number }) {
-  const tokens = useMatchStore((s) => s.tokens)
-  const turn = useMatchStore((s) => s.turn)
-  const selected = useMatchStore((s) => s.selected)
-  const setSelected = useMatchStore((s) => s.setSelected)
-  const setIntercept = useMatchStore((s) => s.setIntercept)
-  const activeEffects = useMatchStore((s) => s.activeEffects) // D4：单位卡 effect 列表
-
-  const sides: ('a' | 'b')[] = ['a', 'b']
-  return (
-    <div className="unit-panel">
-      {sides.map((side) => (
-        <div key={side} className={`unit-side ${side}`}>
-          <h4>{side.toUpperCase()} 方</h4>
-          <ul className="unit-list">
-            {tokens.filter((t) => t.side === side).map((t) => {
-              const cls = woundClass(t, startWoundsOf(t.uid))
-              const ready = Boolean(turn.operatives[t.uid]?.ready)
-              const effs = activeEffects[t.uid] ?? []
-              return (
-                <li
-                  key={t.uid}
-                  className={`unit-card ${cls} ${selected === t.uid ? 'sel' : ''} ${ready ? 'ready' : ''}`}
-                  onClick={() => { setSelected(t.uid); setIntercept(null) }}
-                >
-                  <span className="uc-name">{t.name}</span>
-                  <span className="uc-wounds">耐伤 {t.wounds}{!t.alive && ' ✕'}</span>
-                  {t.markers.map((m) => (
-                    <span key={m} className={`uc-marker uc-marker--${m.toLowerCase()}`} title={`指示物：${m}`}>{m}</span>
-                  ))}
-                  {ready && <span className="uc-tag">激活中</span>}
-                  {cls === 'injured' && <span className="uc-tag warn">受创</span>}
-                  {effs.map((e) => (
-                    <span key={e.id} className="uc-effect" title={`${e.label}（剩余 ${e.remainingTP}TP）`}>{e.label} ×{e.remainingTP}TP</span>
-                  ))}
-                </li>
-              )
-            })}
-          </ul>
+export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarProps}:{startWoundsOf:(uid:string)=>number;sideFilter?:'a'|'b';onPortraitClick?:(uid:string)=>void;actionBarProps?:any}) {
+  const s=useMatchStore()
+  return <div className="unit-panel">{(sideFilter ? [sideFilter] : ['a','b'] as const).map(side=>{
+    const team=s.tokens.filter(t=>t.side===side)
+    const ready=team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false).length
+    return <section key={side} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
+      <header className="team-heading"><div><strong>{side.toUpperCase()} 方阵容</strong><small>{ready} 待激活 / {team.filter(t=>t.alive).length} 存活</small></div><div className="team-resources"><span>CP <b>{s.turn.cp[side]}</b></span><span>VP <b>{s.vp[side]}</b></span></div></header>
+      <TeamWargearSummary side={side} team={team} />
+      <div className="team-list">{team.map(t=>{
+        const active=s.turn.activeOpId===t.uid
+        const exhausted=s.turn.operatives[t.uid]?.ready===false
+        const selected=s.selected===t.uid
+        const canActivate=t.alive && t.placed && !exhausted && !s.turn.activeOpId && !s.lastShot && s.turn.activePlayer===side
+        const status=!t.alive?'已残废':active?(s.reactionUid===t.uid?'反应中':'行动中'):exhausted?'待机':'就绪'
+        const max=startWoundsOf(t.uid)
+        return <div key={t.uid} className={`team-unit ${selected?'selected':''} ${!t.alive?'incapacitated':''}`}>
+          <button className="unit-select" aria-label={`选择 ${t.name}`} aria-pressed={selected} onClick={()=>{s.setSelected(t.uid);s.setIntercept(null)}}>
+            <img alt="" src={getAvatarUrl(t.factionId,t.opId)} />
+            <span className="unit-info"><strong>{t.name}</strong><span>{t.order==='CONCEAL'?'隐匿':'交战'} · {status}</span><span className="health-track"><span style={{width:`${Math.max(0,t.wounds)/max*100}%`}} /></span></span>
+            <span className="unit-wounds">{t.wounds}<small>/{max}</small></span>
+          </button>
+          {selected && <div className="unit-controls"><button onClick={()=>onPortraitClick?.(t.uid)}>数据卡</button>{canActivate && <button className="primary" onClick={()=>s.activate(t.uid,t.side)}>激活该特工 ▶</button>}{s.canReact(t.uid) && <button className="primary" onClick={()=>s.react(t.uid)}>反应 · 1 AP</button>}</div>}
+          {active && selected && actionBarProps && <ActionBar {...actionBarProps} themeColor={`rgb(${packOfFaction(t.factionId).faction.theme?.ui?.primaryRgb ?? '227,174,98'})`} />}
         </div>
-      ))}
-    </div>
-  )
+      })}</div>
+    </section>
+  })}</div>
 }

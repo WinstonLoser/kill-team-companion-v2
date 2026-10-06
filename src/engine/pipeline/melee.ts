@@ -1,6 +1,7 @@
 // 近战结算流水线（FR-5，7 step）。DN3：改 StepFn 注册表 + 游标驱动（同架构 §3.1/§7.1）+
 // 真交替格挡（修 P3 对称双重计数）+ 出击/格挡子决策日志；格挡用共用 parryAllocation（P4 统一）。
 
+import { successPool } from '../weaponKeywords'
 import type { Effect, Weapon } from '../../rules/types'
 import type { DiceSource, DiceRoll } from '../../dice'
 import type { StepTrace } from '../context'
@@ -29,6 +30,7 @@ export interface MeleeResolutionContext {
   predicate?: PredicateContext
   pipelineId: string
   attempt: number
+  manualAllocation?: { atkStrike: Pool; defStrike: Pool } // Added for Phase 2 interactivity
 }
 
 /** 近战累积状态：step 间线程传递。 */
@@ -71,12 +73,7 @@ export function createInitialMeleeState(): MeleeState {
 
 function rollSuccesses(dice: DiceSource, weapon: Weapon): { pool: Pool; rolls: DiceRoll[] } {
   const rolls = dice.roll(weapon.profile.attacks)
-  const pool: Pool = { normal: 0, critical: 0 }
-  for (const d of rolls) {
-    if (d.nat === 1) continue
-    if (d.nat === 6) pool.critical++
-    else if (d.nat >= weapon.profile.hit) pool.normal++
-  }
+  const pool = successPool(rolls, weapon.profile.hit, weapon.profile.weaponRules, dice.finalized)
   return { pool, rolls }
 }
 
@@ -129,16 +126,31 @@ const MELEE_SIMULTANEOUS_ROLL: MeleeStep = {
 
 const MELEE_ALTERNATING_RESOLVE: MeleeStep = {
   stepId: 'MELEE_ALTERNATING_RESOLVE',
-  run: (state) => {
+  run: (state, ctx) => {
+    if (ctx.manualAllocation) {
+      // DN6: Phase 2 interactivity. UI passed down the manual strike allocation.
+      return {
+        state: { 
+          ...state, 
+          attackerStrike: ctx.manualAllocation.atkStrike, 
+          defenderStrike: ctx.manualAllocation.defStrike, 
+          parryLog: ['(Manual Allocation via UI)'] 
+        },
+        summary: `手动交替格挡后 攻方出击 普通${ctx.manualAllocation.atkStrike.normal}/关键${ctx.manualAllocation.atkStrike.critical}；防方出击 普通${ctx.manualAllocation.defStrike.normal}/关键${ctx.manualAllocation.defStrike.critical}`,
+        applied: [],
+        rejected: [],
+      }
+    }
+
     const a = state.attackerPool
     const d = state.defenderPool
     // DN3 真交替（修 P3 双重计数）：
     // 回合1 攻击方（主动方）格挡防御方——消耗攻击方骰，抵消防御方成功
-    const r1 = parryAllocation(a, d)
+    const r1 = parryAllocation(a, d, false)
     const defenderAfterAtk = r1.survivor
     const attackerRemaining = subtractPool(a, r1.used)
     // 回合2 防御方用其剩余骰格挡攻击方剩余——消耗防御方骰
-    const r2 = parryAllocation(defenderAfterAtk, attackerRemaining)
+    const r2 = parryAllocation(defenderAfterAtk, attackerRemaining, false)
     const attackerStrike = r2.survivor
     const defenderStrike = subtractPool(defenderAfterAtk, r2.used)
     const parryLog = [

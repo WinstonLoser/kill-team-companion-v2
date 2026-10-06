@@ -45,7 +45,7 @@ export function SubFactionSelect({
                 onChange={() => toggle(opt)}
                 disabled={!selection.includes(opt) && selection.length >= selector.max}
               />
-              {optionLabel(opt)}
+              {selector.id === 'chapterTactic' && selection.includes(opt) ? (selection.indexOf(opt) === 0 ? '首要 · ' : '次要 · ') : ''}{optionLabel(opt)}
             </label>
           </li>
         ))}

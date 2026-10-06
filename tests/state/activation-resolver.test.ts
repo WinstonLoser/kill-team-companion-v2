@@ -1,12 +1,19 @@
 import { describe, it, expect } from 'vitest'
 import { resolveActivationEffects, type WargearHolder, type ActivationEffectContext } from '../../src/state/activationResolver'
 import { ManualDiceSource } from '../../src/dice'
-import { loadPack, type Effect } from '../../src'
-import plague from '../../src/data/packs/plague_marines.v1.json'
+import type { Effect } from '../../src'
 
-const pack = loadPack(plague)
-const grantEff = pack.effects.find((e) => e.effectId === 'wargear_mucus_exit_grant')! as Effect
-const dmgEff = pack.effects.find((e) => e.effectId === 'wargear_mucus_exit_damage')! as Effect
+// 当前瘟疫包保留装备文字，激活层的条件路由用显式描述符做单元测试。
+const grantEff: Effect = {
+  effectId: 'test_mucus_grant', label: '排毒口：挂毒', source: 'test',
+  trigger: { point: 'ON_ACTIVATION_START', condition: { op: 'all', all: [{ op: 'dieFaceEquals', args: [3] }, { op: 'targetHasNoMarker', args: ['POISON'] }] } },
+  pipelineStep: 'ACTIVATION_PRE', modifier: { kind: 'GRANT_MARKER', payload: { marker: 'POISON', target: 'DEFENDER' } }, stacking: { policy: 'CONDITIONAL' },
+}
+const dmgEff: Effect = {
+  effectId: 'test_mucus_damage', label: '排毒口：伤害', source: 'test',
+  trigger: { point: 'ON_ACTIVATION_START', condition: { op: 'targetHasMarker', args: ['POISON'] } },
+  pipelineStep: 'ACTIVATION_PRE', modifier: { kind: 'EXTRA_DAMAGE_ON_HIT', payload: { amount: 1 } }, stacking: { policy: 'CONDITIONAL' },
+}
 
 function makeCtx(activatorMarkers: string[], diceSeq: number[]): ActivationEffectContext {
   const holders: WargearHolder[] = [{

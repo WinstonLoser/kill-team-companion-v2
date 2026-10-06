@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   losFinding,
   coverFinding,
+  obscuredFinding,
+  sharedCoverObscuredTerrain,
+  targetingHeight,
   rangeFinding,
   engagementFinding,
   validateTarget,
@@ -10,6 +13,7 @@ import {
   pointInPolygon,
   circleInsidePolygon,
   circlesOverlap,
+  circleHitsBlockingTerrain,
   type Board,
   type OperativePlacement,
   type Point,
@@ -22,7 +26,63 @@ const op = (id: string, x: number, y: number, r = 0.5): OperativePlacement => ({
   baseRadius: r,
 })
 
+describe('立体地形射线', () => {
+  const wall = { id: 'wall', kind: 'BLOCKING' as const, terrainClass: 'HEAVY' as const, polygon: [{ x: 4, y: -1 }, { x: 4.2, y: -1 }, { x: 4.2, y: 1 }, { x: 4, y: 1 }], bottom: 0, top: 2 }
+  const board: Board = { terrain: [wall], operatives: [] }
+
+  it('高处视线越过矮墙，地面视线受阻', () => {
+    expect(losFinding({ x: 0, y: 0 }, { x: 8, y: 0 }, board).finalValue).toBe(false)
+    expect(losFinding({ x: 0, y: 0 }, { x: 8, y: 0 }, board, { targetHeight: 3 }).finalValue).toBe(true)
+  })
+
+  it('高台底座线越过地面墙体，不误算掩护或遮蔽', () => {
+    expect(coverFinding({ x: 4.6, y: 0 }, board, [{ x: 0, y: 0 }], 0.3, 0.3).finalValue).toBe(true)
+    expect(coverFinding({ x: 4.6, y: 0 }, board, [{ x: 0, y: 0 }], 0.3, 0.3, 3, 3).finalValue).toBe(false)
+    expect(obscuredFinding({ x: 0, y: 0 }, { x: 8, y: 0 }, board).finalValue).toBe(true)
+    expect(obscuredFinding({ x: 0, y: 0 }, { x: 8, y: 0 }, board, 0, 0, 3, 3).finalValue).toBe(false)
+  })
+
+  it('顶盖挡住从下层直穿上层的视线', () => {
+    const roof: Board = { terrain: [], operatives: [], platforms: [{ id: 'roof', height: 3, polygon: [{ x: 4, y: -1 }, { x: 6, y: -1 }, { x: 6, y: 1 }, { x: 4, y: 1 }] }] }
+    expect(losFinding({ x: 5, y: 0 }, { x: 5.8, y: 0 }, roof, { targetBaseRadius: 0.2, targetHeight: 3 }).finalValue).toBe(false)
+  })
+
+  it('相隔楼层时按立体距离判断 2 英寸贴近掩护例外', () => {
+    const tall: Board = { terrain: [{ ...wall, polygon: [{ x: 1.2, y: -1 }, { x: 1.4, y: -1 }, { x: 1.4, y: 1 }, { x: 1.2, y: 1 }], top: 5 }], operatives: [] }
+    expect(coverFinding({ x: 2.5, y: 0 }, tall, [{ x: 0, y: 0 }], 0.5, 0.5, 0, 0).finalValue).toBe(false)
+    expect(coverFinding({ x: 2.5, y: 0 }, tall, [{ x: 0, y: 0 }], 0.5, 0.5, 3, 0).finalValue).toBe(true)
+  })
+
+  it('大型废墟与要塞首层按同一裁定高度绘制目标线', () => {
+    const ruin: Board = { terrain: [], operatives: [], platforms: [{ id: 'C', height: 3.5, targetingHeight: 3, polygon: [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }] }] }
+    expect(targetingHeight({ ...op('ruin', 2, 2), height: 3.5 }, ruin)).toBe(3)
+    expect(targetingHeight({ ...op('ground', 2, 2), height: 0 }, ruin)).toBe(0)
+  })
+
+  it('同一地形造成掩护及遮蔽时，只使用防守方所选效果', () => {
+    const heavy: Board = { terrain: [{ id: 'heavy', kind: 'COVER', terrainClass: 'HEAVY', bottom: 0, top: 3, polygon: [{ x: 8, y: -1 }, { x: 9, y: -1 }, { x: 9, y: 1 }, { x: 8, y: 1 }] }], operatives: [] }
+    const a = op('a', 0, 0), t = op('t', 10, 0)
+    expect(sharedCoverObscuredTerrain(a, t, heavy)).toBe(true)
+    const cover = validateTarget(a, t, 20, heavy, [a.pos], { terrainChoice: 'COVER' }).findings
+    const obscured = validateTarget(a, t, 20, heavy, [a.pos], { terrainChoice: 'OBSCURED' }).findings
+    expect(cover.find(f => f.kind === 'COVER')?.finalValue).toBe(true)
+    expect(cover.find(f => f.kind === 'OBSCURED')?.finalValue).toBe(false)
+    expect(obscured.find(f => f.kind === 'COVER')?.finalValue).toBe(false)
+    expect(obscured.find(f => f.kind === 'OBSCURED')?.finalValue).toBe(true)
+  })
+})
+
 describe('LOS', () => {
+  it('仅标位置的沃库斯附件不参与自动视线、掩护与碰撞', () => {
+    const polygon = [{ x: 4, y: -2 }, { x: 6, y: -2 }, { x: 6, y: 2 }, { x: 4, y: 2 }]
+    const board: Board = { terrain: [
+      { id: 'accessory-wall', kind: 'BLOCKING', polygon, advisoryOnly: true },
+      { id: 'accessory-cover', kind: 'COVER', polygon, advisoryOnly: true },
+    ], operatives: [] }
+    expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, board).finalValue).toBe(true)
+    expect(coverFinding({ x: 5, y: 0 }, board, []).finalValue).toBe(false)
+    expect(circleHitsBlockingTerrain({ x: 5, y: 0 }, 0.5, board.terrain)).toBeNull()
+  })
   it('无地形阻挡 → 可见', () => {
     expect(losFinding({ x: 0, y: 0 }, { x: 10, y: 0 }, noTerrain).finalValue).toBe(true)
   })
@@ -128,12 +188,12 @@ describe('资格判定 + 咨询式翻转', () => {
     expect(flipped.overridden).toBe(true)
   })
 
-  it('P13：目标隐匿命令 → 不可射击', () => {
+  it('隐匿目标在开阔地仍可射击', () => {
     const r = validateTarget(op('a', 0, 0), op('d', 8, 0), 12, noTerrain, [], {
       targetOrder: 'CONCEALED',
     })
-    expect(r.ok).toBe(false)
-    expect(r.missing.some((m) => m.includes('隐匿'))).toBe(true)
+    expect(r.ok).toBe(true)
+    expect(r.missing.some((m) => m.includes('隐匿'))).toBe(false)
   })
 
   it('P13：目标与己方近战纠缠（控制范围内有己方）→ 不可射击', () => {

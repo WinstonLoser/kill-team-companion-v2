@@ -1,0 +1,446 @@
+{
+  "packId": "chaos_cult",
+  "version": "1.1.0",
+  "rulesetVersion": "kt-lite-1.0",
+  "faction": {
+    "id": "chaos_cult",
+    "name": "Chaos Cult / 混沌教派",
+    "keywords": ["CHAOS", "CHAOS CULT"],
+    "theme": {
+      "ui": {
+        "primaryRgb": "185, 28, 28",
+        "textHighlight": "#fca5a5"
+      },
+      "dice": {
+        "baseColor": "#7f1d1d",
+        "pipColor": "#fca5a5"
+      }
+    }
+  },
+  "factionRules": [
+    {
+      "ruleId": "mutation",
+      "name": "Mutation / 变异",
+      "description": "战斗期间，己方混沌教派特工可以通过下列方式进行变异：1) 作为战略计划，按转折点选择一定数量的己方混沌教派特工进行变异：第一转折点 2 名、第二转折点 2 名、第三转折点 3 名、第四及之后 4 名；2) 每当一名己方虔信者将其控制范围内的一名敌方特工残废时，该虔信者可以进行变异。每个转折点中，每名特工最多进行一次变异。每当一名己方特工进行变异时，从下列效果中选择一个（互斥，不能既转型又治疗）：a) 若其是虔信者，将其转变为变异者；b) 若其是变异者，将其转变为受难者（每个转折点最多以此方式转变两次）；c) 该特工回复最多 D3+1 点已失去的耐伤。场上不能同时拥有超过 5 名变异者和 3 名受难者。转换处理：更换微缩模型，新模型底座中心尽可能靠近旧模型底座中心；若旧模型位于敌方控制范围内，新模型在可能时也须处于这些敌方特工的控制范围内；新类型已失去的耐伤等于原类型已失去的耐伤（非按比例换算）；对已选择该特工的规则而言仍是同一特工，但此后使用新类型的模型与数据卡规则。"
+    },
+    {
+      "ruleId": "gifts_of_mutation",
+      "name": "Gifts of Mutation / 诅咒之礼",
+      "description": "当首次有一名己方虔信者在战斗中变为变异者时，选择第一诅咒之礼；当首次有一名己方变异者变为受难者时，选择第二诅咒之礼。所有己方变异者拥有第一诅咒之礼；所有己方受难者同时拥有第一和第二诅咒之礼。每场战斗不能重复选择同一项诅咒之礼。",
+      "type": "SELECTION",
+      "selectionLimit": 2,
+      "options": [
+        {
+          "id": "gift_winged",
+          "name": "Winged / 生翼",
+          "description": "该特工向上攀爬时，可以把垂直距离视为 2\"，无论实际垂直移动多远；跳落时忽略垂直距离。"
+        },
+        {
+          "id": "gift_fleet",
+          "name": "Fleet / 迅捷",
+          "description": "移动属性增加 1\"。"
+        },
+        {
+          "id": "gift_carapace",
+          "name": "Carapace / 甲壳",
+          "description": "豁免属性提升 1 点。"
+        },
+        {
+          "id": "gift_horns",
+          "name": "Horns / 犄角",
+          "description": "该特工结束冲锋行动的移动时，可以对控制范围内的一名敌方特工造成 1 点伤害；若该特工是受难者，改为 D3 点伤害。"
+        },
+        {
+          "id": "gift_sinew",
+          "name": "Sinew / 强肌",
+          "description": "可以忽略该特工因受创而导致的任何近战武器命中属性修正（不忽略其他来源的修正）；其近战武器获得“残暴（Brutal）”。"
+        },
+        {
+          "id": "gift_barbed",
+          "name": "Barbed / 带刺",
+          "description": "每当该特工进行近战或反击时，敌方特工不能协助；在该流程中首次出击时，还对其控制范围内的每一名其他敌方特工造成 1 点伤害（若该特工是受难者则改为 D3 点伤害），并对每个目标分别掷骰。"
+        }
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "abilityId": "lure_to_kill",
+      "name": "Lure to Kill / 诱使杀戮",
+      "description": "独特行动（1AP，支援）。位于该特工 9\" 内且对其可见的另一名己方混沌教派特工可以立即执行一次无消耗的近战行动。该特工位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "incited_urgency",
+      "name": "Incited Urgency / 煽动紧迫性",
+      "description": "独特行动（1AP，支援）。位于该特工 9\" 内且对其可见的另一名己方混沌教派特工可以立即执行一次无消耗的冲刺或冲锋行动；若选择冲锋，移动不能超过 3\"。该特工位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "cut_down_the_enemy",
+      "name": "Cut Down the Enemy / 斩杀敌人",
+      "description": "当控制范围内的一名敌方特工执行后撤行动时，可以在其移动前对其造成 D3+1 点伤害；若该敌方特工同时位于两名祝福战刃的控制范围内，改为造成 2D3+2 点伤害。"
+    },
+    {
+      "abilityId": "synchronised_execution",
+      "name": "Synchronised Execution / 同步执行",
+      "description": "该特工被激活时，可以同时激活其 6\" 内另一名就绪的己方祝福战刃。以任意顺序、逐个行动完成两名特工的激活。"
+    },
+    {
+      "abilityId": "icon_bearer",
+      "name": "Icon Bearer / 持徽手",
+      "description": "判断一个标识的控制权时，将该特工的 APL 视为高 1 点。这不是对 APL 属性的修改，因此与其他修改效果叠加。"
+    },
+    {
+      "abilityId": "icon_of_ruin",
+      "name": "Icon of Ruin / 毁灭徽记",
+      "description": "独特行动（1AP，灵能）。选择下列一个效果，效果持续至该特工下一次激活开始、该特工被残废，或该特工再次执行此行动，以先发生者为准。该特工位于敌方控制范围内时不能执行此行动。激励（灵能）：己方混沌教派特工位于该特工 4\" 内时，数值为 4 或以上的普通和暴击伤害对其少造成 1 点伤害。恶化（灵能）：敌方特工位于该特工 4\" 内时，其受到的普通和暴击伤害增加 1 点。"
+    },
+    {
+      "abilityId": "torrent_of_malice",
+      "name": "Torrent of Malice / 恶毒之洪",
+      "description": "独特行动（1AP，灵能）。选择一名属于该特工有效目标的敌方特工，直到其下一次激活结束，其 APL 减少 1 点。该特工位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "vile_vortex",
+      "name": "Vile Vortex / 凶恶漩涡",
+      "description": "独特行动（1AP，灵能）。将己方已有的凶恶漩涡标识移出杀戮区；随后把标识放在该特工可见的位置，或放在该特工可见的地形模型的制高点上。放置时，对标识 2\" 内每名敌方特工造成 1 点伤害；此后在每个战略阶段的就绪步骤中，再对标识 2\" 内每名敌方特工造成 1 点伤害。该特工位于敌方控制范围内时不能执行此行动。"
+    },
+    {
+      "abilityId": "group_activation",
+      "name": "Group Activation / 群体激活",
+      "description": "每当该特工进入待机时，若可以，必须在对手激活前激活另一名就绪的己方混沌教派虔信者。第二名特工进入待机后，对手照常激活；本规则不能令超过两名特工连续激活。"
+    },
+    {
+      "abilityId": "cursed_mutant",
+      "name": "Cursed Mutant / 被诅咒的变异者",
+      "description": "不能执行独特行动。执行拾取标识行动或任务行动时必须额外消耗 1AP，但操作舱门除外。"
+    },
+    {
+      "abilityId": "supernatural_regeneration",
+      "name": "Supernatural Regeneration / 超自然再生",
+      "description": "每当一枚攻击骰对该特工造成 3 点或以上伤害时，掷一枚 D6；结果为 5+ 时，所造成伤害减少 1 点。"
+    },
+    {
+      "abilityId": "cursed_torment",
+      "name": "Cursed Torment / 被诅咒的受难者",
+      "description": "不能使用数据卡上没有的武器，也不能执行拾取标识行动、独特行动或任务行动，但操作舱门除外。"
+    },
+    {
+      "abilityId": "cumbersome",
+      "name": "Cumbersome / 笨重",
+      "description": "对手选择有效目标时，若该特工拥有隐匿命令，则不能使用轻型地形来避免成为目标。只要有掩护，它仍保留掩护豁免。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "cult_demagogue",
+      "name": "Cult Demagogue / 教派煽动家",
+      "type": "cult_demagogue",
+      "keywords": ["CHAOS CULT", "CHAOS", "LEADER", "DARK COMMUNE", "CULT DEMAGOGUE"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 8 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_diabolical_stave_ranged", "cc_autopistol", "cc_diabolical_stave_melee"]]
+        }
+      ],
+      "abilityRefs": ["lure_to_kill", "incited_urgency"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "blessed_blade",
+      "name": "Blessed Blade / 祝福战刃",
+      "type": "blessed_blade",
+      "keywords": ["CHAOS CULT", "CHAOS", "DARK COMMUNE", "BLESSED BLADE"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 8 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_commune_blade"]]
+        }
+      ],
+      "abilityRefs": ["cut_down_the_enemy", "synchronised_execution"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "iconarch",
+      "name": "Iconarch / 徽记头领",
+      "type": "iconarch",
+      "keywords": ["CHAOS CULT", "CHAOS", "DARK COMMUNE", "PSYKER", "ICONARCH"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 8 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_blazing_censer", "cc_autopistol", "cc_crude_melee_weapon_iconarch"]]
+        }
+      ],
+      "abilityRefs": ["icon_bearer", "icon_of_ruin"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "mindwitch",
+      "name": "Mindwitch / 头脑巫师",
+      "type": "mindwitch",
+      "keywords": ["CHAOS CULT", "CHAOS", "DARK COMMUNE", "PSYKER", "MINDWITCH"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 8 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_infernal_gaze", "cc_fists"]]
+        }
+      ],
+      "abilityRefs": ["torrent_of_malice", "vile_vortex"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "chaos_devotee",
+      "name": "Chaos Devotee / 混沌虔信者",
+      "type": "chaos_devotee",
+      "keywords": ["CHAOS CULT", "CHAOS", "DEVOTEE"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 7 },
+      "base": { "diameterMm": 25 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_autopistol", "cc_crude_melee_weapon_devotee"]]
+        }
+      ],
+      "abilityRefs": ["group_activation"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "chaos_mutant",
+      "name": "Chaos Mutant / 混沌变异者",
+      "type": "chaos_mutant",
+      "keywords": ["CHAOS CULT", "CHAOS", "MUTANT"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 7 },
+      "base": { "diameterMm": 25 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_blasphemous_appendages"]]
+        }
+      ],
+      "abilityRefs": ["cursed_mutant", "supernatural_regeneration"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    },
+    {
+      "operativeId": "chaos_torment",
+      "name": "Chaos Torment / 混沌受难者",
+      "type": "chaos_torment",
+      "keywords": ["CHAOS CULT", "CHAOS", "TORMENT"],
+      "stats": { "apl": 2, "move": 6, "save": 5, "wounds": 13 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [["cc_hideous_mutations"]]
+        }
+      ],
+      "abilityRefs": ["cursed_torment", "supernatural_regeneration", "cumbersome"],
+      "factionRuleRefs": ["mutation", "gifts_of_mutation"]
+    }
+  ],
+  "weapons": [
+    {
+      "weaponId": "cc_diabolical_stave_ranged",
+      "name": "Diabolical stave (Ranged) / 恶毒杖（远程）",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 3, "criticalDamage": 6, "range": 2, "weaponRules": ["Stun"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_autopistol",
+      "name": "Autopistol / 手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 2, "criticalDamage": 3, "range": 8, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_diabolical_stave_melee",
+      "name": "Diabolical stave (Melee) / 恶毒杖（近战）",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 3, "criticalDamage": 6, "weaponRules": ["Shock", "Stun"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_commune_blade",
+      "name": "Commune blade / 秘社之刃",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_blazing_censer",
+      "name": "Blazing censer / 燃烧香炉",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 4, "criticalDamage": 4, "range": 5, "weaponRules": ["Saturate", "Torrent 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_crude_melee_weapon_iconarch",
+      "name": "Crude melee weapon / 粗制近战武器（徽记头领）",
+      "kind": "MELEE",
+      "profile": { "attacks": 3, "hit": 4, "normalDamage": 2, "criticalDamage": 3, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_infernal_gaze",
+      "name": "Infernal gaze / 地狱凝视",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 0, "criticalDamage": 0, "range": 6, "weaponRules": ["Psychic", "Devastating 2", "Lethal 3+"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_fists",
+      "name": "Fists / 双拳",
+      "kind": "MELEE",
+      "profile": { "attacks": 3, "hit": 5, "normalDamage": 1, "criticalDamage": 2, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_crude_melee_weapon_devotee",
+      "name": "Crude melee weapon / 粗制近战武器（虔信者）",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 2, "criticalDamage": 3, "weaponRules": [] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_blasphemous_appendages",
+      "name": "Blasphemous appendages / 渎神附肢",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Ceaseless", "Rending"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "cc_hideous_mutations",
+      "name": "Hideous mutations / 骇人变异",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Ceaseless", "Rending"] },
+      "keywords": []
+    }
+  ],
+  "effects": [
+    {
+      "effectId": "cc_supernatural_regeneration",
+      "label": "超自然再生 / Supernatural Regeneration",
+      "source": "chaos_cult:chaos_mutant,chaos_torment",
+      "trigger": { "point": "ON_DAMAGE_PER_DIE" },
+      "pipelineStep": "DAMAGE_PER_DIE",
+      "modifier": { "kind": "DAMAGE_MITIGATION", "payload": { "threshold": 3, "roll": "5+" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_chaos_cult_zh.md", "section": "特工数据卡 / 超自然再生" }
+    }
+  ],
+  "stratagems": [
+    {
+      "id": "joy_in_anguish",
+      "name": "Joy in Anguish / 痛苦之乐",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "可以忽略己方混沌教派特工因受创而导致的武器命中属性变化，包括武器数据变化。每当一名特工对一名受伤的己方混沌教派特工进行射击时，可以重掷一枚防御骰。"
+    },
+    {
+      "id": "frenzied_onslaught",
+      "name": "Frenzied Onslaught / 狂热猛攻",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "己方混沌教派特工的近战武器获得“精准 1（Accurate 1）”；若该特工是变异者或受难者，则改为“精准 2（Accurate 2）”。"
+    },
+    {
+      "id": "nightmarish_entities",
+      "name": "Nightmarish Entities / 噩梦生物",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "判断一个标识的控制权时，若至少一名争夺该标识的敌方特工位于己方混沌教派变异者或受难者 2\" 内，则把所有争夺该标识的敌方特工的 APL 总和视为低 1 点。这不是 APL 属性修改，因此与其他修改效果叠加。"
+    },
+    {
+      "id": "sickening_aura",
+      "name": "Sickening Aura / 恶心气场",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "敌方特工位于己方混沌教派变异者或受难者 2\" 内时，其武器命中属性弱化 1。本效果不与受创导致的命中弱化叠加。"
+    },
+    {
+      "id": "devoted_followers",
+      "name": "Devoted Followers / 忠诚追随者",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "当一名己方混沌教派黑暗秘社特工被选为射击行动的有效目标，或被选为近战行动的近战对象时使用。选择该黑暗秘社特工 3\" 内且对其可见的另一名己方混沌教派特工（黑暗秘社除外），由后者替代成为目标或近战对象，即使通常不是有效对象。若为近战行动，在该行动期间把替代特工视为位于近战特工的控制范围内；若为射击行动，只有原目标拥有掩护或被遮挡时，替代特工才拥有相应状态；若射击武器拥有爆炸（Blast）或洪流（Torrent）规则，本计谋无效。"
+    },
+    {
+      "id": "abominable_mutation",
+      "name": "Abominable Mutation / 憎恶突变",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "在一名己方混沌教派特工（黑暗秘社除外）被激活时使用。选择一项诅咒之礼，该特工获得其效果，并与已拥有的诅咒之礼叠加。每场战斗每名特工最多成为本计谋对象一次；若其之后通过“变异”转变类型，仍保留这项诅咒之礼。"
+    },
+    {
+      "id": "zealous_demise",
+      "name": "Zealous Demise / 狂热死亡",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "己方混沌教派变异者或受难者被残废时，在将其移出杀戮区前使用。对其 2\" 内且对其可见的一名敌方特工造成 D3 点伤害；若被残废者是受难者，改为 D6 点伤害。"
+    },
+    {
+      "id": "unleash_the_daemon",
+      "name": "Unleash the Daemon / 释放恶魔",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "在己方混沌教派变异者或受难者的激活期间，于其执行一个行动之前或之后使用。在该次激活中，该特工可以执行两次近战行动，并且其中一次可以无消耗。"
+    }
+  ],
+  "wargear": [
+    {
+      "id": "cc_dark_grimoire",
+      "name": "Dark Grimoire / 邪恶魔典",
+      "description": "每场战斗限一次，战略计划。更换己方的一项诅咒之礼。若更换的是某名特工通过“憎恶突变”获得的诅咒之礼，只有该特工获得更换后的效果。"
+    },
+    {
+      "id": "cc_sly_disguises",
+      "name": "Sly Disguises / 秘密伪装",
+      "description": "揭示本装备后掷一枚 D3。在第一转折点中，作为战略计划，选择数量等于结果、完全位于己方降落区内的己方混沌教派虔信者；这些特工可以立即执行一次无消耗的转移行动，但必须在完全位于己方降落区 3\" 内的位置结束移动。"
+    },
+    {
+      "id": "cc_unclean_talisman",
+      "name": "Unclean Talisman / 不洁护身符",
+      "description": "每个转折点限一次。当一名特工对一名己方混沌教派特工射击时，在掷防御骰步骤中，可以把一枚普通成功作为关键成功保留。"
+    },
+    {
+      "id": "cc_foul_blessings",
+      "name": "Foul Blessings / 污秽祝福",
+      "description": "每场战斗限一次。当一枚攻击骰对一名己方混沌教派特工（虔信者除外）造成普通伤害时，可以忽略该次伤害。若目标是变异者或受难者，不能先为同一枚攻击骰使用“超自然再生”掷骰，再决定改用本规则；必须预先二选一。"
+    }
+  ],
+  "buildConstraints": {
+    "operatives": { "min": 14, "max": 14 },
+    "leaderFrom": ["cult_demagogue"],
+    "operativeTypeLimits": {
+      "cult_demagogue": { "min": 1, "max": 1 },
+      "blessed_blade": { "min": 2, "max": 2 },
+      "iconarch": { "min": 1, "max": 1 },
+      "mindwitch": { "min": 1, "max": 1 },
+      "chaos_devotee": { "min": 9, "max": 9 }
+    },
+    "initialRosterIneligible": ["chaos_mutant", "chaos_torment"],
+    "notes": "固定 14 人：1 煽动家、2 祝福战刃、1 徽记头领、1 头脑巫师、9 虔信者。变异者/受难者仅由对局中变异产生，初始建队不可选。"
+  }
+}

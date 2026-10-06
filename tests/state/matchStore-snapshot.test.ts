@@ -11,8 +11,8 @@ beforeEach(() => {
       dropZones: { a: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }], b: [{ x: 2, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 1 }, { x: 2, y: 1 }] },
     },
     tokens: [
-      { uid: 'a1', side: 'a', opId: 'x', name: 'A1', pos: { x: 0, y: 0 }, facing: 0, baseRadius: 0.6, wounds: 10, maxWounds: 10, markers: [], alive: true, placed: true, order: 'CONCEAL' },
-      { uid: 'b1', side: 'b', opId: 'x', name: 'B1', pos: { x: 5, y: 0 }, facing: 0, baseRadius: 0.6, wounds: 10, maxWounds: 10, markers: [], alive: true, placed: true, order: 'CONCEAL' },
+      { factionId: "angels_of_death", weapons: [], uid: 'a1', side: 'a', opId: 'x', name: 'A1', pos: { x: 0, y: 0 }, facing: 0, baseRadius: 0.6, wounds: 10, maxWounds: 10, markers: [], alive: true, placed: true, order: 'CONCEAL' },
+      { factionId: "angels_of_death", weapons: [], uid: 'b1', side: 'b', opId: 'x', name: 'B1', pos: { x: 5, y: 0 }, facing: 0, baseRadius: 0.6, wounds: 10, maxWounds: 10, markers: [], alive: true, placed: true, order: 'CONCEAL' },
     ],
   })
 })
@@ -48,7 +48,7 @@ describe('快照回退 + 回放（D3）', () => {
     const s = useMatchStore.getState()
     // 模拟一次待确认结算
     useMatchStore.setState({
-      lastShot: { targetUid: 'b1', targetName: 'B1', woundsDealt: 3, prevWounds: 10, attackerUid: 'a1', kind: 'shoot' },
+      lastShot: { targetUid: 'b1', targetName: 'B1', woundsDealt: 3, prevWounds: 10, attackerUid: 'a1', kind: 'SHOOT' },
       currentLog: { resolutionId: 'r1', pipelineKind: 'SHOOTING', records: [{ stepId: 'HIT_ROLL', summary: 'x', appliedEffectIds: [], rejectedEffectIds: [] }], cursor: 1, inputSnapshot: {} as never, result: {} as never },
     })
     s.confirmCasualties()

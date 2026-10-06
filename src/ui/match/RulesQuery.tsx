@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
-import { loadPack, type FactionPack, type Effect, type Weapon } from '../..'
-import angelsPack from '../../data/packs/angels_of_death.v1.json'
-
-const pack: FactionPack = loadPack(angelsPack)
+import type { Effect, Weapon } from '../..'
+import { ALL_PACKS } from '../../data/packs'
 
 // 1.17 T3/T4：规则查询（参数化要点，不显示 GW 原文 D-29）。
 // 引擎接入 + UI 抽为 RulesSearch，供顶栏规则视图与对局浮层共用（P10 统一）。
@@ -26,14 +24,16 @@ export function searchRules(q: string): Hit[] {
   const k = q.trim().toLowerCase()
   if (!k) return []
   const hits: Hit[] = []
-  for (const e of pack.effects) {
-    if (`${e.effectId} ${e.label} ${e.modifier.kind} ${e.trigger.point} ${e.pipelineStep} ${e.source}`.toLowerCase().includes(k)) {
-      hits.push({ kind: 'effect', e })
+  for (const pack of ALL_PACKS) {
+    for (const e of pack.effects) {
+      if (`${e.effectId} ${e.label} ${e.modifier.kind} ${e.trigger.point} ${e.pipelineStep} ${e.source}`.toLowerCase().includes(k)) {
+        if (!hits.some(h => h.kind === 'effect' && h.e.effectId === e.effectId)) hits.push({ kind: 'effect', e })
+      }
     }
-  }
-  for (const w of pack.weapons) {
-    if (`${w.weaponId} ${w.name} ${w.kind} ${w.keywords.join(' ')}`.toLowerCase().includes(k)) {
-      hits.push({ kind: 'weapon', w })
+    for (const w of pack.weapons) {
+      if (`${w.weaponId} ${w.name} ${w.kind} ${w.keywords.join(' ')}`.toLowerCase().includes(k)) {
+        if (!hits.some(h => h.kind === 'weapon' && h.w.weaponId === w.weaponId)) hits.push({ kind: 'weapon', w })
+      }
     }
   }
   return hits.slice(0, 12)

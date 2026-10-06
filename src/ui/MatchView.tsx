@@ -1,9 +1,8 @@
+import { buildMatchTokens, canStartMatch } from '../state/setup'
 import { useState } from 'react'
-import { loadPack, type FactionPack } from '../'
-import { useMatchStore, type MatchToken } from '../state/matchStore'
-import { useRosterStore } from '../state/rosterStore'
+import { useMatchStore, type HeightMode } from '../state/matchStore'
 import type { Point, TerrainFeature } from '../geometry'
-import { loadMapPack, type MapPack, type ObjectiveMarker } from '../data/maps'
+import { loadMapPack, mapWithDeploymentMode, type DeploymentMode, type MapPack, type ObjectiveMarker } from '../data/maps'
 import { MapSelect } from './match/MapSelect'
 import { TerrainEditor } from './match/TerrainEditor'
 import { DeployPhase } from './match/DeployPhase'
@@ -14,40 +13,9 @@ import { RulesQuery, useRulesQuery } from './match/RulesQuery'
 import openMap from '../data/packs/maps/open.v1.json'
 import ruinMap from '../data/packs/maps/ruin.v1.json'
 import corridorMap from '../data/packs/maps/corridor.v1.json'
-import angelsPack from '../data/packs/angels_of_death.v1.json'
+import { VOLKUS_MAPS } from '../data/packs/maps/volkus'
 
-const pack: FactionPack = loadPack(angelsPack)
-const MAPS: MapPack[] = [openMap, ruinMap, corridorMap].map((m) => loadMapPack(m))
-
-const DEFAULT_IDS = [pack.operatives[0]!.operativeId, (pack.operatives[1] ?? pack.operatives[0]!).operativeId]
-
-function buildTokens(): MatchToken[] {
-  const picked = useRosterStore.getState().rosterA.operativeIds
-  const ids = picked.length ? picked : DEFAULT_IDS
-  const out: MatchToken[] = []
-  ids.forEach((opId, i) => {
-    const op = pack.operatives.find((o) => o.operativeId === opId) ?? pack.operatives[0]!
-    const baseRadius = op.base.diameterMm / 2 / 25.4 // mm→英寸半径（D-27）
-    ;(['a', 'b'] as const).forEach((side) => {
-      out.push({
-        uid: `${side}${i + 1}`,
-        side,
-        opId,
-        name: `${op.name}-${side.toUpperCase()}${i + 1}`,
-        pos: { x: -1, y: -1 },
-        facing: 0,
-        baseRadius,
-        wounds: op.stats.wounds,
-        maxWounds: op.stats.wounds,
-        markers: [],
-        alive: true,
-        placed: false,
-        order: 'CONCEAL', // 部署即隐匿（D-部署规则）
-      })
-    })
-  })
-  return out
-}
+const MAPS: MapPack[] = [...VOLKUS_MAPS, ...[openMap, ruinMap, corridorMap].map((m) => loadMapPack(m))]
 
 export function MatchView() {
   const phase = useMatchStore((s) => s.phase)
@@ -57,13 +25,14 @@ export function MatchView() {
   const commitBlankMap = useMatchStore((s) => s.commitBlankMap)
   const initTokens = useMatchStore((s) => s.initTokens)
 
-  const [blankBounds] = useState({ w: 30, h: 20 })
+  const [blankBounds] = useState({ w: 30, h: 22 })
   const [blankEditing, setBlankEditing] = useState(false)
   const rulesQuery = useRulesQuery()
 
-  function onLoadMap(m: MapPack) {
-    loadMap(m)
-    initTokens(buildTokens())
+  function onLoadMap(m: MapPack, heightMode: HeightMode, deploymentMode: DeploymentMode) {
+    if (!canStartMatch()) return
+    loadMap(mapWithDeploymentMode(m, deploymentMode), heightMode, deploymentMode)
+    initTokens(buildMatchTokens())
   }
   function onBlank() {
     startBlank(blankBounds)
@@ -72,12 +41,13 @@ export function MatchView() {
   function onTerrainDone(draft: { terrain: TerrainFeature[]; objectives: ObjectiveMarker[]; dropA: Point[]; dropB: Point[] }) {
     setBlankEditing(false)
     commitBlankMap(draft)
-    initTokens(buildTokens())
+    initTokens(buildMatchTokens())
   }
   function beginPlay() {
     useMatchStore.getState().enterStrategy()
   }
 
+  if (!canStartMatch() && phase === 'map-select') return <div className="empty-state"><h2>先完成双方建队</h2><p>回到建队，为双方选择合法的小队与阵营配置。</p></div>
   if (phase === 'ended') {
     return (
       <>

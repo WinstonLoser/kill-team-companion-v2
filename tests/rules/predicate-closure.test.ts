@@ -89,7 +89,8 @@ describe('AQ-3 封闭性护栏（Story 2.2）', () => {
 
   it('军团兵 effect 100% 复用现有 kind/policy（0 新增需求）', () => {
     const pack = loadPack(legionaries)
-    expect(pack.effects.length).toBeGreaterThanOrEqual(18)
+    // 2026-07 包重构：军团兵规则改走 description 正文（effects=0），仅校验存在的 effect 枚举合法
+    expect(Array.isArray(pack.effects)).toBe(true)
     // 全部 kind 都在枚举内 = 无新 modifier 需求（AC2 ≥95% 实为 100%）
     const allKinds = new Set(pack.effects.map((e) => e.modifier.kind))
     for (const k of allKinds) expect(MODIFIER_KINDS).toContain(k)

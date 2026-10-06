@@ -12,21 +12,35 @@ export interface TerrainFeature {
   id: string
   polygon: Polygon
   kind: TerrainKind
+  /** 沃库斯地形原本的轻/重类型；二维几何仍保留简化判定。 */
+  terrainClass?: 'HEAVY' | 'LIGHT'
+  /** 地图图例中的地形编号。 */
+  pieceId?: string
+  /** 门可穿越；其视线、近战等特殊规则由玩家现场裁定。 */
+  accessible?: boolean
+  /** 明确标记门，供后续隔门近战与门状态规则识别。 */
+  isDoor?: boolean
+  /** 只标位置，不自动参与二维裁定（复杂/不确定附件）。 */
+  advisoryOnly?: boolean
   vantage?: boolean
   climbable?: boolean
   difficult?: boolean // 困难地形（移动修正；D2 AC2）
+  bottom?: number
+  top?: number
 }
 
 export interface OperativePlacement {
   operativeId: string
   pos: Point
-  baseRadius: number // = base.diameterMm/2 (D-27)
+  baseRadius: number // 英寸；底座直径毫米 ÷ 50.8
+  height?: number // 底座距战场地面的高度（英寸）
   facing?: number
 }
 
 export interface Board {
   terrain: TerrainFeature[]
   operatives: OperativePlacement[]
+  platforms?: { id: string; polygon: Polygon; height: number; targetingHeight?: number }[]
 }
 
 export type Confidence = 'CLEAR' | 'AMBIGUOUS'
@@ -119,7 +133,7 @@ export function distanceToPolygon(p: Point, poly: Polygon): number {
  */
 export function circleHitsBlockingTerrain(center: Point, radius: number, terrain: TerrainFeature[]): TerrainFeature | null {
   for (const tf of terrain) {
-    if (tf.kind !== 'BLOCKING') continue
+    if (tf.kind !== 'BLOCKING' || tf.advisoryOnly) continue
     if (pointInPoly(center, tf.polygon) || nearestPoly(center, tf.polygon) < radius - 1e-9) return tf
   }
   return null
@@ -131,6 +145,52 @@ function segIntersectsPoly(a: Point, b: Point, poly: Polygon): boolean {
     if (segSeg(a, b, poly[i]!, poly[j]!)) return true
   }
   return false
+}
+/** 线段在多边形内部的参数区间。 */
+function insideIntervals(a: Point, b: Point, poly: Polygon): [number, number][] {
+  if (poly.length < 3) return []
+  const ts = [0, 1]
+  const dx = b.x - a.x, dy = b.y - a.y
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i]!, q = poly[(i + 1) % poly.length]!
+    const ex = q.x - p.x, ey = q.y - p.y
+    const den = dx * ey - dy * ex
+    if (Math.abs(den) < 1e-9) continue
+    const px = p.x - a.x, py = p.y - a.y
+    const t = (px * ey - py * ex) / den
+    const u = (px * dy - py * dx) / den
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) ts.push(t)
+  }
+  ts.sort((x, y) => x - y)
+  const intervals: [number, number][] = []
+  for (let i = 1; i < ts.length; i++) {
+    const l = ts[i - 1]!, r = ts[i]!
+    if (r - l < 1e-8) continue
+    const m = (l + r) / 2
+    if (pointInPoly({ x: a.x + dx * m, y: a.y + dy * m }, poly)) intervals.push([l, r])
+  }
+  return intervals
+}
+function crossesVolume(a: Point, b: Point, za: number, zb: number, t: TerrainFeature): boolean {
+  if (t.bottom === undefined || t.top === undefined) return segIntersectsPoly(a, b, t.polygon)
+  const bottom = t.bottom, top = t.top
+  return insideIntervals(a, b, t.polygon).some(([l, r]) => {
+    const zl = za + (zb - za) * l, zr = za + (zb - za) * r
+    return Math.min(zl, zr) <= top + 1e-6 && Math.max(zl, zr) >= bottom - 1e-6
+  })
+}
+function crossesPlatform(a: Point, b: Point, za: number, zb: number, board: Board): boolean {
+  return (board.platforms ?? []).some(p => {
+    const level = p.targetingHeight ?? p.height
+    if (Math.abs(za - level) < 1e-6 || Math.abs(zb - level) < 1e-6) return false
+    const t = (level - za) / (zb - za)
+    return t > 1e-6 && t < 1 - 1e-6 && pointInPoly({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, p.polygon)
+  })
+}
+export function targetingHeight(placement: OperativePlacement, board: Board): number {
+  const height = placement.height ?? 0
+  const platform = board.platforms?.find(p => Math.abs(p.height - height) < 1e-6 && pointInPoly(placement.pos, p.polygon))
+  return platform?.targetingHeight ?? height
 }
 function distPointSeg(p: Point, a: Point, b: Point): number {
   const dx = b.x - a.x
@@ -158,8 +218,8 @@ function minVertexDistToSeg(poly: Polygon, a: Point, b: Point): number {
 // ===== 判定（各产出 GeometryFinding） =====
 
 /** 单条视线段被 BLOCKING 阻断情况：{blocked, clearance}。 */
-function losSegment(a: Point, b: Point, board: Board): { blocked: boolean; clearance: number } {
-  const blockers = board.terrain.filter((t) => t.kind === 'BLOCKING')
+function losSegment(a: Point, b: Point, board: Board, za = 0, zb = 0): { blocked: boolean; clearance: number } {
+  const blockers = board.terrain.filter((t) => (t.kind === 'BLOCKING' || t.isDoor) && !t.advisoryOnly)
   let blocked = false
   let clearance = Infinity
   for (const blk of blockers) {
@@ -167,10 +227,10 @@ function losSegment(a: Point, b: Point, board: Board): { blocked: boolean; clear
     if (poly.length < 2) continue
     // P8：端点站于此地形内（部署于废墟常见）→ 不当它阻断自身视线
     if (pointInPoly(a, poly) || pointInPoly(b, poly)) continue
-    if (segIntersectsPoly(a, b, poly)) blocked = true
+    if (crossesVolume(a, b, za, zb, blk)) blocked = true
     else clearance = Math.min(clearance, minVertexDistToSeg(poly, a, b))
   }
-  return { blocked, clearance }
+  return { blocked: blocked || crossesPlatform(a, b, za, zb, board), clearance }
 }
 
 /** 目标底座圆上的候选视点：朝攻击方最近点 + 两侧切点（DN4 头→底座保真）。 */
@@ -194,6 +254,8 @@ function sightPoints(a: Point, c: Point, r: number): Point[] {
 /** LOS 保真选项（DN4）：注入目标底座半径则按「头部→底座圆」求可视（任一切线/最近点清则可见）。 */
 export interface LosOptions {
   targetBaseRadius?: number
+  attackerHeight?: number
+  targetHeight?: number
 }
 
 /**
@@ -204,9 +266,12 @@ export interface LosOptions {
  */
 export function losFinding(attacker: Point, target: Point, board: Board, options?: LosOptions): GeometryFinding {
   const r = options?.targetBaseRadius ?? 0
+  // 模型的真实头部/姿态未知；底座上方 1.25" 为辅助判定视点，玩家仍可翻转。
+  const za = (options?.attackerHeight ?? 0) + 1.25
+  const zb = (options?.targetHeight ?? 0) + 1.25
   if (r <= 0) {
     // 向后兼容：中心到中心
-    const { blocked, clearance } = losSegment(attacker, target, board)
+    const { blocked, clearance } = losSegment(attacker, target, board, za, zb)
     return finding('LOS', !blocked, blocked ? -1 : clearance)
   }
   const d = Math.hypot(target.x - attacker.x, target.y - attacker.y)
@@ -217,7 +282,7 @@ export function losFinding(attacker: Point, target: Point, board: Board, options
   let anyClear = false
   let best = -1
   for (const p of sightPoints(attacker, target, r)) {
-    const seg = losSegment(attacker, p, board)
+    const seg = losSegment(attacker, p, board, za, zb)
     if (!seg.blocked) {
       anyClear = true
       best = Math.max(best, seg.clearance)
@@ -226,39 +291,78 @@ export function losFinding(attacker: Point, target: Point, board: Board, options
   return finding('LOS', anyClear, anyClear ? best : -1)
 }
 
-/** 掩护：目标 1" 内有 COVER 地形 → 有掩护；2" 内有他特工 → 无掩护。 */
-export function coverFinding(target: Point, board: Board, otherOperatives: Point[]): GeometryFinding {
-  const coverTerrain = board.terrain.filter((t) => t.kind === 'COVER')
+function intervenesForCover(attacker: Point | undefined, target: Point, radius: number, terrain: TerrainFeature, attackerHeight = 0, targetHeight = 0): boolean {
+  if (!attacker) return true
+  return [target, ...sightPoints(attacker, target, radius)].some(point => crossesVolume(attacker, point, attackerHeight, targetHeight, terrain))
+}
+
+/** 掩护：目标底座 1" 内有介入地形；与攻击方底座相距 2" 内则失去掩护。 */
+export function coverFinding(target: Point, board: Board, otherOperatives: Point[], targetRadius = 0, attackerRadius = 0, attackerHeight = 0, targetHeight = 0): GeometryFinding {
+  const attacker = otherOperatives[0]
+  const coverTerrain = board.terrain.filter((t) => (t.kind === 'COVER' || t.kind === 'BLOCKING') && !t.advisoryOnly && intervenesForCover(attacker, target, targetRadius, t, attackerHeight, targetHeight))
   let nearestCover = Infinity
   for (const c of coverTerrain) nearestCover = Math.min(nearestCover, nearestPoly(target, c.polygon))
-  let nearestOther = Infinity
-  for (const o of otherOperatives) nearestOther = Math.min(nearestOther, Math.hypot(o.x - target.x, o.y - target.y))
-
-  const inCover = nearestCover <= 1
-  const tooCloseOther = nearestOther <= 2
+  const inCover = nearestCover <= 1 + targetRadius
+  const attackerGap = attacker ? Math.hypot(
+    Math.max(0, Math.hypot(attacker.x - target.x, attacker.y - target.y) - targetRadius - attackerRadius),
+    targetHeight - attackerHeight,
+  ) : Infinity
+  const tooCloseOther = attackerGap <= 2 || otherOperatives.slice(1).some(o => Math.hypot(o.x - target.x, o.y - target.y) - targetRadius <= 2)
   const hasCover = inCover && !tooCloseOther
-  const margin = nearestCover - 1 // 负=在掩护内
+  const margin = nearestCover - 1 - targetRadius // 负=在掩护内
   return finding('COVER', hasCover, hasCover ? margin : -margin)
 }
 
-/** 遮挡：目标在 OBSCURING 地形内 → 被遮挡。 */
-export function obscuredFinding(target: Point, board: Board): GeometryFinding {
-  const obscured = board.terrain.some((t) => t.kind === 'OBSCURING' && pointInPoly(target, t.polygon))
+/** 当前二维棋盘中，提供目标掩护的最近一块地形类型。 */
+export function coverTerrainClass(target: Point, board: Board, attacker?: Point, targetRadius = 0, attackerHeight = 0, targetHeight = 0): 'LIGHT' | 'HEAVY' | 'NONE' {
+  const candidates = board.terrain
+    .filter(t => (t.kind === 'COVER' || t.kind === 'BLOCKING') && !t.advisoryOnly && intervenesForCover(attacker, target, targetRadius, t, attackerHeight, targetHeight))
+    .map(t => ({ distance: nearestPoly(target, t.polygon), type: t.terrainClass ?? (t.kind === 'BLOCKING' ? 'HEAVY' : 'LIGHT') }))
+    .filter(t => t.distance <= 1 + targetRadius)
+    .sort((a, b) => a.distance - b.distance)
+  return candidates[0]?.type ?? 'NONE'
+}
+
+/** 遮蔽：射线穿过距双方底座均超过 1" 的重型地形；特殊遮蔽区域单独处理。 */
+export function obscuredFinding(attacker: Point, target: Point, board: Board, attackerRadius = 0, targetRadius = 0, attackerHeight = 0, targetHeight = 0): GeometryFinding {
+  const distance = Math.hypot(target.x - attacker.x, target.y - attacker.y)
+  const spatialDistance = Math.hypot(distance, targetHeight - attackerHeight)
+  const from = 1 + attackerRadius
+  const to = 1 + targetRadius
+  const start = spatialDistance > from + to ? { x: attacker.x + (target.x - attacker.x) * from / spatialDistance, y: attacker.y + (target.y - attacker.y) * from / spatialDistance } : attacker
+  const end = spatialDistance > from + to ? { x: target.x + (attacker.x - target.x) * to / spatialDistance, y: target.y + (attacker.y - target.y) * to / spatialDistance } : target
+  const obscured = board.terrain.some(t => !t.advisoryOnly && (
+    (t.kind === 'OBSCURING' && pointInPoly(target, t.polygon)) ||
+    (spatialDistance > from + to && t.terrainClass === 'HEAVY' && crossesVolume(start, end, attackerHeight + (targetHeight - attackerHeight) * from / spatialDistance, targetHeight + (attackerHeight - targetHeight) * to / spatialDistance, t))
+  ))
   return finding('OBSCURED', obscured, obscured ? -1 : 1)
+}
+
+/** 同一重型地形同时提供掩护和遮蔽，防守方须二选一。 */
+export function sharedCoverObscuredTerrain(attacker: OperativePlacement, target: OperativePlacement, board: Board): boolean {
+  const attackerHeight = targetingHeight(attacker, board), targetHeight = targetingHeight(target, board)
+  const basesApart = Math.hypot(
+    Math.max(0, Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y) - attacker.baseRadius - target.baseRadius),
+    targetHeight - attackerHeight,
+  )
+  return basesApart > 2 && board.terrain.some(t => t.terrainClass === 'HEAVY' && !t.advisoryOnly &&
+    nearestPoly(target.pos, t.polygon) <= 1 + target.baseRadius &&
+    intervenesForCover(attacker.pos, target.pos, target.baseRadius, t, attackerHeight, targetHeight) &&
+    obscuredFinding(attacker.pos, target.pos, { terrain: [t], operatives: [] }, attacker.baseRadius, target.baseRadius, attackerHeight, targetHeight).finalValue)
 }
 
 /** 射程：双方底座最近点距离 ≤ range。 */
 export function rangeFinding(attacker: OperativePlacement, target: OperativePlacement, range: number): GeometryFinding {
-  const center = Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y)
-  const nearest = Math.max(0, center - attacker.baseRadius - target.baseRadius)
+  const horizontal = Math.max(0, Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y) - attacker.baseRadius - target.baseRadius)
+  const nearest = Math.hypot(horizontal, (target.height ?? 0) - (attacker.height ?? 0))
   const inRange = nearest <= range
   return finding('RANGE', inRange, range - nearest)
 }
 
 /** 控制范围：双方底座最近点 ≤ 1" 且可见。 */
 export function engagementFinding(attacker: OperativePlacement, target: OperativePlacement, los: boolean): GeometryFinding {
-  const center = Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y)
-  const nearest = Math.max(0, center - attacker.baseRadius - target.baseRadius)
+  const horizontal = Math.max(0, Math.hypot(target.pos.x - attacker.pos.x, target.pos.y - attacker.pos.y) - attacker.baseRadius - target.baseRadius)
+  const nearest = Math.hypot(horizontal, (target.height ?? 0) - (attacker.height ?? 0))
   const engaged = nearest <= 1 && los
   return finding('ENGAGEMENT', engaged, 1 - nearest)
 }
@@ -275,8 +379,17 @@ export interface ValidateTargetOptions {
   targetOrder?: 'ENGAGED' | 'CONCEALED'
   /** 己方特工位置：目标控制范围内有己方（近战纠缠）则禁射击，避免误伤 */
   friendlyPositions?: Point[]
+  /** 有底座尺寸时使用完整控制范围判定，避免只用圆心距离漏判。 */
+  friendlyPlacements?: OperativePlacement[]
   /** 咨询式翻转覆盖（DN7/D-24）：玩家终裁覆盖引擎某项 finding 的 finalValue */
   findingOverrides?: FindingOverride[]
+  /** 判定类型：射击或近战 */
+  kind?: 'SHOOT' | 'MELEE'
+  /** 高点至少高 2 英寸时，可射击轻掩护中的隐匿目标。 */
+  vantage?: boolean
+  coverType?: 'LIGHT' | 'HEAVY' | 'NONE'
+  /** 同一块地形同时造成掩护和遮蔽时，防守方的选择。 */
+  terrainChoice?: 'COVER' | 'OBSCURED'
 }
 
 /** 玩家终裁覆盖（DN7）：强制某项 finding 的最终值。 */
@@ -305,26 +418,44 @@ export function validateTarget(
   options?: ValidateTargetOptions,
 ): EligibilityResult {
   const overrides = options?.findingOverrides
-  const los = applyOverride(losFinding(attacker.pos, target.pos, board, { targetBaseRadius: target.baseRadius }), overrides)
-  const cover = applyOverride(coverFinding(target.pos, board, otherOperatives), overrides)
-  const obscured = applyOverride(obscuredFinding(target.pos, board), overrides)
+  const attackerTargetingHeight = targetingHeight(attacker, board), targetTargetingHeight = targetingHeight(target, board)
+  const los = applyOverride(losFinding(attacker.pos, target.pos, board, { targetBaseRadius: target.baseRadius, attackerHeight: attackerTargetingHeight, targetHeight: targetTargetingHeight }), overrides)
+  let cover = applyOverride(coverFinding(target.pos, board, otherOperatives, target.baseRadius, attacker.baseRadius, attackerTargetingHeight, targetTargetingHeight), overrides)
+  let obscured = applyOverride(obscuredFinding(attacker.pos, target.pos, board, attacker.baseRadius, target.baseRadius, attackerTargetingHeight, targetTargetingHeight), overrides)
+  if (cover.finalValue && obscured.finalValue && sharedCoverObscuredTerrain(attacker, target, board)) {
+    if (options?.terrainChoice === 'OBSCURED') cover = { ...cover, finalValue: false }
+    else obscured = { ...obscured, finalValue: false }
+  }
   const rangeF = applyOverride(rangeFinding(attacker, target, range), overrides)
-  const engaged = applyOverride(engagementFinding(attacker, target, los.finalValue), overrides)
+  // 沃库斯门在控制范围判定中不阻断可见性，但仍阻断正常射击视线。
+  const controlLos = board.terrain.some(t => t.isDoor)
+    ? losFinding(attacker.pos, target.pos, { ...board, terrain: board.terrain.filter(t => !t.isDoor) }, { targetBaseRadius: target.baseRadius, attackerHeight: attackerTargetingHeight, targetHeight: targetTargetingHeight }).finalValue
+    : los.finalValue
+  const controlVisibility = overrides?.find(o => o.kind === 'LOS')?.finalValue ?? controlLos
+  const engaged = applyOverride(engagementFinding(attacker, target, controlVisibility), overrides)
 
   const missing: string[] = []
-  if (!los.finalValue) missing.push('LOS 不可见')
-  if (obscured.finalValue) missing.push('目标被遮挡')
-  if (!rangeF.finalValue) missing.push('超出射程')
-  if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
-  // P13：目标隐匿命令不可射击
-  if (options?.targetOrder === 'CONCEALED') missing.push('目标隐匿命令（不可射击）')
-  // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
-  const friendlies = options?.friendlyPositions ?? []
-  const friendlyEngaged = friendlies.some((fp) => {
-    const center = Math.hypot(target.pos.x - fp.x, target.pos.y - fp.y)
-    return Math.max(0, center - target.baseRadius) <= 1
-  })
-  if (friendlyEngaged) missing.push('目标控制范围内有己方（近战纠缠，避免误伤）')
+  const kind = options?.kind ?? 'SHOOT'
+  
+  if (kind === 'SHOOT') {
+    if (!los.finalValue) missing.push('LOS 不可见')
+    if (!rangeF.finalValue) missing.push('超出射程')
+    if (engaged.finalValue) missing.push('在敌方控制范围内（禁射击）')
+    // P13：目标隐匿命令不可射击
+    if (options?.targetOrder === 'CONCEALED' && cover.finalValue && !(options.vantage && options.coverType === 'LIGHT')) missing.push('目标隐匿且有掩护（不可射击）')
+    // P13：目标控制范围内有己方（近战纠缠）→ 避免误伤
+    const friendlyPlacements = options?.friendlyPlacements
+    const friendlyEngaged = friendlyPlacements
+      ? friendlyPlacements.some(fp => {
+          const visible = losFinding(fp.pos, target.pos, { ...board, terrain: board.terrain.filter(t => !t.isDoor) }, { targetBaseRadius: target.baseRadius, attackerHeight: targetingHeight(fp, board), targetHeight: targetTargetingHeight }).finalValue
+          return engagementFinding(fp, target, visible).finalValue
+        })
+      : (options?.friendlyPositions ?? []).some(fp => Math.max(0, Math.hypot(target.pos.x - fp.x, target.pos.y - fp.y) - target.baseRadius) <= 1)
+    if (friendlyEngaged) missing.push('目标控制范围内有己方（近战纠缠，避免误伤）')
+  } else {
+    // MELEE
+    if (!engaged.finalValue) missing.push('近战必须在目标控制范围内')
+  }
 
   return {
     ok: missing.length === 0,

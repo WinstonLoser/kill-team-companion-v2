@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { loadPack, evaluateLegality, type FactionPack } from '../'
+import { evaluateLegality, type FactionPack } from '../'
 import { useViewStore } from '../state/viewStore'
 import { useRosterStore, type Side } from '../state/rosterStore'
 import { FactionSelect, type FactionOption } from './roster/FactionSelect'
@@ -7,19 +7,11 @@ import { OperativePicker, computeDefaultRoster } from './roster/OperativePicker'
 import { SubFactionSelect } from './roster/SubFactionSelect'
 import { LegalityPanel } from './roster/LegalityPanel'
 import { FactionOverview } from './roster/FactionOverview'
-import angelsPack from '../data/packs/angels_of_death.v1.json'
-import legionariesPack from '../data/packs/legionaries.v1.json'
-import plaguePack from '../data/packs/plague_marines.v1.json'
+import { FactionWargearSelect } from './roster/FactionWargearSelect'
+import { FACTION_REGISTRY } from '../data/packs'
 
-// 三阵营全部可用（Epic 1-3 完成）。
-const angelsLoaded: FactionPack = loadPack(angelsPack)
-const legionariesLoaded: FactionPack = loadPack(legionariesPack)
-const plagueLoaded: FactionPack = loadPack(plaguePack)
-const FACTIONS: FactionOption[] = [
-  { id: 'angels_of_death', name: '死亡天使', available: true, pack: angelsLoaded },
-  { id: 'legionaries', name: '军团兵', available: true, pack: legionariesLoaded },
-  { id: 'plague_marines', name: '瘟疫战士', available: true, pack: plagueLoaded },
-]
+// 阵营列表来自统一注册表（src/data/packs/index.ts），全部可用。
+const FACTIONS: FactionOption[] = FACTION_REGISTRY.map((f) => ({ id: f.id, name: f.name, available: true, pack: f.pack }))
 
 function packFor(factionId: string | null): FactionPack | null {
   if (!factionId) return null
@@ -36,6 +28,13 @@ function legalityOf(side: Side) {
     operativeIds: entry.operativeIds,
     loadout: entry.loadout,
     subFactionSelection: entry.subFactionSelection,
+    teamRulesEnabled: entry.teamRulesEnabled,
+    perOperativeMarks: entry.perOperativeMarks,
+    personalAbilityIds: entry.personalAbilityIds,
+    personalTactics: entry.personalTactics,
+    boonWeaponTargets: entry.boonWeaponTargets,
+    selectedWargearIds: entry.selectedWargearIds,
+    personalRulesEnabled: entry.personalRulesEnabled,
   })
 }
 
@@ -56,7 +55,8 @@ export function RosterView() {
 
   const resultA = legalityOf('a')
   const resultB = legalityOf('b')
-  const bothGreen = resultA.legal && resultB.legal
+  const bothLegal = resultA.legal && resultB.legal
+  const bothGreen = bothLegal
   const unresolved = (resultA.legal ? 0 : 1) + (resultB.legal ? 0 : 1)
 
   // T6：进入对局门禁。双方全绿 → commit（已在 store）→ 切 setup-map-deploy（当前=match 视图）
@@ -69,7 +69,7 @@ export function RosterView() {
 
   return (
     <section className="roster">
-      <h2>建队（无点数 D-30 · 双方各建一队）</h2>
+      <div className="roster-intro"><div><span className="eyebrow">MISSION PREPARATION / 任务准备</span><h2>选择阵营，组建你的小队。</h2><p className="muted">为双方配置特工与武器。完成右侧检查后，即可进入战场。</p></div><span className="rules-badge">LITE RULES · 4 转折点</span></div>
 
       {/* A/B 双方建队切换 */}
       <div className="row side-toggle">
@@ -82,7 +82,7 @@ export function RosterView() {
               className={`side-btn ${side} ${editing === side ? 'active' : ''}`}
               onClick={() => setEditing(side)}
             >
-              {sideLabel(side)}{e.factionId ? ` · ${e.factionId}` : ' · 未选阵营'}
+              {sideLabel(side)}{e.factionId ? ` · ${FACTIONS.find(f => f.id === e.factionId)?.name ?? e.factionId}` : ' · 未选阵营'}
               <span className={`dot ${r.legal ? 'ok' : 'warn'}`}>{r.legal ? '✓' : '!'}</span>
             </button>
           )
@@ -118,38 +118,50 @@ export function RosterView() {
               const defaults = computeDefaultRoster(f.pack)
               patchRoster(editing, {
                 factionId: f.id,
+                teamRulesEnabled: false,
+                personalRulesEnabled: false,
                 operativeIds: defaults.operativeIds,
                 loadout: defaults.loadout,
                 subFactionSelection: [],
-                perOperativeMarks: defaults.perOperativeMarks,
-                wargearAssignment: {},
+                perOperativeMarks: {},
+                personalAbilityIds: {},
+                personalTactics: {},
+                boonWeaponTargets: {},
+                selectedWargearIds: [],
               })
             }}
           />
 
           {pack && (
             <>
+              <div className="roster-rule-section"><span className="builder-eyebrow">01 / TEAM</span><h3>全队级别</h3><p>人数、队长等通用建队限制始终生效；下方的整队能力与阵营装备由双方决定是否加入本局。</p></div>
+              {selector?.scope === 'team' && <>
+                <section className="roster-rule-mode" aria-label="全队个性化规则">
+                  <span className="builder-eyebrow">TEAM OPTIONS</span><h3>全队个性化</h3>
+                  <label className="roster-personal-toggle"><input type="checkbox" checked={entry.teamRulesEnabled} onChange={e => patchRoster(editing, { teamRulesEnabled: e.target.checked, subFactionSelection: [] })} /><span><strong>启用战团战术（可选）</strong><small>{sideLabel(editing)} · {pack.faction.name}</small></span></label>
+                  <p>{entry.teamRulesEnabled ? '按阵营规则为全队选择首要和次要战团战术；选满后才可开局。' : '阵营规则原本要求选择两项；关闭表示双方约定采用不使用战团战术的简化玩法。'}</p>
+                </section>
+                {entry.teamRulesEnabled && <SubFactionSelect selector={selector} pack={pack} selection={entry.subFactionSelection} onChange={(next) => patchRoster(editing, { subFactionSelection: next })} />}
+              </>}
+              <FactionWargearSelect pack={pack} selected={entry.selectedWargearIds} onChange={selectedWargearIds => patchRoster(editing, { selectedWargearIds })} />
+              <section className="roster-rule-mode" aria-label="特工级别规则">
+                <span className="builder-eyebrow">02 / OPERATIVES</span><h3>特工级别</h3>
+                <p>特工与武器照常配置。双方若约定使用额外能力，再打开下面的选项。</p>
+                <label className="roster-personal-toggle"><input type="checkbox" checked={entry.personalRulesEnabled} onChange={e => patchRoster(editing, { personalRulesEnabled: e.target.checked, perOperativeMarks: {}, personalAbilityIds: {}, personalTactics: {}, boonWeaponTargets: {} })} /><span><strong>允许逐名选用额外能力</strong><small>{sideLabel(editing)} · {pack.faction.name} · 可选</small></span></label>
+                <p>{entry.personalRulesEnabled ? '展开特工卡片，只勾选本局要使用的能力；不需要每名特工都选。' : '当前不使用特工额外能力；仍可组队并配置武器。'}</p>
+              </section>
               <OperativePicker
                 pack={pack}
                 operativeIds={entry.operativeIds}
                 loadout={entry.loadout}
                 perOperativeMarks={entry.perOperativeMarks}
-                wargearAssignment={entry.wargearAssignment}
+                personalAbilityIds={entry.personalAbilityIds}
+                personalTactics={entry.personalTactics}
+                boonWeaponTargets={entry.boonWeaponTargets}
+                personalRulesEnabled={entry.personalRulesEnabled}
                 onChange={(next) => patchRoster(editing, next)}
               />
-              {selector && selector.id === 'chapterTactic' ? (
-                <SubFactionSelect
-                  selector={selector}
-                  pack={pack}
-                  selection={entry.subFactionSelection}
-                  onChange={(next) => patchRoster(editing, { subFactionSelection: next })}
-                />
-              ) : selector && selector.id === 'markOfChaos' ? null : null}
-              {(!selector || selector.id === 'markOfChaos') && (
-                <div className="subfaction-none">
-                  <h3>阵营能力（常驻）</h3>
-                </div>
-              )}
+              <div className="subfaction-none"><h3>阵营规则参考</h3></div>
               <FactionOverview pack={pack} />
             </>
           )}
@@ -169,7 +181,7 @@ export function RosterView() {
         >
           {bothGreen ? '进入对局 ▶' : `先满足合法性（${unresolved} 方未合规）`}
         </button>
-        {!bothGreen && <span className="muted"> 先解决 {unresolved} 方违规再进入对局</span>}
+        {!bothLegal && <span className="muted"> 先解决 {unresolved} 方违规再进入对局</span>}
       </div>
     </section>
   )

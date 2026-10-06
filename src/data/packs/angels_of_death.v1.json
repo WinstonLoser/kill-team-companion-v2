@@ -1,832 +1,609 @@
 {
   "packId": "angels_of_death",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "rulesetVersion": "kt-lite-1.0",
   "faction": {
-    "id": "angels_of_death",
-    "name": "死亡天使",
-    "keywords": [
-      "IMPERIUM",
-      "ANGELS_OF_DEATH",
-      "ASTARTES"
-    ],
-    "subFactionSelector": {
-      "id": "chapterTactic",
-      "label": "战团战术（8 选 2）",
-      "options": [
-        "chapterTactic_relentless",
-        "chapterTactic_duelist",
-        "chapterTactic_resolute",
-        "chapterTactic_concealed",
-        "chapterTactic_mobile",
-        "chapterTactic_stalwart",
-        "chapterTactic_sharpshooter",
-        "chapterTactic_siege"
-      ],
-      "max": 2
+  "id": "angels_of_death",
+  "name": "死亡天使",
+  "keywords": [
+    "IMPERIUM",
+    "ANGELS_OF_DEATH",
+    "ASTARTES"
+  ],
+  "theme": {
+    "ui": {
+      "primaryRgb": "30, 64, 175",
+      "textHighlight": "#93c5fd"
+    },
+    "dice": {
+      "baseColor": "#172554",
+      "pipColor": "#bfdbfe"
     }
   },
-  "operatives": [
+  "subFactionSelector": {
+    "id": "chapterTactic",
+    "label": "主要 / 次要战团战术",
+    "max": 2,
+    "scope": "team",
+    "options": [
+      "chapterTactic_relentless",
+      "chapterTactic_duelist",
+      "chapterTactic_resolute",
+      "chapterTactic_concealed",
+      "chapterTactic_mobile",
+      "chapterTactic_stalwart",
+      "chapterTactic_sharpshooter",
+      "chapterTactic_siege"
+    ]
+  }
+},
+  "stratagems": [
     {
-      "operativeId": "angels_captain",
-      "name": "星际战士连长",
-      "keywords": [
-        "ASTARTES",
-        "CHAMPION",
-        "CAPTAIN"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 15
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_plasma_pistol_std"
-            ],
-            [
-              "angels_plasma_pistol_overload"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_power_fist"
-            ]
-          ]
-        }
-      ],
-      "abilities": [
-        "ability_heroicLeader",
-        "ability_ironHalo"
-      ]
+      "id": "combat_doctrines",
+      "name": "Combat Doctrines / 战斗条令",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Select a combat doctrine (Devastator, Tactical, or Assault). / 选择一个战斗条令（毁灭、战术、突击）。"
     },
     {
-      "operativeId": "angels_assault_sergeant",
-      "name": "突击仲裁者军士",
-      "keywords": [
-        "ASTARTES",
-        "CHAMPION",
-        "ASSAULT"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 15
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_heavy_bolt_pistol"
-            ],
-            [
-              "angels_hand_flamer"
-            ],
-            [
-              "angels_plasma_pistol_std"
-            ],
-            [
-              "angels_plasma_pistol_overload"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_chainsword"
-            ],
-            [
-              "angels_power_fist"
-            ],
-            [
-              "angels_power_weapon"
-            ],
-            [
-              "angels_thunder_hammer"
-            ]
-          ]
-        }
-      ],
-      "abilities": [
-        "ability_doctrineOfWar"
-      ]
+      "id": "indomitable",
+      "name": "Indomitable / 不屈不挠",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "When shooting at a friendly operative, if you roll two or more fails, you can discard one and retain another fail as a normal success. / 每当一名特工对一名己方死亡天使特工进行射击时，如果您掷出了两次或更多失败，那么您可以将其中一次舍弃，并将另一次失败作为一次普通成功进行保留。"
     },
     {
-      "operativeId": "angels_intercessor_sergeant",
-      "name": "仲裁者军士",
-      "keywords": [
-        "ASTARTES",
-        "CHAMPION",
-        "INTERCESSOR"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 15
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_auto_bolt_rifle"
-            ],
-            [
-              "angels_bolt_rifle"
-            ],
-            [
-              "angels_stalker_heavy"
-            ],
-            [
-              "angels_stalker_mobile"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_chainsword"
-            ],
-            [
-              "angels_fists"
-            ],
-            [
-              "angels_power_fist"
-            ],
-            [
-              "angels_power_weapon"
-            ],
-            [
-              "angels_thunder_hammer"
-            ]
-          ]
-        }
-      ],
-      "abilities": [
-        "ability_doctrineOfWar"
-      ]
+      "id": "they_shall_know_no_fear",
+      "name": "They Shall Know No Fear / 他们无所畏惧",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Ignore any changes to the operative's characteristics due to being injured. / 您可以忽略任何己方死亡天使特工因受创而导致的属性变化（包括武器数据）。"
     },
     {
-      "operativeId": "angels_assault_grenadier",
-      "name": "突击仲裁者掷弹兵",
-      "keywords": [
-        "ASTARTES",
-        "ASSAULT",
-        "GRENADIER"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
+      "id": "flexible_tactics",
+      "name": "Flexible Tactics / 灵活战术",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "STRATEGY",
+      "description": "Change your secondary Chapter Tactic until the end of the turning point. / 更改您的次要战团战术。这个计谋的效果将持续至转折点结束。"
+    },
+    {
+      "id": "adaptive_tactics",
+      "name": "Adaptive Tactics / 调整条令",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Change your previously selected Combat Doctrine. / 当一名己方特工在激活期间执行一次行动之前或之后使用。更改之前选择的战斗条令。"
+    },
+    {
+      "id": "transhuman_physiology",
+      "name": "Transhuman Physiology / 超人体格",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Retain one normal save as a critical save. / 在对己方特工进行射击时，您可以在掷防御骰步骤中使用，将一次普通成功作为关键成功进行保留。"
+    },
+    {
+      "id": "wrath_of_vengeance",
+      "name": "Wrath of Vengeance / 复仇之怒",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Perform an additional 1 AP action during counteraction without spending AP. / 在一名己方特工进行反应时使用，可以在那次反应期间无消耗额外执行一次 1AP 的行动（两次行动必须不同）。"
+    },
+    {
+      "id": "shock_assault",
+      "name": "Shock Assault / 震慑突袭",
+      "cp": 1,
+      "useLimit": { "perTurningPoint": 1 },
+      "phase": "ENGAGEMENT",
+      "description": "Melee weapons gain Stun, and the first strike inflicts 1 extra damage. / 在执行了冲锋行动的转折点中执行近战行动时，近战武器拥有“震荡”规则，且首次出击造成额外 1 点伤害。"
+    }
+  ],
+  "factionRules": [
+    {
+      "ruleId": "chapter_tactics",
+      "name": "Chapter Tactics / 战团战术",
+      "description": "Select a primary and secondary CHAPTER TACTIC for friendly ANGEL OF DEATH operatives. Multiple instances of the same CHAPTER TACTIC aren’t cumulative. / 为友方死亡天使特工选择一个主要和一个次要战团战术。同一战团战术的多个实例不可叠加。",
+      "type": "SELECTION",
+      "selectionLimit": 2,
+      "options": [
         {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_heavy_bolt_pistol"
-            ]
-          ]
+          "id": "tactic_aggressive",
+          "name": "1. Aggressive / 猛攻",
+          "description": "This operative’s melee weapons have the Rending weapon rule. / 该特工的近战武器拥有“撕裂”武器规则。"
         },
         {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_chainsword"
-            ]
-          ]
+          "id": "tactic_dueller",
+          "name": "2. Dueller / 决斗家",
+          "description": "Whenever this operative is fighting or retaliating, each of your normal successes can block one unresolved critical success (unless the enemy operative’s weapon has the Brutal weapon rule). / 每当该特工进行近战或反击时，您的每个普通成功都可以格挡一个未结算的关键成功（除非敌方特工的武器拥有“残暴”武器规则）。"
+        },
+        {
+          "id": "tactic_resolute",
+          "name": "3. Resolute / 坚决",
+          "description": "You can ignore any changes to this operative’s APL stat and it isn’t affected by enemy operatives’ Shock weapon rule. / 您可以忽略对该特工APL属性的任何改变，并且它不受敌方特工“震荡”武器规则的影响。"
+        },
+        {
+          "id": "tactic_stealthy",
+          "name": "4. Stealthy / 隐秘",
+          "description": "Whenever an operative is shooting this operative, if you can retain any cover saves, you can retain one additional cover save, or you can retain one cover save as a critical success instead. / 每当有特工对该特工进行射击时，如果您可以保留任何掩护豁免，您可以额外保留一个掩护豁免，或者您可以将一个掩护豁免作为关键成功保留。"
+        },
+        {
+          "id": "tactic_mobile",
+          "name": "5. Mobile / 机动",
+          "description": "This operative can perform the Fall Back action for 1 less AP. It can perform the Charge action while within control range of an enemy operative. / 该特工执行“撤退”行动时少消耗1AP。当位于敌方特工控制范围内时，它可以执行“冲锋”行动。"
+        },
+        {
+          "id": "tactic_hardy",
+          "name": "6. Hardy / 强健",
+          "description": "Whenever an operative is shooting this operative, defence dice results of 5+ are critical successes. When retaliating, the first time taking Normal Dmg of 3+, inflicts 1 less damage. / 每当有特工对该特工进行射击时，5+的防御骰结果视为关键成功。反击时，首次受到3+普通伤害时，伤害减少1点。"
+        },
+        {
+          "id": "tactic_sharpshooter",
+          "name": "7. Sharpshooter / 神射手",
+          "description": "Whenever shooting during an activation without Charge, Fall Back or Reposition, its bolt weapons have Accurate 1 and Severe rules. / 在没有进行“冲锋”、“撤退”或“重新部署”的激活中射击时，其爆矢武器拥有“精准 1”和“严重”规则。"
+        },
+        {
+          "id": "tactic_siege_specialist",
+          "name": "8. Siege Specialist / 攻城专家",
+          "description": "Ranged weapons have Saturate rule. Whenever fighting or retaliating, enemy operatives cannot assist. / 远程武器拥有“饱和”规则。进行近战或反击时，敌方特工不能协助。"
         }
       ]
     },
     {
-      "operativeId": "angels_assault_warrior",
-      "name": "突击仲裁者战士",
-      "keywords": [
-        "ASTARTES",
-        "ASSAULT"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
+      "ruleId": "combat_doctrine",
+      "name": "Combat Doctrine / 战斗条令",
+      "description": "Select one COMBAT DOCTRINE. Whenever a friendly ANGEL OF DEATH operative is X, its weapons have the Balanced weapon rule. / 选择一个战斗条令。每当友方死亡天使特工符合对应条件时，其武器拥有“平衡”武器规则。",
+      "type": "PASSIVE",
+      "options": [
         {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_heavy_bolt_pistol"
-            ]
-          ]
+          "id": "doctrine_devastator",
+          "name": "Devastator Doctrine / 毁灭者条令",
+          "description": "Shooting an operative more than 6\" from it. / 射击距离其 6\" 以外的特工。"
         },
         {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_chainsword"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "operativeId": "angels_eliminator",
-      "name": "歼灭者狙击手",
-      "keywords": [
-        "ASTARTES",
-        "ELIMINATOR"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_bolt_pistol"
-            ],
-            [
-              "angels_sniper_executioner"
-            ],
-            [
-              "angels_sniper_superfrag"
-            ],
-            [
-              "angels_sniper_kraken"
-            ]
-          ]
+          "id": "doctrine_tactical",
+          "name": "Tactical Doctrine / 战术条令",
+          "description": "Shooting an operative within 6\" of it. / 射击距离其 6\" 以内的特工。"
         },
         {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_fists"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "operativeId": "angels_heavy_gunner",
-      "name": "重装仲裁者炮手",
-      "keywords": [
-        "ASTARTES",
-        "HEAVY",
-        "GUNNER"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 5,
-        "save": 3,
-        "wounds": 18
-      },
-      "base": {
-        "diameterMm": 40
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_bolt_pistol"
-            ],
-            [
-              "angels_hb_concentrating"
-            ],
-            [
-              "angels_hb_sweeping"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_fists"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "operativeId": "angels_intercessor_gunner",
-      "name": "仲裁者炮手",
-      "keywords": [
-        "ASTARTES",
-        "INTERCESSOR",
-        "GUNNER"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_auto_bolt_rifle"
-            ],
-            [
-              "angels_bolt_rifle"
-            ],
-            [
-              "angels_stalker_heavy"
-            ],
-            [
-              "angels_stalker_mobile"
-            ],
-            [
-              "angels_gl_frag"
-            ],
-            [
-              "angels_gl_kraken"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_fists"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "operativeId": "angels_intercessor_warrior",
-      "name": "仲裁者战士",
-      "keywords": [
-        "ASTARTES",
-        "INTERCESSOR"
-      ],
-      "stats": {
-        "apl": 3,
-        "move": 6,
-        "save": 3,
-        "wounds": 14
-      },
-      "base": {
-        "diameterMm": 32
-      },
-      "loadouts": [
-        {
-          "description": "远程武器",
-          "options": [
-            [
-              "angels_auto_bolt_rifle"
-            ],
-            [
-              "angels_bolt_rifle"
-            ],
-            [
-              "angels_stalker_heavy"
-            ],
-            [
-              "angels_stalker_mobile"
-            ]
-          ]
-        },
-        {
-          "description": "近战武器",
-          "options": [
-            [
-              "angels_fists"
-            ]
-          ]
+          "id": "doctrine_assault",
+          "name": "Assault Doctrine / 突击条令",
+          "description": "Fighting or retaliating. / 进行近战或反击。"
         }
       ]
     }
   ],
+  "abilities": [
+    {
+      "abilityId": "heroic_leader",
+      "name": "Heroic Leader / 英勇领袖",
+      "description": "Once per turning point, use a firefight ploy for 0CP, Combat Doctrine, or Adjust Doctrine for 0CP. / 每个转折点限一次，以 0CP 使用一个交战计谋，或者以 0CP 使用战斗条令。"
+    },
+    {
+      "abilityId": "iron_halo",
+      "name": "Iron Halo / 钢铁光环",
+      "description": "Once per battle, ignore Normal Dmg from an attack dice. / 每场战斗限一次，忽略一枚攻击骰造成的普通伤害。"
+    },
+    {
+      "abilityId": "doctrine_warfare_assault_tactical",
+      "name": "Doctrine Warfare / 条令战争",
+      "description": "Once per battle: Assault doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP. / 每场战斗限一次：突击条令计谋消耗 0CP。战术条令计谋消耗 0CP。"
+    },
+    {
+      "abilityId": "doctrine_warfare_devastator_tactical",
+      "name": "Doctrine Warfare / 条令战争",
+      "description": "Once per battle: Devastator doctrine ploy costs 0CP. Tactical doctrine ploy costs 0CP. / 每场战斗限一次：毁灭者条令计谋消耗 0CP。战术条令计谋消耗 0CP。"
+    },
+    {
+      "abilityId": "chapter_veteran",
+      "name": "Chapter Veteran / 战团老兵",
+      "description": "Select one additional CHAPTER TACTIC for the battle. / 为本场战斗额外选择一个战团战术。"
+    },
+    {
+      "abilityId": "grenadier",
+      "name": "Grenadier / 掷弹兵",
+      "description": "Can use frag and krak grenades without counting towards limited uses. When doing so, improve Hit stat by 1. / 可以使用破片和穿甲手雷，且不计入使用限制。如此做时，命中属性提升 1。"
+    },
+    {
+      "abilityId": "camo_cloak",
+      "name": "Camo Cloak / 迷彩披风",
+      "description": "When shot, ignore Saturate weapon rule. If Stealthy chapter tactic is selected, retain two cover saves. / 被射击时，忽略“饱和”武器规则。如果选择了隐秘战团战术，则保留两个掩护豁免。"
+    },
+    {
+      "abilityId": "optics",
+      "name": "Optics (1AP) / 光学瞄具 (1AP)",
+      "description": "Until next activation, when shooting, enemy operatives cannot be obscured. / 直到下一次激活前，进行射击时，敌方特工不能被遮挡。"
+    }
+  ],
+  "operatives": [
+    {
+      "operativeId": "space_marine_captain",
+      "name": "Space Marine Captain / 星际战士连长",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "SPACE MARINE CAPTAIN"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup", "capt_power_fist"]
+          ]
+        }
+      ],
+      "abilityRefs": ["heroic_leader", "iron_halo"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_sergeant",
+      "name": "Assault Intercessor Sergeant / 突击仲裁者军士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "ASSAULT INTERCESSOR", "SERGEANT"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Equipment / 装备",
+          "count": 1,
+          "options": [
+            ["hand_flamer", "assault_sgt_chainsword"],
+            ["hand_flamer", "assault_sgt_power_fist"],
+            ["hand_flamer", "assault_sgt_power_weapon"],
+            ["hand_flamer", "assault_sgt_thunder_hammer"],
+            ["heavy_bolt_pistol", "assault_sgt_chainsword"],
+            ["heavy_bolt_pistol", "assault_sgt_power_fist"],
+            ["heavy_bolt_pistol", "assault_sgt_power_weapon"],
+            ["heavy_bolt_pistol", "assault_sgt_thunder_hammer"],
+            ["capt_plasma_pistol_std", "capt_plasma_pistol_sup", "assault_sgt_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["doctrine_warfare_assault_tactical", "chapter_veteran"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_sergeant",
+      "name": "Intercessor Sergeant / 仲裁者军士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "LEADER", "INTERCESSOR", "SERGEANT"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 15 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle"],
+            ["bolt_rifle"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile"]
+          ]
+        },
+        {
+          "description": "Melee Weapon / 近战武器",
+          "count": 1,
+          "options": [
+            ["sgt_chainsword"],
+            ["sgt_fists"],
+            ["sgt_power_fist"],
+            ["sgt_power_weapon"],
+            ["sgt_thunder_hammer"]
+          ]
+        }
+      ],
+      "abilityRefs": ["doctrine_warfare_devastator_tactical", "chapter_veteran"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_grenadier",
+      "name": "Assault Intercessor Grenadier / 突击仲裁者掷弹兵",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ASSAULT INTERCESSOR", "GRENADIER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["warrior_heavy_bolt_pistol", "warrior_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": ["grenadier"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "assault_intercessor_warrior",
+      "name": "Assault Intercessor Warrior / 突击仲裁者战士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ASSAULT INTERCESSOR", "WARRIOR"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["warrior_heavy_bolt_pistol", "warrior_chainsword"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "heavy_intercessor_gunner",
+      "name": "Heavy Intercessor Gunner / 重装仲裁者枪手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "HEAVY INTERCESSOR", "GUNNER"],
+      "stats": { "apl": 3, "move": 5, "save": 3, "wounds": 18 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Heavy Bolter / 重型爆矢枪",
+          "count": 1,
+          "options": [
+            ["heavy_bolter_focused", "heavy_bolter_sweeping", "bolt_pistol", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_gunner",
+      "name": "Intercessor Gunner / 仲裁者枪手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "INTERCESSOR", "GUNNER"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"],
+            ["bolt_rifle", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile", "aux_grenade_frag", "aux_grenade_krak", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "intercessor_warrior",
+      "name": "Intercessor Warrior / 仲裁者战士",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "INTERCESSOR", "WARRIOR"],
+      "stats": { "apl": 3, "move": 6, "save": 3, "wounds": 14 },
+      "base": { "diameterMm": 32 },
+      "loadouts": [
+        {
+          "description": "Ranged Weapon / 远程武器",
+          "count": 1,
+          "options": [
+            ["auto_bolt_rifle", "sgt_fists"],
+            ["bolt_rifle", "sgt_fists"],
+            ["stalker_bolt_rifle_heavy", "stalker_bolt_rifle_mobile", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": [],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    },
+    {
+      "operativeId": "eliminator_sniper",
+      "name": "Eliminator Sniper / 消除者狙击手",
+      "keywords": ["ANGEL OF DEATH", "IMPERIUM", "ADEPTUS ASTARTES", "ELIMINATOR", "SNIPER"],
+      "stats": { "apl": 3, "move": 7, "save": 3, "wounds": 12 },
+      "base": { "diameterMm": 40 },
+      "loadouts": [
+        {
+          "description": "Standard Equipment / 标准装备",
+          "count": 1,
+          "options": [
+            ["bolt_sniper_executioner", "bolt_sniper_hyperfrag", "bolt_sniper_mortis", "bolt_pistol", "sgt_fists"]
+          ]
+        }
+      ],
+      "abilityRefs": ["camo_cloak", "optics"],
+      "factionRuleRefs": ["chapter_tactics", "combat_doctrine"]
+    }
+  ],
   "weapons": [
     {
-      "weaponId": "angels_heavy_bolt_pistol",
-      "name": "重型爆矢手枪",
+      "weaponId": "capt_plasma_pistol_std",
+      "name": "Plasma pistol (standard) / 等离子手枪 (标准)",
       "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 8,
-        "weaponRules": [
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "PISTOL"
-      ]
-    },
-    {
-      "weaponId": "angels_bolt_pistol",
-      "name": "爆矢手枪",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 8,
-        "weaponRules": []
-      },
-      "keywords": [
-        "BOLT",
-        "PISTOL"
-      ]
-    },
-    {
-      "weaponId": "angels_hand_flamer",
-      "name": "喷火手枪",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 2,
-        "normalDamage": 3,
-        "criticalDamage": 3,
-        "range": 6,
-        "weaponRules": [
-          "CONCEAL",
-          "TORRENT"
-        ]
-      },
-      "keywords": [
-        "FLAME"
-      ]
-    },
-    {
-      "weaponId": "angels_plasma_pistol_std",
-      "name": "等离子手枪(标准)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 5,
-        "range": 8,
-        "weaponRules": [
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "PLASMA",
-        "PISTOL"
-      ]
-    },
-    {
-      "weaponId": "angels_plasma_pistol_overload",
-      "name": "等离子手枪(过载)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "range": 8,
-        "weaponRules": [
-          "OVERHEAT",
-          "LETHAL5",
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "PLASMA",
-        "PISTOL"
-      ]
-    },
-    {
-      "weaponId": "angels_auto_bolt_rifle",
-      "name": "自动爆矢步枪",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "TORRENT"
-        ]
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "angels_bolt_rifle",
-      "name": "爆矢步枪",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "angels_stalker_heavy",
-      "name": "追猎者爆矢步枪(重型)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 5,
-        "range": 24,
-        "weaponRules": [
-          "HEAVY",
-          "LETHAL5",
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "angels_stalker_mobile",
-      "name": "追猎者爆矢步枪(机动)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": []
-      },
-      "keywords": [
-        "BOLT"
-      ]
-    },
-    {
-      "weaponId": "angels_hb_concentrating",
-      "name": "重型爆矢枪(集中)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "range": 24,
-        "weaponRules": [
-          "CONCEAL",
-          "PIERCING1"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "HEAVY"
-      ]
-    },
-    {
-      "weaponId": "angels_hb_sweeping",
-      "name": "重型爆矢枪(扫射)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "range": 24,
-        "weaponRules": [
-          "PIERCING1",
-          "TORRENT"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "HEAVY"
-      ]
-    },
-    {
-      "weaponId": "angels_gl_frag",
-      "name": "附加榴弹发射器(破片)",
-      "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "BLAST2"
-        ]
-      },
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Piercing 1"] },
       "keywords": []
     },
     {
-      "weaponId": "angels_gl_kraken",
-      "name": "附加榴弹发射器(穿甲)",
+      "weaponId": "capt_plasma_pistol_sup",
+      "name": "Plasma pistol (supercharge) / 等离子手枪 (超载)",
       "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "range": 24,
-        "weaponRules": [
-          "PIERCING1"
-        ]
-      },
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "range": 8, "weaponRules": ["Hot", "Lethal 5+", "Piercing 1"] },
       "keywords": []
     },
     {
-      "weaponId": "angels_sniper_executioner",
-      "name": "爆矢狙击步枪(处刑者)",
+      "weaponId": "capt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "hand_flamer",
+      "name": "Hand flamer / 手持火焰喷射器",
       "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 2,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "HEAVY",
-          "CONCEAL",
-          "SILENT"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "SNIPER"
-      ]
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "range": 6, "weaponRules": ["Saturate", "Torrent 1\""] },
+      "keywords": []
     },
     {
-      "weaponId": "angels_sniper_superfrag",
-      "name": "爆矢狙击步枪(超级破片)",
+      "weaponId": "heavy_bolt_pistol",
+      "name": "Heavy bolt pistol / 重型爆矢手枪",
       "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 2,
-        "normalDamage": 2,
-        "criticalDamage": 4,
-        "range": 24,
-        "weaponRules": [
-          "BLAST1",
-          "HEAVY",
-          "SILENT"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "SNIPER"
-      ]
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_sniper_kraken",
-      "name": "爆矢狙击步枪(致死)",
+      "weaponId": "assault_sgt_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_power_weapon",
+      "name": "Power weapon / 动力武器",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "assault_sgt_thunder_hammer",
+      "name": "Thunder hammer / 雷霆之锤",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 6, "weaponRules": ["Shock", "Stun"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "auto_bolt_rifle",
+      "name": "Auto bolt rifle / 自动爆矢步枪",
       "kind": "RANGED",
-      "profile": {
-        "attacks": 4,
-        "hit": 2,
-        "normalDamage": 3,
-        "criticalDamage": 3,
-        "range": 24,
-        "weaponRules": [
-          "DEVASTATING3",
-          "HEAVY",
-          "PIERCING1",
-          "SILENT"
-        ]
-      },
-      "keywords": [
-        "BOLT",
-        "SNIPER"
-      ]
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Torrent 1\""] },
+      "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_chainsword",
-      "name": "链锯剑",
-      "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 5,
-        "weaponRules": []
-      },
-      "keywords": [
-        "MELEE"
-      ]
+      "weaponId": "bolt_rifle",
+      "name": "Bolt rifle / 爆矢步枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_fists",
-      "name": "双拳",
-      "kind": "MELEE",
-      "profile": {
-        "attacks": 4,
-        "hit": 3,
-        "normalDamage": 3,
-        "criticalDamage": 4,
-        "weaponRules": []
-      },
-      "keywords": [
-        "MELEE"
-      ]
+      "weaponId": "stalker_bolt_rifle_heavy",
+      "name": "Stalker bolt rifle (heavy) / 潜行者爆矢步枪(重型)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["Heavy (Dash only)", "Lethal 5+", "Piercing Crits 1"] },
+      "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_power_fist",
-      "name": "动力拳套",
-      "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 4,
-        "normalDamage": 5,
-        "criticalDamage": 7,
-        "weaponRules": [
-          "BRUTAL"
-        ]
-      },
-      "keywords": [
-        "MELEE",
-        "POWER"
-      ]
+      "weaponId": "stalker_bolt_rifle_mobile",
+      "name": "Stalker bolt rifle (mobile) / 潜行者爆矢步枪(机动)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["BOLT"]
     },
     {
-      "weaponId": "angels_power_weapon",
-      "name": "动力武器",
+      "weaponId": "sgt_chainsword",
+      "name": "Chainsword / 链锯剑",
       "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 3,
-        "normalDamage": 4,
-        "criticalDamage": 6,
-        "weaponRules": [
-          "LETHAL5"
-        ]
-      },
-      "keywords": [
-        "MELEE",
-        "POWER"
-      ]
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
     },
     {
-      "weaponId": "angels_thunder_hammer",
-      "name": "雷霆锤",
+      "weaponId": "sgt_fists",
+      "name": "Fists / 拳头",
       "kind": "MELEE",
-      "profile": {
-        "attacks": 5,
-        "hit": 4,
-        "normalDamage": 5,
-        "criticalDamage": 6,
-        "weaponRules": [
-          "STUN"
-        ]
-      },
-      "keywords": [
-        "MELEE",
-        "POWER"
-      ]
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_power_fist",
+      "name": "Power fist / 动力拳套",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_power_weapon",
+      "name": "Power weapon / 动力武器",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Lethal 5+"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "sgt_thunder_hammer",
+      "name": "Thunder hammer / 雷霆之锤",
+      "kind": "MELEE",
+      "profile": { "attacks": 4, "hit": 4, "normalDamage": 5, "criticalDamage": 6, "weaponRules": ["Shock", "Stun"] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "warrior_heavy_bolt_pistol",
+      "name": "Heavy bolt pistol / 重型爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "warrior_chainsword",
+      "name": "Chainsword / 链锯剑",
+      "kind": "MELEE",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
+      "keywords": ["MELEE"]
+    },
+    {
+      "weaponId": "bolt_pistol",
+      "name": "Bolt pistol / 爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "heavy_bolter_focused",
+      "name": "Heavy bolter (focused) / 重型爆矢枪 (集中)",
+      "kind": "RANGED",
+      "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing Crits 1"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "heavy_bolter_sweeping",
+      "name": "Heavy bolter (sweeping) / 重型爆矢枪 (扫射)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing Crits 1", "Torrent 1\""] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "aux_grenade_frag",
+      "name": "Auxiliary grenade launcher (frag) / 辅助榴弹发射器(破片)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 2, "criticalDamage": 4, "weaponRules": ["Blast 2\""] },
+      "keywords": []
+    },
+    {
+      "weaponId": "aux_grenade_krak",
+      "name": "Auxiliary grenade launcher (krak) / 辅助榴弹发射器(穿甲)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": ["Piercing 1"] },
+      "keywords": []
+    },
+    {
+      "weaponId": "bolt_sniper_executioner",
+      "name": "Bolt sniper rifle (executioner) / 爆矢狙击步枪 (处决者)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Heavy (Dash only)", "Saturate", "Seek Light", "Silent"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "bolt_sniper_hyperfrag",
+      "name": "Bolt sniper rifle (hyperfrag) / 爆矢狙击步枪 (超能破片)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 2, "criticalDamage": 4, "weaponRules": ["Blast 1\"", "Heavy (Dash only)", "Silent"] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "bolt_sniper_mortis",
+      "name": "Bolt sniper rifle (mortis) / 爆矢狙击步枪 (莫提斯)",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 2, "normalDamage": 3, "criticalDamage": 3, "weaponRules": ["Devastating 3", "Heavy (Dash only)", "Piercing 1", "Silent"] },
+      "keywords": ["BOLT"]
     }
   ],
   "effects": [
@@ -834,626 +611,104 @@
       "effectId": "chapterTactic_relentless",
       "label": "猛攻（近战撕裂）",
       "source": "chapterTactic:relentless",
-      "trigger": {
-        "point": "AFTER_HIT_ROLL"
-      },
+      "trigger": { "point": "AFTER_HIT_ROLL" },
       "pipelineStep": "MELEE_ALTERNATING_RESOLVE",
-      "modifier": {
-        "kind": "UPGRADE_SUCCESS",
-        "payload": {}
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-猛攻"
-      }
+      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-猛攻" }
     },
     {
       "effectId": "chapterTactic_duelist",
       "label": "决斗家（普通可挡关键）",
       "source": "chapterTactic:duelist",
-      "trigger": {
-        "point": "ON_PARRY_ALLOCATION"
-      },
+      "trigger": { "point": "ON_PARRY_ALLOCATION" },
       "pipelineStep": "MELEE_PARRY_RULES",
-      "modifier": {
-        "kind": "IMMUNITY",
-        "payload": {
-          "immuneToEffectGroup": "parry-restriction"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-决斗家"
-      }
+      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "parry-restriction" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-决斗家" }
     },
     {
       "effectId": "chapterTactic_resolute",
-      "label": "坚决（免疫震荡+APL修正）",
+      "label": "坚决（免疫震荡）",
       "source": "chapterTactic:resolute",
-      "trigger": {
-        "point": "ON_PARRY_ALLOCATION"
-      },
+      "trigger": { "point": "ON_PARRY_ALLOCATION" },
       "pipelineStep": "PARRY_ALLOCATE",
-      "modifier": {
-        "kind": "IMMUNITY",
-        "payload": {
-          "immuneToEffectGroup": "stun"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-坚决"
-      }
+      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "stun" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-坚决" }
     },
     {
       "effectId": "chapterTactic_concealed",
       "label": "隐匿（多保留掩护豁免）",
       "source": "chapterTactic:concealed",
-      "trigger": {
-        "point": "BEFORE_DEFENCE_ROLL"
-      },
+      "trigger": { "point": "BEFORE_DEFENCE_ROLL" },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": {
-        "kind": "COVER_SAVE",
-        "payload": {
-          "extraNormal": 1
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE",
-        "groupKeys": [
-          "cover-save"
-        ]
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-隐匿"
-      }
+      "modifier": { "kind": "COVER_SAVE", "payload": { "extraNormal": 1 } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE", "groupKeys": ["cover-save"] },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-隐匿" }
     },
     {
       "effectId": "chapterTactic_mobile",
       "label": "机动（后撤少1AP）",
       "source": "chapterTactic:mobile",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
+      "trigger": { "point": "ON_ACTIVATION_START" },
       "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "ACTION_AP_MOD",
-        "payload": {
-          "action": "FALL_BACK",
-          "delta": -1
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-机动"
-      }
+      "modifier": { "kind": "CUSTOM_HOOK", "payload": { "hookId": "fall-back-ap-discount", "prompt": "后撤 AP-1（机动）" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-机动" }
     },
     {
       "effectId": "chapterTactic_stalwart",
       "label": "强健（防御5+=关键）",
       "source": "chapterTactic:stalwart",
-      "trigger": {
-        "point": "AFTER_DEFENCE_ROLL"
-      },
+      "trigger": { "point": "AFTER_DEFENCE_ROLL" },
       "pipelineStep": "DEFENCE_UPGRADE",
-      "modifier": {
-        "kind": "UPGRADE_SUCCESS",
-        "payload": {}
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-强健"
-      }
+      "modifier": { "kind": "UPGRADE_SUCCESS", "payload": {} },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-强健" }
     },
     {
       "effectId": "chapterTactic_sharpshooter",
-      "label": "神射手（爆矢精准1+严重）",
+      "label": "神射手（爆矢精准1）",
       "source": "chapterTactic:sharpshooter",
-      "trigger": {
-        "point": "AFTER_HIT_ROLL"
-      },
+      "trigger": { "point": "AFTER_HIT_ROLL" },
       "pipelineStep": "ATTACK_UPGRADE",
-      "modifier": {
-        "kind": "AUTO_SUCCESS",
-        "payload": {
-          "count": 1,
-          "grade": "NORMAL"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-神射手"
-      }
+      "modifier": { "kind": "AUTO_SUCCESS", "payload": { "count": 1, "grade": "NORMAL" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-神射手" }
     },
     {
       "effectId": "chapterTactic_siege",
-      "label": "攻城战专家（集中+禁协助）",
+      "label": "攻城战专家（集中，取消掩护豁免）",
       "source": "chapterTactic:siege",
-      "trigger": {
-        "point": "BEFORE_DEFENCE_ROLL"
-      },
+      "trigger": { "point": "BEFORE_DEFENCE_ROLL" },
       "pipelineStep": "DEFENCE_ROLL",
-      "modifier": {
-        "kind": "IMMUNITY",
-        "payload": {
-          "immuneToEffectGroup": "cover-save"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE",
-        "groupKeys": [
-          "cover-save-removal"
-        ]
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战团战术-攻城战专家"
-      }
+      "modifier": { "kind": "IMMUNITY", "payload": { "immuneToEffectGroup": "cover-save" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE", "groupKeys": ["cover-save-removal"] },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-攻城战专家" }
     },
     {
-      "effectId": "strat_combatDoctrine",
-      "label": "战斗条令（战略：选条令行动时武器附加平衡）",
+      "effectId": "combatDoctrine_balanced",
+      "label": "战斗条令·平衡",
       "source": "stratagem:combatDoctrine",
-      "trigger": {
-        "point": "BEFORE_HIT_ROLL"
-      },
+      "trigger": { "point": "BEFORE_HIT_ROLL" },
       "pipelineStep": "HIT_ROLL",
-      "modifier": {
-        "kind": "ATTACH_WEAPON_RULE",
-        "payload": {
-          "rule": "BALANCED"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战略计谋-战斗条令"
-      }
-    },
-    {
-      "effectId": "strat_fearless",
-      "label": "他们无所畏惧（战略：忽略受创属性修改）",
-      "source": "stratagem:fearless",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "IMMUNITY",
-        "payload": {
-          "immuneToEffectGroup": "injured"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_GROUP",
-        "groupKeys": [
-          "injured"
-        ]
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战略计谋-他们无所畏惧"
-      }
-    },
-    {
-      "effectId": "strat_flexible",
-      "label": "灵活战术（战略：换次要战团战术）",
-      "source": "stratagem:flexible",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "flexible-tactics",
-          "prompt": "换次要战团战术（持续到TP结束）"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战略计谋-灵活战术"
-      }
-    },
-    {
-      "effectId": "strat_indomitable",
-      "label": "不屈不挠（战略：2+失败→1普通）",
-      "source": "stratagem:indomitable",
-      "trigger": {
-        "point": "AFTER_DEFENCE_ROLL"
-      },
-      "pipelineStep": "DEFENCE_UPGRADE",
-      "modifier": {
-        "kind": "UPGRADE_SUCCESS",
-        "payload": {}
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "战略计谋-不屈不挠"
-      }
-    },
-    {
-      "effectId": "strat_adjustDoctrine",
-      "label": "调整条令（交战：换战斗条令）",
-      "source": "stratagem:adjustDoctrine",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "adjust-doctrine",
-          "prompt": "激活期换战斗条令"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "交战计谋-调整条令"
-      }
-    },
-    {
-      "effectId": "strat_superhuman",
-      "label": "超人体格（交战：防御普通→关键）",
-      "source": "stratagem:superhuman",
-      "trigger": {
-        "point": "AFTER_DEFENCE_ROLL"
-      },
-      "pipelineStep": "DEFENCE_UPGRADE",
-      "modifier": {
-        "kind": "UPGRADE_SUCCESS",
-        "payload": {}
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "交战计谋-超人体格"
-      }
-    },
-    {
-      "effectId": "strat_shockAssault",
-      "label": "震慑突袭（交战：冲锋近战首出击+1伤cap7+震荡）",
-      "source": "stratagem:shockAssault",
-      "trigger": {
-        "point": "ON_DAMAGE_PER_DIE"
-      },
-      "pipelineStep": "DAMAGE_PER_DIE",
-      "modifier": {
-        "kind": "EXTRA_DAMAGE_ON_HIT",
-        "payload": {
-          "amount": 1,
-          "cap": 7
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "交战计谋-震慑突袭"
-      }
-    },
-    {
-      "effectId": "strat_vengeance",
-      "label": "复仇之怒（交战：反应期+1AP行动）",
-      "source": "stratagem:vengeance",
-      "trigger": {
-        "point": "ON_REACTION"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "vengeance-extra-ap",
-          "prompt": "反应期+1AP行动（两次须不同）"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "交战计谋-复仇之怒"
-      }
-    },
-    {
-      "effectId": "wargear_puritySeal",
-      "label": "纯洁印章（每TP1次：2失败→1普通）",
-      "source": "wargear:puritySeal",
-      "trigger": {
-        "point": "AFTER_HIT_ROLL"
-      },
-      "pipelineStep": "ATTACK_UPGRADE",
-      "modifier": {
-        "kind": "UPGRADE_SUCCESS",
-        "payload": {}
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "阵营装备-纯洁印章"
-      }
-    },
-    {
-      "effectId": "wargear_chapterRelic",
-      "label": "战团圣物（复仇之怒交战计谋0CP）",
-      "source": "wargear:chapterRelic",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "chapter-relic-cp-discount",
-          "prompt": "复仇之怒0CP（须交战命令）"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "阵营装备-战团圣物"
-      }
-    },
-    {
-      "effectId": "wargear_combatShield",
-      "label": "偏移肩盾（每TP1次：近战对手不能保留<6关键）",
-      "source": "wargear:combatShield",
-      "trigger": {
-        "point": "BEFORE_HIT_ROLL"
-      },
-      "pipelineStep": "HIT_ROLL",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "combat-shield-block-crit",
-          "prompt": "对手攻击骰<6不能做关键（致命/撕裂/严重失效）"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "阵营装备-偏移肩盾"
-      }
-    },
-    {
-      "effectId": "wargear_auspex",
-      "label": "占卜仪（每TP1次：8内敌方不被遮挡）",
-      "source": "wargear:auspex",
-      "trigger": {
-        "point": "BEFORE_DEFENCE_ROLL"
-      },
-      "pipelineStep": "DEFENCE_ROLL",
-      "modifier": {
-        "kind": "IMMUNITY",
-        "payload": {
-          "immuneToEffectGroup": "obscured"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "阵营装备-占卜仪"
-      }
-    },
-    {
-      "effectId": "ability_heroicLeader",
-      "label": "英勇领袖（连长：每TP1次，交战计谋0CP/战斗条令/调整条令）",
-      "source": "ability:heroicLeader",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "heroic-leader",
-          "prompt": "每TP1次选一：交战计谋0CP/战斗条令/调整条令0CP"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "星际战士连长-英勇领袖"
-      }
-    },
-    {
-      "effectId": "ability_ironHalo",
-      "label": "钢铁光环（连长：每场1次忽略一次普通伤害）",
-      "source": "ability:ironHalo",
-      "trigger": {
-        "point": "ON_DAMAGE_TOTAL"
-      },
-      "pipelineStep": "DAMAGE_TOTAL_MITIGATE",
-      "modifier": {
-        "kind": "DAMAGE_MITIGATION",
-        "payload": {
-          "threshold": 3,
-          "roll": "ignore-once"
-        }
-      },
-      "stacking": {
-        "policy": "CAP_PER_ATTACK_DIE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "星际战士连长-钢铁光环"
-      }
-    },
-    {
-      "effectId": "ability_doctrineOfWar",
-      "label": "条令战争（军士：杀戮区内战斗条令0CP）",
-      "source": "ability:doctrineOfWar",
-      "trigger": {
-        "point": "ON_ACTIVATION_START"
-      },
-      "pipelineStep": "ACTIVATION_PRE",
-      "modifier": {
-        "kind": "CUSTOM_HOOK",
-        "payload": {
-          "hookId": "doctrine-of-war",
-          "prompt": "杀戮区内战斗条令0CP（每场各条令1次）"
-        }
-      },
-      "stacking": {
-        "policy": "UNIQUE_PER_SOURCE"
-      },
-      "rulesRef": {
-        "doc": "merged_kt_angels_of_death_zh.md",
-        "section": "军士-条令战争"
-      }
+      "modifier": { "kind": "ATTACH_WEAPON_RULE", "payload": { "rule": "BALANCED" } },
+      "stacking": { "policy": "UNIQUE_PER_SOURCE" },
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战斗条令" }
     }
   ],
-  "stratagems": [
-    {
-      "id": "combatDoctrine",
-      "name": "战斗条令",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "STRATEGY"
-    },
-    {
-      "id": "fearless",
-      "name": "他们无所畏惧",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "STRATEGY"
-    },
-    {
-      "id": "flexible",
-      "name": "灵活战术",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "STRATEGY"
-    },
-    {
-      "id": "indomitable",
-      "name": "不屈不挠",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "STRATEGY"
-    },
-    {
-      "id": "adjustDoctrine",
-      "name": "调整条令",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "ENGAGEMENT"
-    },
-    {
-      "id": "superhuman",
-      "name": "超人体格",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "ENGAGEMENT"
-    },
-    {
-      "id": "shockAssault",
-      "name": "震慑突袭",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "ENGAGEMENT"
-    },
-    {
-      "id": "vengeance",
-      "name": "复仇之怒",
-      "cp": 1,
-      "useLimit": {
-        "perTurningPoint": 1
-      },
-      "phase": "ENGAGEMENT"
-    }
-  ],
+
   "wargear": [
-    {
-      "id": "puritySeal",
-      "name": "纯洁印章"
-    },
-    {
-      "id": "chapterRelic",
-      "name": "战团圣物"
-    },
-    {
-      "id": "combatShield",
-      "name": "偏移肩盾"
-    },
-    {
-      "id": "auspex",
-      "name": "占卜仪"
-    }
+    {"id": "purity_seal", "name": "Purity Seal / 纯洁印章", "description": "每个转折点限一次，在一名己方死亡天使特工进行射击、近战或反击时，如果您掷出了两次失败，那么您可以将其中一次舍弃，并将另一次失败作为普通成功进行保留。"},
+    {"id": "chapter_relic", "name": "Chapter Relic / 战团圣物", "description": "在您使用“复仇之怒”交战计谋时，如果被指定的己方特工拥有交战命令，那么那次计谋消耗 0CP。"},
+    {"id": "combat_shield", "name": "Combat Shield / 偏移肩盾", "description": "每个转折点限一次，在一名己方死亡天使特工进行近战或反击时，您可以在对手掷攻击骰后、进行重掷前使用本规则。若使用，您的对手不能在那次流程中将任何结果低于 6 的攻击骰作为关键成功进行保留（例如“致命”、“撕裂”和“严重”武器规则）。"},
+    {"id": "auspex", "name": "Auspex / 占卜仪", "description": "每个转折点限一次，在一名己方死亡天使特工执行射击行动并选择有效目标时，您可以使用本规则。若使用，那么直到那次激活（或反应）结束前，位于那名己方特工 8\" 内的敌方特工不能被遮挡。"}
   ],
   "buildConstraints": {
-    "operatives": {
-      "min": 6,
-      "max": 6
-    },
-    "leaderFrom": [
-      "angels_captain",
-      "angels_assault_sergeant",
-      "angels_intercessor_sergeant"
-    ],
-    "maxPerTypeExcept": [
-      "angels_intercessor_warrior",
-      "angels_assault_warrior"
-    ],
-    "equipmentLimitScope": "weaponId",
-    "notes": "1 名队长（连长/突击军士/仲裁军士 3 选 1）+ 5 名非队长；除战士外每类限 1；无点数 D-30。"
+    "operatives": { "max": 6, "min": 6 },
+    "leaderFrom": ["space_marine_captain", "assault_intercessor_sergeant", "intercessor_sergeant"],
+    "maxPerTypeExcept": ["assault_intercessor_warrior", "intercessor_warrior"],
+    "notes": "战团战术 8 选 2（roster 时选）；钢铁光环 effect 见引擎 DAMAGE_MITIGATION 近似（每场1次）；部分 chapterTactic effect 映射为占位 modifier，引擎 effect-hooking 随 AQ-3 扩展。"
   }
 }

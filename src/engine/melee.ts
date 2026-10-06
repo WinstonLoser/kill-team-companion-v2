@@ -22,6 +22,7 @@ export interface MeleeInput {
   defenderEffects?: Effect[]
   dice: DiceSource
   predicate?: PredicateContext
+  manualAllocation?: { atkStrike: { normal: number, critical: number }, defStrike: { normal: number, critical: number } }
 }
 
 export interface MeleeResult {
@@ -49,6 +50,7 @@ export function runMelee(input: MeleeInput): MeleeResult {
     predicate: input.predicate,
     pipelineId: 'melee',
     attempt: 1,
+    manualAllocation: input.manualAllocation,
   }
   const res = createMeleeResolution(ctx)
   res.run()

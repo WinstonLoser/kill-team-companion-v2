@@ -22,6 +22,8 @@ export function runShooting(input: ShootInput): ShootResult {
     defenderEffects: input.defenderEffects,
     dice: input.dice,
     hasCover: input.hasCover,
+    obscured: input.obscured,
+    coverRetainCount: input.coverRetainCount,
     geometry: input.geometry,
     predicate: input.predicate,
     pipelineId: 'shooting',

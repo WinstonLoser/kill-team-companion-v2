@@ -23,6 +23,8 @@ export interface OperativeActivation {
   fallBackDone: boolean
   chargeDone: boolean
   moveDone: boolean
+  /** 已射击的重型武器对本次激活后续移动的限制。 */
+  heavyMoveRule?: 'DASH' | 'MOVE' | 'NONE'
 }
 
 export type Phase = 'DEPLOYMENT' | 'STRATEGY' | 'ENGAGEMENT' | 'TURNING_POINT_END' | 'BATTLE_END'
@@ -34,9 +36,13 @@ export interface TurnState {
   cp: { a: number; b: number }
   ployUses: Record<string, { used: number; perBattle?: number; perTurningPoint?: number }>
   operatives: Record<string, OperativeActivation>
+  activeOpId?: string | null
 }
 
 export interface ActionContext {
+  actionCost?: number
+  quiet?: boolean
+  chargeInEngagement?: boolean
   apl: number
   isAstartes: boolean
   inEngagementRange: boolean // 该特工位于敌方控制范围内
@@ -95,12 +101,13 @@ export function canDoAction(
   if (!op.ready) return { ok: false, reason: '特工已待机（非就绪）' }
 
   // AP ≤ APL
-  if (op.apUsed + ACTION_AP[action] > ctx.apl) {
-    return { ok: false, reason: `AP 不足（需${ACTION_AP[action]}，剩${ctx.apl - op.apUsed}）` }
+  const cost = ctx.actionCost ?? ACTION_AP[action]
+  if (op.apUsed + cost > ctx.apl) {
+    return { ok: false, reason: `AP 不足（需${cost}，剩${ctx.apl - op.apUsed}）` }
   }
 
   // 后撤后禁转移/冲锋
-  if (op.fallBackDone && (action === 'MOVE' || action === 'CHARGE' || action === 'DASH')) {
+  if (op.fallBackDone && (action === 'MOVE' || action === 'CHARGE')) {
     return { ok: false, reason: '后撤后该激活禁转移/冲锋' }
   }
   // 冲锋后禁冲刺/转移
@@ -108,8 +115,14 @@ export function canDoAction(
     return { ok: false, reason: '冲锋后禁冲刺/转移' }
   }
   // 转移/冲锋后禁冲刺（简化：moveDone 后禁 DASH）
-  if (op.moveDone && action === 'DASH') {
-    return { ok: false, reason: '转移后禁冲刺' }
+  if ((action === 'MOVE' || action === 'DASH') && ctx.inEngagementRange) {
+    return { ok: false, reason: '敌方控制范围内须后撤' }
+  }
+  if (action === 'FALL_BACK' && (op.moveDone || op.chargeDone)) {
+    return { ok: false, reason: '转移或冲锋后不能后撤' }
+  }
+  if (action === 'CHARGE' && (op.order === 'CONCEALED' || op.moveDone || op.fallBackDone || op.actionsThisActivation.includes('DASH') || (ctx.inEngagementRange && !ctx.chargeInEngagement))) {
+    return { ok: false, reason: '冲锋须交战命令，且本次未转移、冲刺或后撤；通常不能已在控制范围内' }
   }
 
   // 同激活不重复同行动（阿斯塔特双近战/双射击例外）
@@ -125,7 +138,7 @@ export function canDoAction(
     return { ok: false, reason: '后撤须正位于敌方控制范围内' }
   }
   if (action === 'SHOOT') {
-    if (op.order === 'CONCEALED') return { ok: false, reason: '隐匿命令禁射击' }
+    if (op.order === 'CONCEALED' && !ctx.quiet) return { ok: false, reason: '隐匿命令只能用安静武器射击' }
     if (ctx.inEngagementRange) return { ok: false, reason: '控制范围内禁射击' }
   }
   if (action === 'FIGHT' && !ctx.enemyInEngagement) {
@@ -155,7 +168,7 @@ export type TurnEvent =
   | { type: 'START_ENGAGEMENT' }
   | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
   | { type: 'SELECT_ORDER'; opId: string; order: Order }
-  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext; apCost?: number; heavyMoveRule?: 'DASH' | 'MOVE' | 'NONE' }
   | { type: 'END_ACTIVATION'; opId: string }
   | { type: 'END_TURNING_POINT' }
   | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
@@ -168,13 +181,14 @@ export function createInitialTurnState(): TurnState {
     cp: { a: 2, b: 2 },
     ployUses: {},
     operatives: {},
+    activeOpId: null,
   }
 }
 
 export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
   switch (event.type) {
     case 'START_BATTLE':
-      return { ...state, phase: 'STRATEGY', turningPoint: 1, cp: { a: 3, b: 3 } }
+      return { ...state, phase: 'STRATEGY', turningPoint: 1, cp: { a: 2, b: 2 } }
     case 'START_ENGAGEMENT':
       return { ...state, phase: 'ENGAGEMENT' }
     case 'ACTIVATE': {
@@ -184,6 +198,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       return {
         ...state,
         activePlayer: event.player,
+        activeOpId: event.opId,
         operatives: {
           ...state.operatives,
           [event.opId]: {
@@ -194,13 +209,14 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
             fallBackDone: false,
             chargeDone: false,
             moveDone: false,
+            heavyMoveRule: undefined,
           },
         },
       }
     }
     case 'SELECT_ORDER': {
       const op = state.operatives[event.opId]
-      if (!op) return state
+      if (!op || op.apUsed > 0 || state.activeOpId !== event.opId) return state
       return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, order: event.order } } }
     }
     case 'DO_ACTION': {
@@ -211,18 +227,26 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
       if (event.ctx && !canDoAction(state, event.opId, event.action, event.ctx).ok) return state
       const next: OperativeActivation = {
         ...op,
-        apUsed: op.apUsed + ACTION_AP[event.action],
+        apUsed: op.apUsed + (event.apCost ?? event.ctx?.actionCost ?? ACTION_AP[event.action]),
         actionsThisActivation: [...op.actionsThisActivation, event.action],
         fallBackDone: op.fallBackDone || event.action === 'FALL_BACK',
         chargeDone: op.chargeDone || event.action === 'CHARGE',
         moveDone: op.moveDone || event.action === 'MOVE',
+        heavyMoveRule: event.action === 'SHOOT' && event.heavyMoveRule
+          ? op.heavyMoveRule && op.heavyMoveRule !== event.heavyMoveRule ? 'NONE' : event.heavyMoveRule
+          : op.heavyMoveRule,
       }
       return { ...state, operatives: { ...state.operatives, [event.opId]: next } }
     }
     case 'END_ACTIVATION': {
       const op = state.operatives[event.opId]
       if (!op) return state
-      return { ...state, operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } }
+      return { 
+        ...state, 
+        activePlayer: state.activePlayer === 'a' ? 'b' : 'a',
+        activeOpId: null,
+        operatives: { ...state.operatives, [event.opId]: { ...op, ready: false } } 
+      }
     }
     case 'USE_PLOY': {
       // DN6：内嵌 guard（计谋次数上限先验）+ CP clamp 防负（补丁 #10）。
@@ -256,7 +280,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         ...state,
         turningPoint: next,
         phase: next > 4 ? 'BATTLE_END' : 'STRATEGY',
-        cp: { a: state.cp.a + 2, b: state.cp.b + 2 },
+        activeOpId: null,
         operatives: ops,
         ployUses,
       }

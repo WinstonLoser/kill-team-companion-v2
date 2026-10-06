@@ -109,13 +109,13 @@ describe('turnReducer 激活流', () => {
     s = turnReducer(s, { type: 'END_ACTIVATION', opId: 'op1' })
     expect(s.operatives.op1?.ready).toBe(false)
   })
-  it('结束转折点：序号+1、翻回就绪、CP 增', () => {
+  it('结束转折点：序号+1、翻回就绪、CP 待先手确定后发放', () => {
     let s = createInitialTurnState()
     s.operatives = { op1: { order: 'ENGAGED', ready: false, apUsed: 1, actionsThisActivation: ['MOVE'], fallBackDone: false, chargeDone: false, moveDone: true } }
     s = turnReducer(s, { type: 'END_TURNING_POINT' })
     expect(s.turningPoint).toBe(2)
     expect(s.operatives.op1?.ready).toBe(true)
-    expect(s.cp.a).toBeGreaterThan(2)
+    expect(s.cp.a).toBe(2)
   })
   it('第 4 转折点结束 → BATTLE_END', () => {
     let s = createInitialTurnState()
