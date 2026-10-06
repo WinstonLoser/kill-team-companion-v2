@@ -33,12 +33,12 @@ export function SubFactionSelect({
   }
 
   return (
-    <div className="subfaction">
+    <div className="subfaction" data-faction={pack.faction.id}>
       <h3>{selector.label}（{selection.length}/{selector.max}）</h3>
       <ul className="list">
         {selector.options.map((opt) => (
-          <li key={opt}>
-            <label className="cover">
+          <li key={opt} className={selection.includes(opt) ? 'tactic-selected' : ''}>
+            <label className="cover chapter-tactic-option">
               <input
                 type="checkbox"
                 checked={selection.includes(opt)}
@@ -46,6 +46,7 @@ export function SubFactionSelect({
                 disabled={!selection.includes(opt) && selection.length >= selector.max}
               />
               {selector.id === 'chapterTactic' && selection.includes(opt) ? (selection.indexOf(opt) === 0 ? '首要 · ' : '次要 · ') : ''}{optionLabel(opt)}
+              {selector.id === 'chapterTactic' && selection.includes(opt) && <span className="tactic-seal" aria-hidden="true">✠</span>}
             </label>
           </li>
         ))}

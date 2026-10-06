@@ -4,6 +4,7 @@ import type { FactionPack } from '../../rules'
 import { useRosterStore } from '../../state/rosterStore'
 import { DiceIcon } from '../components/Dice/DiceIcon'
 import { TeamWargearSummary } from './TeamWargearSummary'
+import { useVisualFxStore } from '../../state/visualFxStore'
 
 const SIDES: Side[] = ['a', 'b']
 
@@ -24,6 +25,7 @@ export function StrategyPhase() {
   const usePloy = useMatchStore(s => s.usePloy)
   const useStrategicGambit = useMatchStore(s => s.useStrategicGambit)
   const setPushMsg = useMatchStore(s => s.setPushMsg)
+  const showPhaseNotice = useVisualFxStore(s => s.showPhaseNotice)
   const [manualA, setManualA] = useState('')
   const [manualB, setManualB] = useState('')
 
@@ -100,7 +102,7 @@ export function StrategyPhase() {
                 ...(pack?.wargear ?? []).filter(item => teamWargearIds.includes(item.id) && item.description?.includes('战略计划')).map(item => ({ source: 'wargear' as const, id: item.id, name: item.name, description: item.description! })),
               ]
               return (
-                <article key={side} className={`sp-side ${side} ${isTurn ? 'active' : ''}`}>
+                <article key={side} data-faction={pack?.faction.id} className={`sp-side ${side} ${isTurn ? 'active' : ''}`}>
                   <div className="sp-side-head">
                     <div><span className="sp-side-kicker">{side.toUpperCase()} 方 · {displayZh(pack?.faction.name ?? '小队')}</span><h3>{isTurn ? '轮到你制定战略' : strategyPasses[side] ? '已跳过本次机会' : '等待对方选择'}</h3></div>
                     <div className="sp-cp"><strong>{turn.cp[side]}</strong><span>CP</span></div>
@@ -111,7 +113,7 @@ export function StrategyPhase() {
                       const used = (usedPloys[`${side}:${strat.id}:tp${turn.turningPoint}`] ?? 0) >= (strat.useLimit.perTurningPoint ?? 1)
                       const insufficient = turn.cp[side] < strat.cp
                       return (
-                        <button key={strat.id} className={`strat-card ${used ? 'on' : ''}`} disabled={!isTurn || used || insufficient} onClick={() => { const result = usePloy(side, strat.id); if (!result.ok) setPushMsg(result.reason ?? '计谋不可用') }}>
+                        <button key={strat.id} className={`strat-card ${used ? 'on' : ''}`} disabled={!isTurn || used || insufficient} onClick={() => { const result = usePloy(side, strat.id); if (!result.ok) setPushMsg(result.reason ?? '计谋不可用'); else showPhaseNotice(displayZh(strat.name), `${side.toUpperCase()} 方 · 战略计谋`, pack?.faction.id) }}>
                           <span className="strat-name">{displayZh(strat.name)}<small className="ploy-description">{displayZh(strat.description ?? '')}</small></span>
                           <span className="strat-cost">{used ? '本轮已用' : insufficient ? 'CP 不足' : `${strat.cp} CP`}</span>
                         </button>
@@ -125,7 +127,7 @@ export function StrategyPhase() {
                       const unavailable = gambit.description.includes('第一转折点中') && turn.turningPoint !== 1
                       return <div className="sp-gambit" key={`${gambit.source}:${gambit.id}`}>
                         <details><summary>{displayZh(gambit.name)}</summary><p>{displayZh(gambit.description)}</p></details>
-                        <button disabled={!isTurn || used || unavailable} onClick={() => { const result = useStrategicGambit(side, gambit.source, gambit.id); if (!result.ok) setPushMsg(result.reason ?? '战略计划不可用') }}>{used ? '已执行' : unavailable ? '仅首轮' : '记录执行'}</button>
+                        <button disabled={!isTurn || used || unavailable} onClick={() => { const result = useStrategicGambit(side, gambit.source, gambit.id); if (!result.ok) setPushMsg(result.reason ?? '战略计划不可用'); else showPhaseNotice(displayZh(gambit.name), `${side.toUpperCase()} 方 · 战略计划`, pack?.faction.id) }}>{used ? '已执行' : unavailable ? '仅首轮' : '记录执行'}</button>
                       </div>
                     })}
                   </div>}

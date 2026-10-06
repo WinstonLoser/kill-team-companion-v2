@@ -1,0 +1,98 @@
+/* Battle information stays legible; decorative motion is attached to real events. */
+.app { --iron: #1a2421; --parchment: #e8ddc3; --brass: #c6a669; }
+.topbar { border-bottom: 1px solid rgba(207,177,117,.35); background-image: linear-gradient(110deg,rgba(199,166,104,.08),transparent 35%), repeating-linear-gradient(90deg,transparent 0 44px,rgba(255,255,255,.012) 45px 46px); }
+.brand-mark { box-shadow: inset 0 0 0 1px rgba(255,237,185,.6), 0 0 14px rgba(205,168,94,.16); }
+.motion-toggle { white-space: nowrap; border-color: rgba(215,185,121,.45); color: var(--parchment); font-size: .74rem; }
+.phase-notice { position: fixed; z-index: 9900; pointer-events: none; left: 50%; top: 19%; min-width: min(76vw,420px); transform: translateX(-50%); padding: 14px 26px 16px; text-align: center; border: 1px solid #d6bb80; border-top: 3px solid #d6bb80; color: #f7e8c6; background: linear-gradient(115deg,#17241f,#29332b 50%,#17241f); box-shadow: 0 20px 45px #080e0bcc, inset 0 0 28px #c5a8671f; animation: briefing-in 1.5s ease both; }
+.phase-notice::before,.phase-notice::after { content: ''; position: absolute; height: 1px; left: 12px; right: 12px; background: #d6bb8066; }
+.phase-notice::before { top: 8px; }.phase-notice::after { bottom: 8px; }
+.phase-notice span { display: block; color: #bcab84; font-size: .59rem; letter-spacing: .26em; }
+.phase-notice strong { display: block; margin: 6px 0 1px; font-size: 1.2rem; letter-spacing: .12em; }
+.phase-notice small { color: #bfc9bb; }
+.phase-notice[data-faction] { border-color: var(--faction-color,#d6bb80); box-shadow: 0 20px 45px #080e0bcc, inset 0 0 28px rgba(var(--faction-rgb,216,187,120),.16); }
+.phase-notice[data-faction]::before { content: attr(data-motif); top: 9px; left: auto; right: 15px; width: auto; height: auto; background: none; color: rgba(var(--faction-rgb,216,187,120),.45); font-size: 1.5rem; }
+@keyframes briefing-in { 0% { opacity: 0; transform: translate(-50%,-12px) scale(.97); } 15%,75% { opacity: 1; transform: translate(-50%,0) scale(1); } 100% { opacity: 0; transform: translate(-50%,8px); } }
+
+[data-faction="angels_of_death"] { --faction-rgb: 216,187,120; --faction-color: #d8bb78; --faction-pattern: repeating-linear-gradient(90deg,transparent 0 17px,#d8bb7819 18px 19px); }
+[data-faction="legionaries"] { --faction-rgb: 218,105,95; --faction-color: #da695f; --faction-pattern: repeating-linear-gradient(135deg,transparent 0 14px,#da695f19 15px 16px); }
+[data-faction="plague_marines"] { --faction-rgb: 167,200,110; --faction-color: #a7c86e; --faction-pattern: radial-gradient(circle at 82% 18%,#a7c86e24 0 2px,transparent 3px),radial-gradient(circle at 18% 72%,#a7c86e20 0 3px,transparent 4px); }
+[data-faction="chaos_cult"] { --faction-rgb: 223,128,121; --faction-color: #df8079; --faction-pattern: repeating-linear-gradient(115deg,transparent 0 22px,#df80791e 23px 24px); }
+[data-faction="warpcoven"] { --faction-rgb: 142,197,219; --faction-color: #8ec5db; --faction-pattern: radial-gradient(circle at 80% 20%,#8ec5db23,transparent 40%),repeating-conic-gradient(from 15deg at 85% 20%,transparent 0deg 29deg,#8ec5db19 30deg 31deg); }
+.faction-card[data-faction] { position: relative; isolation: isolate; overflow: hidden; border-color: rgba(var(--faction-rgb),.4); background-image: var(--faction-pattern),linear-gradient(135deg,#1d2827,#30352c); transition: transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.faction-card[data-faction]::after { content: attr(data-motif); position: absolute; right: 9px; top: 2px; font-size: 3.25rem; line-height: 1; color: rgba(var(--faction-rgb),.19); pointer-events: none; transition: transform .3s ease,color .3s ease; }
+.faction-card[data-faction]:hover:not(:disabled),.faction-card[data-faction].sel { transform: translateY(-2px); border-color: var(--faction-color); box-shadow: inset 0 0 18px rgba(var(--faction-rgb),.13),0 7px 22px #0006; }
+.faction-card[data-faction]:hover::after,.faction-card[data-faction].sel::after { transform: scale(1.1) rotate(-8deg); color: rgba(var(--faction-rgb),.42); }
+.recruit-card[data-faction].recruited { box-shadow: inset 0 0 0 1px rgba(var(--faction-rgb),.35),0 9px 25px #0005; }
+.recruit-card[data-faction].recruited .recruit-title { background-image: var(--faction-pattern); }
+.subfaction[data-faction="angels_of_death"] .tactic-selected { border-left: 3px solid #d8bb78; background: linear-gradient(90deg,#d8bb7820,transparent); }
+.chapter-tactic-option { display: flex; align-items: center; gap: 7px; }
+.tactic-seal { display: inline-grid; place-items: center; margin-left: auto; width: 25px; height: 25px; border: 1px solid #d8bb78; border-radius: 50%; color: #f3da9f; text-shadow: 0 0 7px #d8bb78; animation: tactic-stamp .3s cubic-bezier(.2,1.5,.5,1) both; }
+@keyframes tactic-stamp { from { transform: scale(1.7) rotate(-18deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+.member-mark { display: inline-flex; align-items: center; max-width: 100%; margin-top: 5px; padding: 3px 9px; border: 1px solid currentColor; border-radius: 3px; font-size: .7rem; font-weight: 800; background: #23252a; color: #ddd; box-shadow: inset 2px 0 currentColor; }
+.member-mark[data-mark="mark_khorne"] { color: #ee695e; }.member-mark[data-mark="mark_nurgle"] { color: #a7c86e; }.member-mark[data-mark="mark_slaanesh"] { color: #d8a2d4; }.member-mark[data-mark="mark_tzeentch"] { color: #7ac4e3; }.member-mark[data-mark="mark_undivided"] { color: #d1bd94; }
+.team-panel[data-faction] .team-heading { border-bottom: 1px solid rgba(var(--faction-rgb),.5); background-image: var(--faction-pattern); }
+.team-panel[data-faction] .team-unit.selected { border-color: rgba(var(--faction-rgb),.76); box-shadow: inset 3px 0 var(--faction-color),0 0 14px rgba(var(--faction-rgb),.13); }
+.team-unit .health-track span { transition: width .48s cubic-bezier(.2,.7,.2,1); }
+.active-modifiers li { animation: rule-reveal .38s ease both; }
+.active-modifiers li:nth-child(2) { animation-delay: .08s; }.active-modifiers li:nth-child(3) { animation-delay: .16s; }.active-modifiers li:nth-child(4) { animation-delay: .24s; }
+@keyframes rule-reveal { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+.board .token[data-faction] { outline: 1px solid rgba(var(--faction-rgb),.6); outline-offset: 1px; }
+.board .token[data-mark="mark_khorne"] { --mark-glow: #ee695e; }.board .token[data-mark="mark_nurgle"] { --mark-glow: #a7c86e; }.board .token[data-mark="mark_slaanesh"] { --mark-glow: #d8a2d4; }.board .token[data-mark="mark_tzeentch"] { --mark-glow: #7ac4e3; }.board .token[data-mark="mark_undivided"] { --mark-glow: #d1bd94; }
+.board .token[data-mark] { outline: 2px solid var(--mark-glow); box-shadow: 0 0 8px var(--mark-glow), inset 0 0 7px var(--mark-glow); }
+.board .token.fx-arriving { opacity: .27; }
+
+.board-fx-overlay,.board-terrain-focus { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: visible; }
+.board-fx-overlay { z-index: 7; }
+.board-terrain-focus polygon { fill: rgba(237,200,128,.12); stroke: #f8da9b; stroke-width: 2; stroke-dasharray: 5 3; filter: drop-shadow(0 0 4px #e5c579); }
+.board-terrain-focus text { fill: #f9dc9a; font-size: 11px; font-weight: 800; paint-order: stroke; stroke: #13201a; stroke-width: 4; }
+.los-verdict-marker text { paint-order: stroke; stroke: #121a18; stroke-width: 3; font-size: 11px; font-weight: 900; }
+.board-fx-route { fill: none; stroke-width: 3; stroke-dasharray: 6 6; stroke-linecap: round; animation: route-trace var(--fx-duration) linear both; }
+.board-fx-traveller { filter: drop-shadow(0 0 5px var(--fx-color)); }
+.board-fx-arrival,.board-fx-pulse,.board-fx-impact { fill: none; stroke-width: 2.5; transform-box: fill-box; transform-origin: center; animation: fx-ring var(--fx-duration) ease-out both; }
+.board-fx-shot { fill: none; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1000; animation: shot-trace var(--fx-duration) ease-out both; filter: drop-shadow(0 0 5px var(--fx-color)); }
+.board-fx-slash { fill: none; stroke-width: 5; stroke-linecap: round; animation: slash-reveal var(--fx-duration) ease-out both; filter: drop-shadow(0 0 5px var(--fx-color)); }
+.board-fx-label { paint-order: stroke; stroke: #101917; stroke-width: 3; font-size: 12px; font-weight: 800; animation: fx-label var(--fx-duration) ease-out both; }
+.board-fx-motif { paint-order: stroke; stroke: #111b18; stroke-width: 3; font-size: 20px; animation: fx-label var(--fx-duration) ease-out both; }
+.board-fx[data-faction="angels_of_death"] .board-fx-pulse { stroke-dasharray: 6 2; }
+.board-fx[data-faction="legionaries"] .board-fx-pulse { stroke-dasharray: 13 3 2 3; }
+.board-fx[data-faction="plague_marines"] .board-fx-pulse { stroke-dasharray: 2 5; stroke-width: 5; }
+.board-fx[data-faction="chaos_cult"] .board-fx-pulse { stroke-dasharray: 9 2 3 4; }
+.board-fx[data-faction="warpcoven"] .board-fx-pulse { stroke-dasharray: 3 2; filter: drop-shadow(0 0 7px #8ec5db); }
+.sp-side[data-faction] { border-color: rgba(var(--faction-rgb),.35); background-image: var(--faction-pattern),linear-gradient(135deg,#1b2622,#242d29); }
+.sp-side[data-faction].active { box-shadow: inset 0 0 0 1px rgba(var(--faction-rgb),.55),0 0 20px rgba(var(--faction-rgb),.12); }
+.sp-side[data-faction] .strat-card:not(:disabled):hover { border-color: var(--faction-color); box-shadow: inset 3px 0 var(--faction-color); }
+.objective-wrap:hover .objective-diamond { box-shadow: 0 0 0 4px #f1d99566,0 0 15px #ebc477; transform: scale(1.13) rotate(45deg); }
+.objective-wrap:hover svg circle { stroke-width: 3; opacity: .9; }
+@keyframes route-trace { from { stroke-dashoffset: 36; opacity: 0; } 15% { opacity: 1; } to { stroke-dashoffset: 0; opacity: .5; } }
+@keyframes shot-trace { 0% { stroke-dashoffset: 1000; opacity: 0; } 20% { opacity: 1; } 60% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes slash-reveal { 0% { stroke-dasharray: 0 100; opacity: 0; } 25% { stroke-dasharray: 100 0; opacity: 1; } 100% { opacity: 0; } }
+@keyframes fx-ring { 0% { transform: scale(.6); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(2.1); opacity: 0; } }
+@keyframes fx-label { 0% { transform: translateY(8px); opacity: 0; } 25%,75% { opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+
+.anim-node[data-faction="angels_of_death"] .anim-portrait { border-style: double; }
+.anim-node[data-faction="legionaries"] .anim-portrait { box-shadow: 0 0 25px #a92142, inset 0 0 20px #721e3e; }
+.anim-node[data-faction="plague_marines"] .anim-portrait { box-shadow: 0 0 25px #729743, inset 0 0 23px #456523; }
+.anim-node[data-faction="chaos_cult"] .anim-portrait { border-radius: 42% 58% 55% 45%; }
+.anim-node[data-faction="warpcoven"] .anim-portrait { box-shadow: 0 0 28px #5089bb,inset 0 0 25px #513a8a; }
+.anim-node[data-faction]::after { content: attr(data-motif); position: absolute; top: -18px; right: -18px; color: var(--fx-color,#d7c18a); font-size: 3rem; text-shadow: 0 0 15px currentColor; }
+.anim-node[data-faction] .anim-portrait::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: .7; }
+.anim-node.active[data-faction="angels_of_death"] .anim-portrait::before { background: linear-gradient(90deg,transparent 30%,#f4ddb0a0 49%,transparent 52%); animation: iron-scan 1s ease-out both; }
+.anim-node.active[data-faction="legionaries"] .anim-portrait::before { background: repeating-linear-gradient(135deg,transparent 0 20px,#e14d6280 21px 25px,transparent 26px 55px); animation: chaos-cut .8s ease-out both; }
+.anim-node.active[data-faction="plague_marines"] .anim-portrait::before { background: radial-gradient(circle at 22% 25%,#aad45f9c 0 5px,transparent 7px),radial-gradient(circle at 75% 72%,#aad45fa8 0 8px,transparent 10px),radial-gradient(circle at 55% 43%,#badb5f8a 0 3px,transparent 5px); animation: spore-bloom 1.4s ease-out both; }
+.anim-node.active[data-faction="chaos_cult"] .anim-portrait::before { background: radial-gradient(circle at 20% 40%,#d761666d,transparent 45%),radial-gradient(circle at 75% 30%,#a9506e8c,transparent 40%); animation: flesh-shift .9s ease-in-out both; }
+.anim-node.active[data-faction="warpcoven"] .anim-portrait::before { background: repeating-conic-gradient(from 0deg at 50% 50%,transparent 0deg 28deg,#a8d7ff85 29deg 31deg); animation: rune-turn 1.2s ease-out both; }
+@keyframes iron-scan { from { transform: translateX(-100%); opacity: 0; } 35% { opacity: .8; } to { transform: translateX(100%); opacity: 0; } }
+@keyframes chaos-cut { from { transform: translate(-70%,-30%); opacity: 0; } 45% { opacity: 1; } to { transform: translate(50%,40%); opacity: 0; } }
+@keyframes spore-bloom { from { transform: scale(.45) rotate(-15deg); opacity: 0; } 45% { opacity: .9; } to { transform: scale(1.7) rotate(10deg); opacity: 0; } }
+@keyframes flesh-shift { 0%,100% { transform: scale(.8) skew(0); opacity: 0; } 45% { transform: scale(1.2) skew(7deg,-5deg); opacity: .9; } }
+@keyframes rune-turn { from { transform: rotate(-50deg) scale(.7); opacity: 0; } 40% { opacity: .8; } to { transform: rotate(38deg) scale(1.45); opacity: 0; } }
+
+.motion-reduced .board-fx-route,.motion-reduced .board-fx-shot,.motion-reduced .board-fx-slash,.motion-reduced .board-fx-arrival,.motion-reduced .board-fx-pulse,.motion-reduced .board-fx-impact,.motion-reduced .board-fx-label,.motion-reduced .board-fx-motif,.motion-reduced .phase-notice,.motion-reduced .faction-card[data-faction]::after,.motion-reduced .token.sel::before,.motion-reduced .token.sel::after { animation: none !important; }
+.motion-reduced .board-fx-traveller { display: none; }
+.motion-reduced .board .token.fx-arriving { opacity: 1; }
+.motion-reduced .anim-node,.motion-reduced .anim-node * { animation: none !important; transition: none !important; }
+.motion-reduced .dice-critical,.motion-reduced .dice-rolling,.motion-reduced .dice-entrance,.motion-reduced .stat-reveal { animation: none !important; }
+.motion-reduced .active-modifiers li { animation: none !important; }
+.motion-reduced .tactic-seal { animation: none !important; }
+.motion-reduced .phase-notice { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .app:not(.motion-full) .board-fx-traveller { display: none; } }

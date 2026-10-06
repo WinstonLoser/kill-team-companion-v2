@@ -4,12 +4,13 @@ import { circleInsidePolygon, circlesOverlap, circleHitsBlockingTerrain, type Po
 import { Board, BoardLegend, SCALE } from './Board'
 import { TeamWargearSummary } from './TeamWargearSummary'
 import { getAvatarUrl } from '../../utils/avatars'
+import { useVisualFxStore } from '../../state/visualFxStore'
 import { assignedDropZones, mapWithDeploymentMode } from '../../data/maps'
 import { VolkusTerrainPanel } from './VolkusTerrainPanel'
 import { VOLKUS_MAPS } from '../../data/packs/maps/volkus'
 
 // 部署阶段（对齐 lite rule §部署）：
-//  1. 部署前掷先手权（按钮即时出结果；动画后续补）。
+//  1. 部署前掷先手权；棋子落地与批次交接给出视觉反馈。
 //  2. 从先手方开始，轮流部署本队 1/3（向上取整）；放满本批后点「完成本批部署」交对方。
 //  3. 落点须完全在己方降落区 + 不与他单位/墙体重叠；部署即隐匿（token.order=CONCEAL）。
 //  只有当前批已放置的 token 可微调；回退会撤销上一批及其后的落子。
@@ -73,6 +74,8 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const restoreDeployBatches = useMatchStore((s) => s.restoreDeployBatches)
   const log = useMatchStore((s) => s.log)
   const refreshMapTemplate = useMatchStore((s) => s.refreshMapTemplate)
+  const emitBoardFx = useVisualFxStore(s => s.emitBoardFx)
+  const showPhaseNotice = useVisualFxStore(s => s.showPhaseNotice)
 
   useEffect(() => {
     const current = VOLKUS_MAPS.find((template) => template.mapId === mapPack.mapId)
@@ -159,6 +162,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
     }
     setIntercept(null)
     placeToken(next.uid, pos, next.facing)
+    emitBoardFx({ kind: 'DEPLOY', uid: next.uid, factionId: next.factionId, to: pos, label: '已部署', durationMs: 700 })
     recordDeployPlacement(next.uid)
     setHoverPos(null)
     pushLog('deploy', `${next.name} 部署于 ${pos.x.toFixed(1)},${pos.y.toFixed(1)}（隐匿）`)
@@ -194,6 +198,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
           setIntercept({ title: '与墙体重叠', reasons: [`${t.name} 压在阻拦地形上，已回退`] })
         } else {
           setIntercept(null)
+          emitBoardFx({ kind: 'MOVE', uid: t.uid, factionId: t.factionId, from: dragOrigin, to: t.pos, path: [dragOrigin, t.pos], durationMs: 520 })
           pushLog('deploy', `${t.name} 移动至 ${t.pos.x.toFixed(1)},${t.pos.y.toFixed(1)}`)
         }
       }
@@ -212,6 +217,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
     setSelectedUid(null)
     setHoverPos(null)
     advanceDeployBatch()
+    showPhaseNotice(`${side.toUpperCase()} 方部署完成`, '轮到对方放置下一批特工', tokens.find(token => token.side === side)?.factionId)
     pushLog('deploy', `${side.toUpperCase()} 方完成本批部署`)
   }
 

@@ -1,4 +1,5 @@
 import type { FactionPack } from '../../rules'
+import { factionVisual } from '../visual/factionVisuals'
 
 // T2：阵营选择卡。阵营机制 = 数据；本 Epic 仅死亡天使数据可用（Story 1.3），
 // 军团兵/瘟疫战士置灰标 Epic 2/3。阵营可同可异（AC4）。
@@ -29,6 +30,8 @@ export function FactionSelect({
           <button
             key={f.id}
             className={`faction-card ${selectedId === f.id ? 'sel' : ''}`}
+            data-faction={f.id}
+            data-motif={factionVisual(f.id).motif}
             aria-pressed={selectedId === f.id} disabled={!f.available}
             onClick={() => onSelect(f)}
             title={f.available ? f.name : `${f.name}（${f.epic ?? '待定'}）`}

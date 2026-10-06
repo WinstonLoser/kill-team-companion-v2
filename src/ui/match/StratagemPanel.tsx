@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useMatchStore, packOfFaction, type Side } from '../../state/matchStore'
+import { useVisualFxStore } from '../../state/visualFxStore'
 
 export function StratagemPanel() {
   const state = useMatchStore()
+  const emitBoardFx = useVisualFxStore(s => s.emitBoardFx)
   const [expanded, setExpanded] = useState(false)
   const [side, setSide] = useState<Side>(state.turn.activePlayer)
   const [message, setMessage] = useState('')
@@ -21,6 +23,10 @@ export function StratagemPanel() {
         return <button key={p.id} className={`strat-card ${used ? 'on' : ''}`} disabled={used || spent || state.turn.cp[side] < p.cp} onClick={() => {
           const result = state.usePloy(side,p.id)
           setMessage(result.ok ? `已使用 ${p.name}，支付 ${p.cp} CP。请完成卡面效果。` : result.reason ?? '不可用')
+          if (result.ok) {
+            const focus = state.tokens.find(t => t.side === side && t.uid === state.turn.activeOpId) ?? state.tokens.find(t => t.side === side && t.alive && t.placed)
+            if (focus) emitBoardFx({ kind: 'RULE', factionId: focus.factionId, to: focus.pos, label: p.name.split(' / ').at(-1), durationMs: 1000 })
+          }
         }}><span className="strat-name">{p.name}<small className="ploy-description">{p.description}</small></span><span className="strat-cp">{used || spent ? '已用' : `${p.cp} CP`}</span></button>
       })}
     </div>}

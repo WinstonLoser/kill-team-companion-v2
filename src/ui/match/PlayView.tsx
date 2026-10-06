@@ -20,6 +20,7 @@ import { playerRulingRules } from '../weaponDisplay'
 import { VolkusTerrainPanel } from './VolkusTerrainPanel'
 import { evaluateElevationMove } from '../../geometry/elevationMove'
 import { createPlanarReachability, type PlanarRoute } from '../../geometry/planarMove'
+import { useVisualFxStore } from '../../state/visualFxStore'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -92,6 +93,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
+  const emitBoardFx = useVisualFxStore(s => s.emitBoardFx)
   const intercept = useMatchStore((s) => s.intercept)
   const pushLog = useMatchStore((s) => s.pushLog)
   const lastShot = useMatchStore((s) => s.lastShot)
@@ -471,7 +473,14 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     // Validate action and capture undo at its committed origin, not the drag preview.
     const r = doAction(t.uid, pendingMove)
     if (r.ok) {
+      const path = planarReach?.routeTo(destination).path ?? [moveOrigin, destination]
       moveToken(t.uid, destination, targetHeight)
+      emitBoardFx({ kind: 'MOVE', uid: t.uid, factionId: t.factionId, from: moveOrigin, to: destination, path, durationMs: 700 })
+      const crossedDoor = mapPack?.terrain.find(feature => feature.isDoor && path.some((point, index) => index > 0 && Array.from({ length: 13 }, (_, step) => ({ x: path[index - 1]!.x + (point.x - path[index - 1]!.x) * step / 12, y: path[index - 1]!.y + (point.y - path[index - 1]!.y) * step / 12 })).some(sample => pointInPolygon(sample, feature.polygon))))
+      if (crossedDoor) {
+        const middle = crossedDoor.polygon.reduce((sum, point) => ({ x: sum.x + point.x / crossedDoor.polygon.length, y: sum.y + point.y / crossedDoor.polygon.length }), { x: 0, y: 0 })
+        emitBoardFx({ kind: 'DOOR', factionId: t.factionId, to: middle, label: '门 · +1″', durationMs: 850 })
+      }
       if (targetHeight !== (active.height ?? 0)) pushLog('turn', `${t.name} ${targetHeight > (active.height ?? 0) ? '攀爬上高台' : '从高台跳落'}：${active.height ?? 0}″ → ${targetHeight}″`)
       setPreviewPosition(null)
     }
@@ -777,6 +786,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 })
                 useMatchStore.getState().clearOverride(`${attacker.uid}>${target.uid}>TERRAIN_CHOICE`)
                 if (!r.ok) setIntercept({ title: '结算失败', reasons: r.missing ?? [] })
+                else if (!maplessMode) {
+                  const shot = useMatchStore.getState().lastShot
+                  const attackRolls = result.atkRolls ?? []
+                  const miss = kind === 'SHOOT' && attackRolls.length > 0 && attackRolls.every(roll => roll.grade === 'FAIL')
+                  emitBoardFx({ kind: kind === 'SHOOT' ? 'SHOT' : 'MELEE', factionId: attacker.factionId, from: attacker.pos, to: target.pos, miss, label: miss ? '射偏' : shot?.woundsDealt ? `待确认 −${shot.woundsDealt}` : '未造成伤害', durationMs: 900 })
+                }
               }}
               onCancel={() => {
                 useMatchStore.getState().clearOverride(`${combatCollect.attacker.uid}>${combatCollect.target.uid}>TERRAIN_CHOICE`)

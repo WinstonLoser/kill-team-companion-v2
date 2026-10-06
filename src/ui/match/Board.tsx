@@ -1,7 +1,10 @@
-import type { Point, TerrainFeature } from '../../geometry'
+import { pointInPolygon, type Point, type TerrainFeature } from '../../geometry'
+import { useState } from 'react'
 import type { ObjectiveMarker, MapPack } from '../../data/maps'
 import type { MatchToken, Side } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
+import { useVisualFxStore } from '../../state/visualFxStore'
+import { factionVisual } from '../visual/factionVisuals'
 
 export const SCALE = 20 // 像素/英寸
 
@@ -78,6 +81,9 @@ export function Board({
   onObjectiveHover?: (o: ObjectiveMarker | null) => void
 }) {
   const bounds = mapPack?.bounds ?? { w: 30, h: 20 }
+  const effects = useVisualFxStore(s => s.boardEffects)
+  const [hoveredTerrain, setHoveredTerrain] = useState<string | null>(null)
+  const focusedTerrain = terrain.find(feature => feature.id === hoveredTerrain)
   const W = bounds.w * SCALE
   const H = bounds.h * SCALE
   const ctrlColor = (c: Side | null) => (c === 'a' ? 'var(--side-a)' : c === 'b' ? 'var(--side-b)' : '#6b7280')
@@ -96,9 +102,18 @@ export function Board({
     <div
       className={`board ${phase === 'deploy' ? 'deploying' : ''} ${showPlatforms ? 'board-elevated' : ''}`}
       style={{ width: W, height: H }}
-      onPointerMove={(e) => onPointerMove?.(evtPoint(e))}
+      onPointerMove={(e) => {
+        const point = evtPoint(e)
+        onPointerMove?.(point)
+        let id: string | null = null
+        for (let i = terrain.length - 1; i >= 0; i--) {
+          const feature = terrain[i]!
+          if (!feature.advisoryOnly && pointInPolygon(point, feature.polygon)) { id = feature.id; break }
+        }
+        setHoveredTerrain(previous => previous === id ? previous : id)
+      }}
       onPointerUp={() => onPointerUp?.()}
-      onPointerLeave={() => onPointerLeave?.()}
+      onPointerLeave={() => { setHoveredTerrain(null); onPointerLeave?.() }}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) onBoardPointerDown?.(evtPoint(e))
       }}
@@ -183,6 +198,11 @@ export function Board({
           return <g key={l.uid ?? i} className={crossLevel ? 'elevation-shot-line' : undefined} opacity={focused ? l.opacity : 0.22}>
             {crossLevel && <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#101b17" strokeWidth={7} />}
             <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={l.stroke} strokeWidth={crossLevel ? 3 : 2} strokeDasharray={crossLevel ? '7 4' : l.dash} />
+            {shotFocus && focused && (l.stroke === '#ff5c5c' || l.dash === '2 4') && <g className="los-verdict-marker" transform={`translate(${(x1 + x2) / 2},${(y1 + y2) / 2})`}>
+              <circle r={12} fill="#1a2220" stroke={l.stroke} strokeWidth={2} />
+              <text textAnchor="middle" dominantBaseline="middle" fill={l.stroke}>{l.stroke === '#ff5c5c' ? '×' : '◈'}</text>
+              <text y={-18} textAnchor="middle" fill={l.stroke}>{l.stroke === '#ff5c5c' ? '视线阻断' : '遮蔽'}</text>
+            </g>}
             {crossLevel && focused && <g transform={`translate(${(x1 + x2) / 2},${(y1 + y2) / 2 - 13})`} className="elevation-shot-marker">
               <rect x={-24} y={-10} width={48} height={20} rx={10} />
               <text textAnchor="middle" dominantBaseline="middle">{delta > 0 ? '↗' : '↘'} {Math.abs(delta)}″</text>
@@ -214,6 +234,36 @@ export function Board({
           >{t.kind !== 'BLOCKING' && !t.isDoor && <span className="terrain-label">{t.pieceId}</span>}</div>
         )
       })}
+
+      {focusedTerrain && <svg className="board-terrain-focus" width={W} height={H} aria-hidden="true">
+        <polygon points={focusedTerrain.polygon.map(p => `${p.x * SCALE},${p.y * SCALE}`).join(' ')} />
+        <text x={focusedTerrain.polygon.reduce((n,p) => n + p.x, 0) / focusedTerrain.polygon.length * SCALE} y={Math.min(...focusedTerrain.polygon.map(p => p.y)) * SCALE - 7} textAnchor="middle">{focusedTerrain.isDoor ? '可通行门 · 移动 +1″' : focusedTerrain.terrainClass === 'HEAVY' ? '重型地形' : focusedTerrain.terrainClass === 'LIGHT' ? '轻型地形' : '地形'}</text>
+      </svg>}
+
+      <svg className="board-fx-overlay" width={W} height={H} aria-hidden="true">
+        {effects.map(fx => {
+          const visual = factionVisual(fx.factionId)
+          const points = fx.path?.length ? fx.path : fx.from ? [fx.from, fx.to] : [fx.to]
+          const visualPoints = fx.kind === 'SHOT' && fx.miss ? [...points.slice(0, -1), { x: fx.to.x + .55, y: fx.to.y - .45 }] : points
+          const path = visualPoints.map((p, index) => `${index ? 'L' : 'M'} ${p.x * SCALE} ${p.y * SCALE}`).join(' ')
+          const x = fx.to.x * SCALE, y = fx.to.y * SCALE
+          return <g key={fx.id} data-faction={fx.factionId} className={`board-fx board-fx-${fx.kind.toLowerCase()}`} style={{ '--fx-color': visual.accent, '--fx-duration': `${fx.durationMs}ms` } as React.CSSProperties}>
+            {fx.kind === 'MOVE' && <>
+              <path className="board-fx-route" d={path} stroke={visual.accent} />
+              <circle className="board-fx-traveller" r={8} fill={visual.accent}><animateMotion dur={`${fx.durationMs}ms`} path={path} fill="freeze" /></circle>
+              <circle className="board-fx-arrival" cx={x} cy={y} r={12} stroke={visual.accent} />
+            </>}
+            {fx.kind === 'SHOT' && fx.from && <>
+              <path className="board-fx-shot" d={path} stroke={visual.accent} />
+              {!fx.miss && <circle className="board-fx-impact" cx={x} cy={y} r={8} stroke={visual.accent} />}
+            </>}
+            {fx.kind === 'MELEE' && <path className="board-fx-slash" d={`M ${x - 15} ${y + 12} Q ${x + 2} ${y - 18} ${x + 18} ${y - 12}`} stroke={visual.accent} />}
+            {['DEPLOY', 'RULE', 'DAMAGE', 'DOOR'].includes(fx.kind) && <circle className="board-fx-pulse" cx={x} cy={y} r={14} stroke={visual.accent} />}
+            {fx.kind === 'RULE' && <text className="board-fx-motif" x={x} y={y + 7} textAnchor="middle" fill={visual.accent}>{visual.motif}</text>}
+            {fx.label && <text className="board-fx-label" x={x} y={y - 18} textAnchor="middle" fill={visual.accent}>{fx.label}</text>}
+          </g>
+        })}
+      </svg>
 
       {placementPreview && <div className={`placement-preview ${placementPreview.valid ? 'valid' : 'invalid'}`} style={{
         left: placementPreview.center.x * SCALE,
@@ -261,7 +311,10 @@ export function Board({
           return (
             <button
               key={t.uid}
-              className={`token ${t.side} ${isSel ? 'sel' : ''} ${showPlatforms ? (t.height ?? 0) > 0 ? 'on-upper' : 'on-ground' : ''} ${shotFocus && t.uid === shotTargetUid ? 'shot-target' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''}`}
+              className={`token ${t.side} ${isSel ? 'sel' : ''} ${showPlatforms ? (t.height ?? 0) > 0 ? 'on-upper' : 'on-ground' : ''} ${shotFocus && t.uid === shotTargetUid ? 'shot-target' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''} ${effects.some(fx => fx.kind === 'MOVE' && fx.uid === t.uid) ? 'fx-arriving' : ''}`}
+              data-faction={t.factionId}
+              data-motif={factionVisual(t.factionId).motif}
+              data-mark={t.selections?.find(selection => selection.startsWith('mark_'))}
               style={{
                 left: t.pos.x * SCALE,
                 top: t.pos.y * SCALE,

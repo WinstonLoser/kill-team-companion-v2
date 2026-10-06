@@ -8,7 +8,7 @@ export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarPro
   return <div className="unit-panel">{(sideFilter ? [sideFilter] : ['a','b'] as const).map(side=>{
     const team=s.tokens.filter(t=>t.side===side)
     const ready=team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false).length
-    return <section key={side} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
+    return <section key={side} data-faction={team[0]?.factionId} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
       <header className="team-heading"><div><strong>{side.toUpperCase()} 方阵容</strong><small>{ready} 待激活 / {team.filter(t=>t.alive).length} 存活</small></div><div className="team-resources"><span>CP <b>{s.turn.cp[side]}</b></span><span>VP <b>{s.vp[side]}</b></span></div></header>
       <TeamWargearSummary side={side} team={team} />
       <div className="team-list">{team.map(t=>{
