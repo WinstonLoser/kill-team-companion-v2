@@ -41,7 +41,7 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-.app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.app { height: 100vh; height: 100dvh; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 .main-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
 
 .topbar {
@@ -369,7 +369,7 @@ button.primary:disabled, button:disabled { opacity: 0.4; cursor: not-allowed; fi
 .result-page .outcome { font-size: 1.2rem; margin: 1rem 0; }
 
 /* 规则查询（1.17） */
-.rules-query { width: 480px; }
+.rules-query { width: 480px; max-width: 100%; }
 .rq-list { list-style: none; padding: 0; margin: 0.5rem 0; max-height: 50vh; overflow-y: auto; }
 .rq-item { padding: 0.4rem 0; border-bottom: 1px solid var(--border); }
 .rq-fields { font-size: 0.78rem; line-height: 1.5; }
@@ -447,7 +447,6 @@ button.primary:disabled, button:disabled { opacity: 0.4; cursor: not-allowed; fi
 .fo-cp { font-size: var(--text-xs); color: var(--muted); font-family: ui-monospace, monospace; }
 .fo-desc { font-size: var(--text-xs); color: var(--muted); flex: 1; min-width: 10rem; }
 .push-banner { background: rgba(57,217,138,0.1); border: 1px solid #39d98a; color: #39d98a; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0.3rem 0; display: flex; justify-content: space-between; align-items: center; }
-.portrait-hint { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.5rem; }
 .legality li.actionable { cursor: pointer; }
 .legality li.actionable:hover { background: rgba(255,107,107,0.08); border-radius: 3px; }
 .rq-input { width: 100%; background: var(--bg); color: var(--fg); border: 1px solid var(--border); padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; min-height: 44px; }

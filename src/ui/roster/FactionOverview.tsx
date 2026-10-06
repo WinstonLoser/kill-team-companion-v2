@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FactionPack } from '../../rules'
 
 // 阵营概览：只读展示计谋（战略/交战）、阵营装备、特工能力。
-// 计谋和装备是阵营常驻规则，不需建队时选择——展示让玩家了解。
+// 这里只读展示规则全文；实际启用的阵营装备由建队选择决定。
 export function FactionOverview({ pack }: { pack: FactionPack }) {
   const [expanded, setExpanded] = useState(false)
 

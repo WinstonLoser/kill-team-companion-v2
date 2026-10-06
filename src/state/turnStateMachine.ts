@@ -23,6 +23,8 @@ export interface OperativeActivation {
   fallBackDone: boolean
   chargeDone: boolean
   moveDone: boolean
+  /** 已射击的重型武器对本次激活后续移动的限制。 */
+  heavyMoveRule?: 'DASH' | 'MOVE' | 'NONE'
 }
 
 export type Phase = 'DEPLOYMENT' | 'STRATEGY' | 'ENGAGEMENT' | 'TURNING_POINT_END' | 'BATTLE_END'
@@ -166,7 +168,7 @@ export type TurnEvent =
   | { type: 'START_ENGAGEMENT' }
   | { type: 'ACTIVATE'; opId: string; player: 'a' | 'b' }
   | { type: 'SELECT_ORDER'; opId: string; order: Order }
-  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext; apCost?: number }
+  | { type: 'DO_ACTION'; opId: string; action: ActionType; ctx?: ActionContext; apCost?: number; heavyMoveRule?: 'DASH' | 'MOVE' | 'NONE' }
   | { type: 'END_ACTIVATION'; opId: string }
   | { type: 'END_TURNING_POINT' }
   | { type: 'USE_PLOY'; ployId: string; player: 'a' | 'b'; cpCost: number }
@@ -207,6 +209,7 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
             fallBackDone: false,
             chargeDone: false,
             moveDone: false,
+            heavyMoveRule: undefined,
           },
         },
       }
@@ -229,6 +232,9 @@ export function turnReducer(state: TurnState, event: TurnEvent): TurnState {
         fallBackDone: op.fallBackDone || event.action === 'FALL_BACK',
         chargeDone: op.chargeDone || event.action === 'CHARGE',
         moveDone: op.moveDone || event.action === 'MOVE',
+        heavyMoveRule: event.action === 'SHOOT' && event.heavyMoveRule
+          ? op.heavyMoveRule && op.heavyMoveRule !== event.heavyMoveRule ? 'NONE' : event.heavyMoveRule
+          : op.heavyMoveRule,
       }
       return { ...state, operatives: { ...state.operatives, [event.opId]: next } }
     }

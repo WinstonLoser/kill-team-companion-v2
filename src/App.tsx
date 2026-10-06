@@ -88,27 +88,6 @@ export function App() {
         {currentView === 'animationLab' && <AnimationLab packs={TESTLAB_PACKS} />}
         {currentView === 'rules' && <RulesSearch />}
       </Suspense></main>
-      <PortraitLockHint />
-    </div>
-  )
-}
-
-/** P15：竖屏提示「请横屏」（UX-OQ-7）。 */
-function PortraitLockHint() {
-  const mq = typeof window !== 'undefined' ? window.matchMedia('(orientation: portrait)') : null
-  const check = () => Boolean(mq?.matches && window.innerWidth < 900)
-  const [portrait, setPortrait] = useState(check)
-  useEffect(() => {
-    if (!mq) return
-    const handler = () => setPortrait(check())
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [mq])
-  if (!portrait) return null
-  return (
-    <div className="portrait-hint">
-      <strong>请横屏使用</strong>
-      <p className="muted">Kill Team 战棋助手为横屏平板优化。</p>
     </div>
   )
 }

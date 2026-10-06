@@ -669,13 +669,13 @@
     },
     {
       "effectId": "chapterTactic_sharpshooter",
-      "label": "神⊥手（爆矢精准1）",
+      "label": "神射手（爆矢精准1）",
       "source": "chapterTactic:sharpshooter",
       "trigger": { "point": "AFTER_HIT_ROLL" },
       "pipelineStep": "ATTACK_UPGRADE",
       "modifier": { "kind": "AUTO_SUCCESS", "payload": { "count": 1, "grade": "NORMAL" } },
       "stacking": { "policy": "UNIQUE_PER_SOURCE" },
-      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-神⊥手" }
+      "rulesRef": { "doc": "merged_kt_angels_of_death_zh.md", "section": "战团战术-神射手" }
     },
     {
       "effectId": "chapterTactic_siege",

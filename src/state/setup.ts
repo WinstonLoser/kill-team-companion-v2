@@ -25,6 +25,8 @@ export function buildMatchTokens(mapless = false): MatchToken[] {
       const instance = counts.get(opId) ?? 0
       counts.set(opId, instance + 1)
       const key = `${opId}#${instance}`
+      const enabledAbilityIds = r.personalRulesEnabled ? (r.personalAbilityIds[key] ?? []) : []
+      const mark = r.personalRulesEnabled ? r.perOperativeMarks[key] : undefined
       return {
         uid: `${side}${index + 1}`, side, factionId: pack.faction.id, opId,
         name: `${op.name.split(' / ').pop()} · ${side.toUpperCase()}${index + 1}`,
@@ -32,8 +34,10 @@ export function buildMatchTokens(mapless = false): MatchToken[] {
         wounds: op.stats.wounds, maxWounds: op.stats.wounds, markers: [],
         alive: true, placed: mapless, order: 'CONCEAL' as const,
         weapons: [...(r.loadout[key] ?? [])],
-        selections: [...r.subFactionSelection, ...(r.perOperativeMarks[key] ? [r.perOperativeMarks[key]!] : [])],
-        wargear: [...(r.wargearAssignment[key] ?? [])],
+        selections: [...(r.teamRulesEnabled ? r.subFactionSelection : []), ...(mark ? [mark] : []), ...(r.personalRulesEnabled && r.personalTactics[key] ? [r.personalTactics[key]!] : [])],
+        enabledAbilityIds,
+        boonWeaponTarget: r.personalRulesEnabled ? r.boonWeaponTargets[key] : undefined,
+        teamWargearIds: [...r.selectedWargearIds],
       }
     })
   })

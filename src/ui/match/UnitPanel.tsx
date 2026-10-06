@@ -1,6 +1,7 @@
 import { useMatchStore, packOfFaction } from '../../state/matchStore'
 import { ActionBar } from './ActionBar'
 import { getAvatarUrl } from '../../utils/avatars'
+import { TeamWargearSummary } from './TeamWargearSummary'
 
 export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarProps}:{startWoundsOf:(uid:string)=>number;sideFilter?:'a'|'b';onPortraitClick?:(uid:string)=>void;actionBarProps?:any}) {
   const s=useMatchStore()
@@ -9,6 +10,7 @@ export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarPro
     const ready=team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false).length
     return <section key={side} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
       <header className="team-heading"><div><strong>{side.toUpperCase()} 方阵容</strong><small>{ready} 待激活 / {team.filter(t=>t.alive).length} 存活</small></div><div className="team-resources"><span>CP <b>{s.turn.cp[side]}</b></span><span>VP <b>{s.vp[side]}</b></span></div></header>
+      <TeamWargearSummary side={side} team={team} />
       <div className="team-list">{team.map(t=>{
         const active=s.turn.activeOpId===t.uid
         const exhausted=s.turn.operatives[t.uid]?.ready===false

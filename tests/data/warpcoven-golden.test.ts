@@ -185,14 +185,14 @@ describe('次元密会数据包（2026-04 勘误基线）', () => {
     expect(r.checks.find((c) => c.key === 'equipment')?.status).toBe('warn')
   })
 
-  it('合法性：巫师未选恩惠 → 违规；非巫师选恩惠 → 违规；恩惠重复 → 违规', () => {
+  it('可选恩惠可留空；非巫师选恩惠或重复恩惠仍违规', () => {
     const ids = ['wc_sorcerer_destiny', 'wc_sorcerer_time', 'wc_rubric_gunner', 'wc_rubric_warrior', 'wc_tzaangor_champion']
     // 未选
     let r = evaluateLegality({
       pack, operativeIds: ids, loadout: {}, subFactionSelection: [],
       perOperativeMarks: { 'wc_sorcerer_destiny#0': 'boon_time_walker', 'wc_sorcerer_time#0': '' },
     })
-    expect(r.checks.find((c) => c.key === 'sub-faction')?.status).toBe('warn')
+    expect(r.checks.find((c) => c.key === 'sub-faction')?.status).toBe('ok')
     // 非巫师选恩惠
     r = evaluateLegality({
       pack, operativeIds: ids, loadout: {}, subFactionSelection: [],
