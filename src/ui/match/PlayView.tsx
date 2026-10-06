@@ -16,6 +16,7 @@ import { packOfFaction } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
 import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPanel'
 import { type RollContext } from '../../dice/source'
+import { playerRulingRules } from '../weaponDisplay'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -912,7 +913,8 @@ function WeaponPicker({ uid }: { uid: string }) {
   if (!data) return null
   return <div className="weapon-picker"><span className="muted">{data.token.name} · 本次武器</span>{(['RANGED','MELEE'] as const).map(kind => {
     const list = data.weapons.filter(w => w.kind === kind)
-    return list.length ? <label key={kind}>{kind === 'RANGED' ? '射击' : '近战'}<select aria-label={kind === 'RANGED' ? '射击武器' : '近战武器'} disabled={!!pending} value={combatWeapon(uid, kind)?.weaponId} onChange={e => setWeapon(uid,kind,e.target.value)}>{list.map(w => <option key={w.weaponId} value={w.weaponId}>{w.name} · {w.profile.attacks}骰 / {w.profile.hit}+</option>)}</select></label> : null
+    const manual = playerRulingRules(combatWeapon(uid, kind)?.profile.weaponRules ?? [])
+    return list.length ? <label key={kind}>{kind === 'RANGED' ? '射击' : '近战'}<select aria-label={kind === 'RANGED' ? '射击武器' : '近战武器'} disabled={!!pending} value={combatWeapon(uid, kind)?.weaponId} onChange={e => setWeapon(uid,kind,e.target.value)}>{list.map(w => <option key={w.weaponId} value={w.weaponId}>{w.name} · {w.profile.attacks}骰 / {w.profile.hit}+</option>)}</select>{manual.length > 0 && <small>本武器的 {manual.join('、')} 效果请按规则由玩家裁定。</small>}</label> : null
   })}</div>
 }
 

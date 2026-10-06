@@ -36,6 +36,13 @@ export function combatWeapon(uid: string, kind: 'RANGED' | 'MELEE'): Weapon | un
   const data = getMatchOperativeData(uid)
   return data?.weapons.find(w => w.kind === kind && w.weaponId === data.token.chosenWeapons?.[kind]) ?? data?.weapons.find(w => w.kind === kind)
 }
+function heavyMoveRule(weapon: Weapon | undefined): 'DASH' | 'MOVE' | 'NONE' | undefined {
+  const rule = weapon?.profile.weaponRules.find(item => /^Heavy(?:\s|$)/i.test(item))
+  if (!rule) return undefined
+  if (/Dash only/i.test(rule)) return 'DASH'
+  if (/Reposition only/i.test(rule)) return 'MOVE'
+  return 'NONE'
+}
 // P4：武器查找为可选（缺类不致导入期崩溃，多阵营安全）；结算时再 guard。
 const RANGED = MATCH_PACK.weapons.find((w) => w.kind === 'RANGED')
 const MELEE = MATCH_PACK.weapons.find((w) => w.kind === 'MELEE')
@@ -80,6 +87,7 @@ export function getMatchOperativeData(uid: string): { operative: Operative; pack
     }
   }
 
+  if (token.enabledAbilityIds) op.abilityRefs = op.abilityRefs?.filter(id => token.enabledAbilityIds!.includes(id))
   applyUnitRules(op, weapons, token.selections ?? [], token.wounds, token.maxWounds)
   return { operative: op, pack, weapons, token }
 }
@@ -99,7 +107,7 @@ function buildEffectStack(token: MatchToken, activeStratagems: string[]): Effect
   for (const e of pack.effects) {
     const cat = e.source.split(':')[0]
     if (cat === 'factionRule') out.push(e)
-    else if (cat === 'ability' && pack.operatives.find(o => o.operativeId === opId)?.abilityRefs?.includes(e.source.split(':')[1]!)) out.push(e)
+    else if (cat === 'ability' && pack.operatives.find(o => o.operativeId === opId)?.abilityRefs?.includes(e.source.split(':')[1]!) && (!token.enabledAbilityIds || token.enabledAbilityIds.includes(e.source.split(':')[1]!))) out.push(e)
     else if (cat === 'chapterTactic' || cat === 'markOfChaos') {
       // Current pack descriptors predate current rule text; direct profile rules are applied per token.
       if (e.modifier.kind === 'CUSTOM_HOOK' && token.selections?.includes(e.effectId)) out.push(e)
@@ -151,7 +159,9 @@ export interface MatchToken {
   weapons: string[]
   chosenWeapons?: Partial<Record<'RANGED' | 'MELEE', string>>
   selections?: string[]
-  wargear?: string[]
+  enabledAbilityIds?: string[]
+  boonWeaponTarget?: string
+  teamWargearIds?: string[]
   /** 运行时数据覆写：基础属性修改（DM Mode） */
   statOverrides?: Partial<OperativeStats>
   /** 运行时数据覆写：武器属性修改（DM Mode）Record<weaponId, Partial<WeaponProfile>> */
@@ -249,7 +259,7 @@ interface MatchState {
   /** 6.1 战略阶段：最近一次使用计谋前的快照（一级回退，防误点） */
   lastPloy: { cp: { a: number; b: number }; strategyTurn: 'a' | 'b'; strategyPasses: { a: boolean; b: boolean }; activeStratagems: { a: string[]; b: string[] } } | null
   /** 激活期逐步回退栈：每次 doAction 前压栈，undoAction 弹栈恢复（AP/行动记录/位置）。激活结束清空。 */
-  activationUndo: { uid: string; apUsed: number; actionsThisActivation: ActionType[]; fallBackDone: boolean; chargeDone: boolean; moveDone: boolean; pos: Point; tokens: MatchToken[] }[]
+  activationUndo: { uid: string; apUsed: number; actionsThisActivation: ActionType[]; fallBackDone: boolean; chargeDone: boolean; moveDone: boolean; heavyMoveRule?: 'DASH' | 'MOVE' | 'NONE'; pos: Point; tokens: MatchToken[] }[]
   /** 简化对局模式（无地图、跳过部署、自动隐蔽、手动选择目标/掩体） */
   maplessMode?: boolean
 
@@ -832,9 +842,9 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const tok = s.tokens.find((t) => t.uid === uid)
     // 逐步回退栈：压入 commit 前状态
     const undo = op && tok
-      ? [...s.activationUndo, { uid, apUsed: op.apUsed, actionsThisActivation: [...op.actionsThisActivation], fallBackDone: op.fallBackDone, chargeDone: op.chargeDone, moveDone: op.moveDone, pos: tok.pos, tokens: structuredClone(s.tokens) }]
+      ? [...s.activationUndo, { uid, apUsed: op.apUsed, actionsThisActivation: [...op.actionsThisActivation], fallBackDone: op.fallBackDone, chargeDone: op.chargeDone, moveDone: op.moveDone, heavyMoveRule: op.heavyMoveRule, pos: tok.pos, tokens: structuredClone(s.tokens) }]
       : s.activationUndo
-    set({ turn: turnReducer(s.turn, { type: 'DO_ACTION', opId: uid, action, apCost: get().actionCostOf(uid, action) }), activationUndo: undo })
+    set({ turn: turnReducer(s.turn, { type: 'DO_ACTION', opId: uid, action, apCost: get().actionCostOf(uid, action), heavyMoveRule: action === 'SHOOT' ? heavyMoveRule(combatWeapon(uid, 'RANGED')) : undefined }), activationUndo: undo })
     s.pushLog('turn', `${s.tokens.find((t) => t.uid === uid)?.name ?? uid} → ${ACTION_LABEL_ZH[action] ?? action}（−${s.actionCostOf(uid, action)}AP）`)
     return { ok: true }
   },
@@ -844,7 +854,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     if (!last) return
     const op = s.turn.operatives[last.uid]
     set({
-      turn: op ? { ...s.turn, operatives: { ...s.turn.operatives, [last.uid]: { ...op, apUsed: last.apUsed, actionsThisActivation: [...last.actionsThisActivation], fallBackDone: last.fallBackDone, chargeDone: last.chargeDone, moveDone: last.moveDone } } } : s.turn,
+      turn: op ? { ...s.turn, operatives: { ...s.turn.operatives, [last.uid]: { ...op, apUsed: last.apUsed, actionsThisActivation: [...last.actionsThisActivation], fallBackDone: last.fallBackDone, chargeDone: last.chargeDone, moveDone: last.moveDone, heavyMoveRule: last.heavyMoveRule } } } : s.turn,
       tokens: structuredClone(last.tokens),
       lastShot: null, currentLog: null,
       activationUndo: s.activationUndo.slice(0, -1),
@@ -892,6 +902,12 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const astartes = opData ? isAstartes(opData) : false
     if (s.reactionUid === uid && (ACTION_AP[action] !== 1 || op.actionsThisActivation.length > 0)) return { ok: false, reason: '反应仅允许一个原费用为1AP的行动' }
     const ranged = combatWeapon(uid, 'RANGED')
+    const moving = action === 'MOVE' || action === 'DASH' || action === 'FALL_BACK' || action === 'CHARGE'
+    if (moving && op.heavyMoveRule && action !== op.heavyMoveRule) return { ok: false, reason: '本次激活已使用重型武器，不能执行此移动' }
+    if (action === 'SHOOT') {
+      const permitted = heavyMoveRule(ranged)
+      if (permitted && op.actionsThisActivation.some(previous => (previous === 'MOVE' || previous === 'DASH' || previous === 'FALL_BACK' || previous === 'CHARGE') && previous !== permitted)) return { ok: false, reason: '此前移动与当前重型武器不兼容' }
+    }
     const extra = { actionCost: s.actionCostOf(uid, action), quiet: !!ranged?.profile.weaponRules.some(r => /silent|quiet/i.test(r)), chargeInEngagement: t.selections?.includes('chapterTactic_mobile') }
     
     // 简化对局模式下，跳过物理距离的交战检查，假设条件满足（由玩家手动判定）
@@ -941,7 +957,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     const atkRanged = combatWeapon(attacker.uid, 'RANGED')
     const findingOverrides = get().findingOverridesFor(attacker.uid, target.uid)
     
-    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind, targetOrder: target.order === 'CONCEAL' ? 'CONCEALED' : 'ENGAGED', friendlyPositions: s.tokens.filter(t => t.alive && t.placed && t.side === attacker.side && t.uid !== attacker.uid).map(t => t.pos) })
+    const elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? Math.hypot(map.bounds.w, map.bounds.h), board, others, { findingOverrides, kind, targetOrder: target.order === 'CONCEAL' ? 'CONCEALED' : 'ENGAGED', friendlyPositions: s.tokens.filter(t => t.alive && t.placed && t.side === attacker.side && t.uid !== attacker.uid).map(t => t.pos) })
     return { ok: elig.ok, missing: elig.missing }
   },
   resolveAttack: ({ attackerUid, targetUid, kind, atkNats, defNats, atkRolls, defRolls, manualAllocation }) => {
@@ -972,7 +988,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     
     let elig = { ok: true, missing: [] as string[], findings: findingOverrides }
     if (!s.maplessMode) {
-      elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? RANGED?.profile.range ?? 24, board, others, { findingOverrides, kind })
+      elig = validateTarget(aPl, dPl, atkRanged?.profile.range ?? Math.hypot(map.bounds.w, map.bounds.h), board, others, { findingOverrides, kind })
       if (!elig.ok) return { ok: false, missing: elig.missing }
     }
 
@@ -1171,7 +1187,7 @@ overrideValue: (aUid, tUid, kind) => get().overrides[overrideKey(aUid, tUid, kin
     if (!attacker) return { range: 0, controlRing: null, ownCover: null, targets: [] }
     const placed = s.tokens.filter((t) => t.alive && t.placed)
     const board: BoardT = { terrain: map.terrain, operatives: placed.map((t) => ({ operativeId: t.uid, pos: t.pos, baseRadius: t.baseRadius })) }
-    const range = combatWeapon(activeUid, 'RANGED')?.profile.range ?? 24
+    const range = combatWeapon(activeUid, 'RANGED')?.profile.range ?? Math.hypot(map.bounds.w, map.bounds.h)
     // 1.14 AC2：1" 控制范围圈 + 自身掩护染色（COVER 1" 内→绿；2" 内有他特工→灰）
     const others = placed.filter((t) => t.uid !== attacker.uid).map((t) => t.pos)
     const cf = coverFinding(attacker.pos, board, others)

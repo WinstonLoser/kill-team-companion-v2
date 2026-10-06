@@ -3,6 +3,7 @@ import { useMatchStore, packOfOp, packOfFaction, type Side } from '../../state/m
 import { type FactionPack, type Stratagem } from '../..'
 import { useRosterStore } from '../../state/rosterStore'
 import { DiceIcon } from '../components/Dice/DiceIcon'
+import { TeamWargearSummary } from './TeamWargearSummary'
 // 6.1 战略阶段屏幕：先手 D6（投骰按钮）→ 双方计谋同屏（剩余 CP）→ 进入交战
 export function StrategyPhase() {
   const turn = useMatchStore((s) => s.turn)
@@ -61,6 +62,7 @@ export function StrategyPhase() {
   return (
     <div className="strategy-phase">
       <h2>战略阶段 · 转折点 {turn.turningPoint}/4</h2>
+      <div className="team-wargear-pair">{(['a', 'b'] as const).map(side => <TeamWargearSummary key={side} side={side} team={tokens.filter(token => token.side === side)} />)}</div>
 
       {phase === 'roll' && (
         <div className="sp-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>

@@ -41,7 +41,7 @@ describe('死亡天使数据包加载', () => {
 })
 
 describe('golden：死亡天使机制经引擎结算', () => {
-  it('神⊥手 AUTO_SUCCESS：基线 2 成功 → 加成后 3 成功，伤害 +3', () => {
+  it('神射手 AUTO_SUCCESS：基线 2 成功 → 加成后 3 成功，伤害 +3', () => {
     const baseline = shoot([], [4, 5, 2, 3, 1, 1, 1])
     const withSharp = shoot([effect('chapterTactic_sharpshooter')], [4, 5, 2, 3, 1, 1, 1])
     expect(baseline.woundsDealt).toBe(9) // 4 普通 × 3 = 12 = 9

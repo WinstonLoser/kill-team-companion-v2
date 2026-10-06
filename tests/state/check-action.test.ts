@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useMatchStore } from '../../src/state/matchStore'
-import { useRosterStore } from '../../src/state/rosterStore'
+import { emptyRoster, useRosterStore } from '../../src/state/rosterStore'
 import { effectiveMove, effectiveApl, effectiveActionAp } from '../../src/state/turnStateMachine'
 import type { Effect } from '../../src/rules'
 
@@ -8,8 +8,8 @@ import type { Effect } from '../../src/rules'
 beforeEach(() => {
   useMatchStore.getState().reset()
   useRosterStore.setState({
-    rosterA: { factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
-    rosterB: { factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'], loadout: {}, subFactionSelection: [], perOperativeMarks: {}, wargearAssignment: {} },
+    rosterA: { ...emptyRoster(), factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'] },
+    rosterB: { ...emptyRoster(), factionId: 'angels_of_death', operativeIds: ['intercessor_warrior'] },
     editing: 'a',
   })
   useMatchStore.setState({

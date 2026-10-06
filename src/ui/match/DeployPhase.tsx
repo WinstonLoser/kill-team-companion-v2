@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMatchStore, type MatchToken, type Side } from '../../state/matchStore'
 import { circleInsidePolygon, circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
 import { Board } from './Board'
+import { TeamWargearSummary } from './TeamWargearSummary'
 
 // 部署阶段（对齐 lite rule §部署）：
 //  1. 部署前掷先手权（按钮即时出结果；动画后续补）。
@@ -146,6 +147,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
 
   return (
     <div className="deploy-phase">
+      <div className="team-wargear-pair">{(['a', 'b'] as const).map(side => <TeamWargearSummary key={side} side={side} team={tokens.filter(token => token.side === side)} />)}</div>
       {/* 先手权未定：掷骰门禁 */}
       {!deployInitiative || !deployDice ? (
         <div className="deploy-init-roll">

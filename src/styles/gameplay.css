@@ -348,6 +348,7 @@ button:focus-visible,select:focus-visible,input:focus-visible  {
   display:flex;
   gap:8px;
   align-items:center;
+  flex-wrap:wrap;
   
 }
 .weapon-picker select {
@@ -464,6 +465,17 @@ button:focus-visible,select:focus-visible,input:focus-visible  {
   border-color:#d1a467;
   
 }
+.weapon-picker label small {
+  flex-basis:100%;
+  color:#e6c387;
+  line-height:1.5;
+}
+.team-wargear { margin:8px; padding:9px; border:1px solid #596476; border-radius:8px; background:#111a25; font-size:11px; }
+.team-wargear summary { color:#f0c587; cursor:pointer; font-weight:700; }
+.team-wargear ul { margin:8px 0 0; padding-left:18px; display:grid; gap:8px; }
+.team-wargear li strong { display:block; color:var(--fg); }
+.team-wargear li span { display:block; margin-top:3px; color:var(--muted); line-height:1.5; }
+.team-wargear-pair { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:8px; }
 .team-heading {
   display:flex;
   justify-content:space-between;
@@ -671,6 +683,9 @@ button:focus-visible,select:focus-visible,input:focus-visible  {
 }
 
 @media(max-width:560px) {
+  .cols,.sp-sides {
+  grid-template-columns:minmax(0,1fr);
+  }
   .play-main {
   grid-template-columns:minmax(0,1fr);
   

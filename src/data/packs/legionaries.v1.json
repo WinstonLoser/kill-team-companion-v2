@@ -371,7 +371,7 @@
           "description": "Standard / 标准",
           "count": 1,
           "options": [
-            ["bolt_pistol", "flensing_blades"]
+            ["shrivetalon_bolt_pistol", "flensing_blades"]
           ]
         }
       ],
@@ -415,21 +415,21 @@
     },
     {
       "weaponId": "tainted_bolt_pistol",
-      "name": "Tainted bolt pistol",
+      "name": "Tainted bolt pistol / 腐化爆矢手枪",
       "kind": "RANGED",
       "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "range": 8, "weaponRules": ["Rending"] },
       "keywords": ["BOLT"]
     },
     {
       "weaponId": "power_fist",
-      "name": "Power fist",
+      "name": "Power fist / 动力拳套",
       "kind": "MELEE",
       "profile": { "attacks": 5, "hit": 4, "normalDamage": 5, "criticalDamage": 7, "weaponRules": ["Brutal"] },
       "keywords": ["MELEE"]
     },
     {
       "weaponId": "power_maul",
-      "name": "Power maul",
+      "name": "Power maul / 动力槌",
       "kind": "MELEE",
       "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 6, "weaponRules": ["Shock"] },
       "keywords": ["MELEE"]
@@ -463,6 +463,13 @@
       "keywords": ["BOLT"]
     },
     {
+      "weaponId": "shrivetalon_bolt_pistol",
+      "name": "Bolt pistol / 爆矢手枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "range": 8, "weaponRules": ["Rending"] },
+      "keywords": ["BOLT"]
+    },
+    {
       "weaponId": "daemonic_claw",
       "name": "Daemonic claw / 恶魔之爪",
       "kind": "MELEE",
@@ -471,14 +478,14 @@
     },
     {
       "weaponId": "fireblast",
-      "name": "Fireblast / 烈火爆破",
+      "name": "Fireblast / 火焰冲击",
       "kind": "RANGED",
       "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["PSYCHIC", "Blast 2\"", "1\" Devastating 1", "Saturate"] },
       "keywords": ["PSYCHIC"]
     },
     {
       "weaponId": "life_siphon",
-      "name": "Life siphon / 生命虹吸",
+      "name": "Life siphon / 灵魂虹吸",
       "kind": "RANGED",
       "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 3, "weaponRules": ["PSYCHIC", "Saturate", "Siphon Life"] },
       "keywords": ["PSYCHIC"]
@@ -562,14 +569,14 @@
     },
     {
       "weaponId": "reaper_chaincannon_focused",
-      "name": "Reaper chaincannon (focused) / 收割者链炮(聚焦)",
+      "name": "Reaper chaincannon (focused) / 收割者机炮(集中)",
       "kind": "RANGED",
       "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Ceaseless", "Heavy (Reposition only)", "Punishing"] },
       "keywords": []
     },
     {
       "weaponId": "reaper_chaincannon_sweeping",
-      "name": "Reaper chaincannon (sweeping) / 收割者链炮(扫射)",
+      "name": "Reaper chaincannon (sweeping) / 收割者机炮(扫射)",
       "kind": "RANGED",
       "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Ceaseless", "Heavy (Reposition only)", "Punishing", "Torrent 2\""] },
       "keywords": []
@@ -583,14 +590,14 @@
     },
     {
       "weaponId": "chainsword",
-      "name": "Chainsword",
+      "name": "Chainsword / 链锯剑",
       "kind": "MELEE",
       "profile": { "attacks": 5, "hit": 3, "normalDamage": 4, "criticalDamage": 5, "weaponRules": [] },
       "keywords": ["MELEE"]
     },
     {
       "weaponId": "flensing_blades",
-      "name": "Flensing blades",
+      "name": "Flensing blades / 剥皮刀",
       "kind": "MELEE",
       "profile": { "attacks": 5, "hit": 3, "normalDamage": 3, "criticalDamage": 5, "weaponRules": ["Lethal 5+"] },
       "keywords": ["MELEE"]

@@ -202,8 +202,7 @@
           "description": "Weapon / 武器",
           "count": 1,
           "options": [
-            ["boltgun", "plague_knife_melee"],
-            ["bolt_pistol", "plague_knife_melee"]
+            ["warrior_boltgun", "bolt_pistol", "plague_knife_melee"]
           ]
         }
       ],
@@ -238,6 +237,13 @@
       "name": "Boltgun / 爆矢枪",
       "kind": "RANGED",
       "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": [] },
+      "keywords": ["BOLT"]
+    },
+    {
+      "weaponId": "warrior_boltgun",
+      "name": "Boltgun / 爆矢枪",
+      "kind": "RANGED",
+      "profile": { "attacks": 4, "hit": 3, "normalDamage": 3, "criticalDamage": 4, "weaponRules": ["Toxic"] },
       "keywords": ["BOLT"]
     },
     {

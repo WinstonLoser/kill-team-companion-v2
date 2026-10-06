@@ -29,14 +29,29 @@ const ROSTER6 = [
   'intercessor_warrior', 'intercessor_warrior', 'intercessor_warrior',
   'intercessor_warrior', 'intercessor_warrior',
 ] as const
+const roster6Loadout = Object.fromEntries(ROSTER6.map((id, index) => [
+  `${id}#${ROSTER6.slice(0, index).filter(previous => previous === id).length}`,
+  pack.operatives.find(op => op.operativeId === id)!.loadouts.flatMap(slot => slot.options[0] ?? []),
+]))
 
 describe('建队合法性判定（纯逻辑，数据驱动）', () => {
+  it('突击仲裁者军士的等离子手枪只能搭配链锯剑', () => {
+    const operative = pack.operatives.find(op => op.operativeId === 'assault_intercessor_sergeant')!
+    const plasmaBundle = operative.loadouts[0]!.options.find(option => option.some(id => id.includes('plasma_pistol')))!
+    const powerFist = operative.loadouts[0]!.options.flat().find(id => id.includes('power_fist'))!
+    const legal = evaluateLegality({ pack, operativeIds: [operative.operativeId], loadout: { 'assault_intercessor_sergeant#0': plasmaBundle }, subFactionSelection: [] })
+    const illegal = evaluateLegality({ pack, operativeIds: [operative.operativeId], loadout: { 'assault_intercessor_sergeant#0': [...plasmaBundle.filter(id => !id.includes('chainsword')), powerFist] }, subFactionSelection: [] })
+    expect(legal.checks.find(check => check.key === 'loadout')?.status).toBe('ok')
+    expect(illegal.checks.find(check => check.key === 'loadout')?.status).toBe('warn')
+  })
+
   it('全绿：6 特工 + 队长 + 战团战术满 2 选', () => {
     const r = evaluateLegality({
       pack: synthSelectorPack(),
       operativeIds: [...ROSTER6],
-      loadout: { intercessor_warrior: ['bolt_rifle'] },
+      loadout: roster6Loadout,
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist'],
+      teamRulesEnabled: true,
     })
     expect(r.legal).toBe(true)
     expect(r.checks.every((c) => c.status === 'ok')).toBe(true)
@@ -74,6 +89,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
       operativeIds: [...ROSTER6],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless'],
+      teamRulesEnabled: true,
     })
     expect(r.legal).toBe(false)
     expect(r.checks.find((c) => c.key === 'sub-faction')?.status).toBe('warn')
@@ -85,6 +101,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
       operativeIds: [...ROSTER6],
       loadout: {},
       subFactionSelection: ['chapterTactic_relentless', 'chapterTactic_duelist', 'chapterTactic_resolute'],
+      teamRulesEnabled: true,
     })
     expect(r.legal).toBe(false)
     expect(r.checks.find((c) => c.key === 'sub-faction')?.status).toBe('warn')
@@ -256,7 +273,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
     expect(missing.checks.find((c) => c.key === 'keyword-min')?.detail).toContain('SERGEANT')
   })
 
-  it('perOperative 选择器：资格 + 必选 + 整队唯一（通用化，无阵营特判）', () => {
+  it('perOperative 选择器：可留空，但仍校验资格与整队唯一', () => {
     const cPack: FactionPack = {
       ...pack,
       faction: {
@@ -274,7 +291,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
       },
       buildConstraints: { operatives: { min: 1 } },
     }
-    // 军士未选 → warn
+    // 玩家未启用该项个性化能力，可留空
     const missing = evaluateLegality({
       pack: cPack,
       operativeIds: ['intercessor_sergeant', 'intercessor_warrior'],
@@ -282,7 +299,7 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
       subFactionSelection: [],
       perOperativeMarks: { 'intercessor_sergeant#0': '' },
     })
-    expect(missing.checks.find((c) => c.key === 'sub-faction')?.status).toBe('warn')
+    expect(missing.checks.find((c) => c.key === 'sub-faction')?.status).toBe('ok')
 
     // 合格选了、非合格也选了 → warn（战士不符合资格）
     const notEligible = evaluateLegality({
@@ -319,10 +336,11 @@ describe('建队合法性判定（纯逻辑，数据驱动）', () => {
   it('无子阵营选择器的阵营：跳过子阵营检查', () => {
     const noSelector: FactionPack = { ...pack, faction: { ...pack.faction } }
     delete (noSelector.faction as { subFactionSelector?: unknown }).subFactionSelector
+    const ids = ['space_marine_captain', ...ROSTER6.slice(1)]
     const r = evaluateLegality({
       pack: noSelector,
-      operativeIds: [...ROSTER6],
-      loadout: {},
+      operativeIds: ids,
+      loadout: Object.fromEntries(ids.map((id, index) => [`${id}#${ids.slice(0, index).filter(x => x === id).length}`, pack.operatives.find(op => op.operativeId === id)!.loadouts.flatMap(slot => slot.options[0] ?? [])])),
       subFactionSelection: [],
     })
     expect(r.checks.find((c) => c.key === 'sub-faction')).toBeUndefined()

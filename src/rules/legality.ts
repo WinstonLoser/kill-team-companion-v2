@@ -3,6 +3,7 @@
 // KT Lite 无点数（D-30），校验仅三类：特工来源 / 子阵营选择 / 装备限制。
 
 import type { FactionPack } from './types'
+import { isChapterVeteran, personalAbilities, psychicRangedWeapons } from './rosterOptions'
 
 export type RosterLegalityStatus = 'ok' | 'warn'
 
@@ -20,11 +21,17 @@ export interface RosterLegalityInput {
   loadout: Record<string, string[]>
   /** 子阵营选择器已选项 id 列表（战团战术/印记） */
   subFactionSelection: string[]
+  teamRulesEnabled?: boolean
   /**
    * perOperative 选择器的逐特工选择（键为 `${opId}#${instance}`，值为选项 id）。
    * 校验 requiredPerEligible / uniqueAcrossTeam / eligibleKeywords 时必须提供。
    */
   perOperativeMarks?: Record<string, string>
+  personalRulesEnabled?: boolean
+  personalAbilityIds?: Record<string, string[]>
+  personalTactics?: Record<string, string>
+  boonWeaponTargets?: Record<string, string>
+  selectedWargearIds?: string[]
   /**
    * 合成武器 keyword 覆盖（测试/扩展用）：weaponId → keywords。
    * 未列出则回退到 pack.weapons 里的 keywords。UI 正常路径留空。
@@ -47,6 +54,7 @@ function weaponKeywords(pack: FactionPack, synthetic: Record<string, string[]> |
 /** 计算建队合法性。纯函数：相同输入恒定输出，便于单测与回放。 */
 export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResult {
   const { pack, operativeIds, loadout, subFactionSelection, syntheticWeaponKeywords } = input
+  const personalRulesEnabled = input.personalRulesEnabled ?? false
   const constraints = pack.buildConstraints
   const checks: RosterLegalityCheck[] = []
 
@@ -70,6 +78,22 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
     srcDetail += `；上限 ${max} 名`
   }
   checks.push({ key: 'operatives-source', label: '特工来源', status: srcStatus, detail: srcDetail })
+
+  // Each selected operative needs exactly one legal bundle from every card slot.
+  const instances = operativeIds.map((id, index) => ({ id, key: `${id}#${operativeIds.slice(0, index).filter(x => x === id).length}` }))
+  const invalidLoadouts: string[] = []
+  for (const { id, key } of instances) {
+    const op = pack.operatives.find(o => o.operativeId === id)
+    if (!op) continue
+    const selected = [...(loadout[key] ?? [])].sort().join('|')
+    let combinations: string[][] = [[]]
+    for (const slot of op.loadouts) {
+      const options = slot.options.length ? slot.options : [[]]
+      combinations = combinations.flatMap(before => options.map(option => [...before, ...option]))
+    }
+    if (!combinations.some(option => [...option].sort().join('|') === selected)) invalidLoadouts.push(key)
+  }
+  checks.push({ key: 'loadout', label: '卡面武器组合', status: invalidLoadouts.length ? 'warn' : 'ok', detail: invalidLoadouts.length ? `需重新配置：${invalidLoadouts.join('、')}` : '所有已选特工的武器组合有效' })
 
   // ===== AC3 队长规则：≥1 名来自 leaderFrom =====
   const leaderFrom = constraints?.leaderFrom
@@ -174,7 +198,6 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
     if (selector.scope === 'perOperative') {
       // 每特工各选（军团兵混沌印记 / 次元密会奸奇恩惠）：按 selector 元数据通用校验，
       // 不再依赖 selector.id === 'markOfChaos' 之类的阵营特判。
-      const required = selector.requiredPerEligible ?? 0
       const eligibleKws = selector.eligibleKeywords
       const opById = new Map(pack.operatives.map((o) => [o.operativeId, o]))
       const marks = input.perOperativeMarks ?? {}
@@ -190,9 +213,7 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
         const mark = marks[key]
         if (pack.faction.id === 'legionaries' && id === 'balefire_acolyte' && mark === 'mark_khorne') problems.push('邪火使徒不能选择恐虐印记')
         if (eligible) {
-          if (required > 0 && (!mark || !validOptions.has(mark))) {
-            problems.push(`${op.name}需选 ${required} 项`)
-          }
+          if (mark && !validOptions.has(mark)) problems.push(`${op.name}选项无效`)
         } else if (mark) {
           problems.push(`${op.name}不符合选择资格`)
         }
@@ -214,21 +235,51 @@ export function evaluateLegality(input: RosterLegalityInput): RosterLegalityResu
           : problems.slice(0, 4).join('；'),
       })
     } else {
-      // 整队选 max 项（死亡天使战团战术）：选满 max 且选项合法
+      // 整队个性化规则启用后，选满 max 项；关闭时无需选择。
       const validOptions = new Set(selector.options)
       const invalid = subFactionSelection.filter((s) => !validOptions.has(s))
       let sfStatus: RosterLegalityStatus = 'ok'
-      let sfDetail = `${subFactionSelection.length}/${selector.max}（${selector.label}）`
-      if (subFactionSelection.length !== selector.max || new Set(subFactionSelection).size !== selector.max) {
+      let sfDetail = input.teamRulesEnabled ? `${subFactionSelection.length}/${selector.max}（${selector.label}）` : '未启用全队个性化规则'
+      if (input.teamRulesEnabled && (subFactionSelection.length !== selector.max || new Set(subFactionSelection).size !== selector.max)) {
         sfStatus = 'warn'
         sfDetail = `需选 ${selector.max}，已选 ${subFactionSelection.length}`
-      } else if (invalid.length > 0) {
+      } else if (input.teamRulesEnabled && invalid.length > 0) {
         sfStatus = 'warn'
         sfDetail = `无效选项：${invalid.join(', ')}`
       }
       checks.push({ key: 'sub-faction', label: '子阵营选择', status: sfStatus, detail: sfDetail })
     }
   }
+
+  const personalProblems: string[] = []
+  const validInstances = new Set(instances.map(item => item.key))
+  for (const [key, ids] of Object.entries(input.personalAbilityIds ?? {})) {
+    const opId = instances.find(item => item.key === key)?.id
+    const valid = new Set(opId ? personalAbilities(pack, opId).map(ability => ability.abilityId) : [])
+    if (!validInstances.has(key) || new Set(ids).size !== ids.length || ids.some(id => !valid.has(id))) personalProblems.push(`${key} 的能力选择无效`)
+  }
+  const tacticOptions = new Set(pack.faction.subFactionSelector?.id === 'chapterTactic' ? pack.faction.subFactionSelector.options : [])
+  for (const { id, key } of instances) {
+    const abilities = personalRulesEnabled ? (input.personalAbilityIds?.[key] ?? []) : []
+    const veteran = isChapterVeteran(pack, id) && abilities.includes('chapter_veteran')
+    const tactic = input.personalTactics?.[key]
+    if (veteran && !tactic) personalProblems.push(`${key} 需选战团老兵战术`)
+    if (tactic && (!veteran || !tacticOptions.has(tactic))) personalProblems.push(`${key} 的战团老兵战术无效`)
+    const mark = input.perOperativeMarks?.[key]
+    const target = input.boonWeaponTargets?.[key]
+    if (mark === 'boon_starburst') {
+      const possible = psychicRangedWeapons(pack, loadout[key] ?? []).map(w => w.weaponId)
+      if (!target || !possible.includes(target)) personalProblems.push(`${key} 的星爆术需指定已装备的灵能远程武器`)
+    } else if (target) personalProblems.push(`${key} 不需要星爆术武器目标`)
+  }
+  for (const key of Object.keys(input.personalTactics ?? {})) if (!validInstances.has(key)) personalProblems.push(`${key} 已不在阵容中`)
+  for (const key of Object.keys(input.boonWeaponTargets ?? {})) if (!validInstances.has(key)) personalProblems.push(`${key} 已不在阵容中`)
+  checks.push({ key: 'personal-options', label: '个性化选择', status: personalProblems.length ? 'warn' : 'ok', detail: personalProblems.length ? personalProblems.slice(0, 3).join('；') : personalRulesEnabled ? '已启用的能力选择有效' : '未启用个性化规则' })
+
+  const selectedWargear = input.selectedWargearIds ?? []
+  const availableWargear = new Set((pack.wargear ?? []).map(item => item.id))
+  const wargearValid = new Set(selectedWargear).size === selectedWargear.length && selectedWargear.every(id => availableWargear.has(id))
+  checks.push({ key: 'faction-wargear', label: '阵营装备', status: wargearValid ? 'ok' : 'warn', detail: wargearValid ? `已选 ${selectedWargear.length} 项，效果由玩家裁定` : '所选阵营装备无效或重复' })
 
   // ===== 装备限制：按 scope（weaponId|keyword）聚合计数，超限 → 违规 =====
   const limits = constraints?.equipmentLimits
