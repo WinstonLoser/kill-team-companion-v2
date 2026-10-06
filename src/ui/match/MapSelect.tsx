@@ -50,11 +50,11 @@ export function MapSelect({ maps, onLoad, onBlank }: {
       <legend>高度裁定</legend>
       <label className={heightMode === 'uniform' ? 'selected' : ''}>
         <input type="radio" name="height-mode" checked={heightMode === 'uniform'} onChange={() => setHeightMode('uniform')} />
-        <span><strong>统一高度</strong><small>所有单位视作同一高度，射击不使用楼层与制高点修正。</small></span>
+        <span><strong>统一高度</strong><small>使用平面视线、掩护与遮蔽；不计算顶盖、楼层或制高点。</small></span>
       </label>
       <label className={heightMode === 'elevation' ? 'selected' : ''}>
         <input type="radio" name="height-mode" checked={heightMode === 'elevation'} onChange={() => setHeightMode('elevation')} />
-        <span><strong>启用高低差</strong><small>后续射击时由玩家选择双方楼层；立体视线与攀爬仍现场裁定。</small></span>
+        <span><strong>启用高低差</strong><small>移动时选择楼层并计算攀爬；射击按立体地形判断视线、掩护与遮蔽。</small></span>
       </label>
     </fieldset>
 

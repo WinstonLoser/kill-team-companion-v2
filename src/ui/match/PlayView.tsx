@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { DungeonMasterOverlay } from '../components/DungeonMaster/DungeonMasterOverlay'
-import { useMatchStore, getMatchOperativeData, combatWeapon, type MatchToken } from '../../state/matchStore'
+import { useMatchStore, getMatchOperativeData, combatWeapon, vantageBonus, attackCoverType, geometryBoard, geometryPlacement, type MatchToken } from '../../state/matchStore'
 import type { ActionType } from '../../state/turnStateMachine'
-import { circlesOverlap, circleHitsBlockingTerrain, type Point } from '../../geometry'
+import { circlesOverlap, circleHitsBlockingTerrain, pointInPolygon, validateTarget, sharedCoverObscuredTerrain, type Point } from '../../geometry'
 import { Board, BoardLegend, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { UnitPanel } from './UnitPanel'
@@ -18,6 +18,8 @@ import { DamageResolutionPanel } from '../components/Combat/DamageResolutionPane
 import { type RollContext } from '../../dice/source'
 import { playerRulingRules } from '../weaponDisplay'
 import { VolkusTerrainPanel } from './VolkusTerrainPanel'
+import { evaluateElevationMove } from '../../geometry/elevationMove'
+import { createPlanarReachability, type PlanarRoute } from '../../geometry/planarMove'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -94,6 +96,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const pushLog = useMatchStore((s) => s.pushLog)
   const lastShot = useMatchStore((s) => s.lastShot)
   const attackViz = useMatchStore((s) => s.attackViz)
+  useMatchStore((s) => s.overrides)
   const engagementOf = useMatchStore((s) => s.engagementOf)
 
   const [pendingAsk, setPendingAsk] = useState<{ attacker: MatchToken; target: MatchToken } | null>(null)
@@ -105,6 +108,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     atkContext: any
     atkTheme: any
     atkDamage?: { normal: number, critical: number }
+    atkRetainedDice?: import('../../dice/source').DiceRoll[]
     defCount: number;
     defContext: any;
     defTheme: any
@@ -116,16 +120,19 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   } | null>(null)
   const [hoverInch, setHoverInch] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState<{uid:string;pos:Point}|null>(null)
+  const [moveRoute, setMoveRoute] = useState<PlanarRoute | null>(null)
+  const [destinationHeight, setDestinationHeight] = useState(0)
   const [pendingMove, setPendingMove] = useState<ActionType | null>(null)
   const [pendingAttack, setPendingAttack] = useState<'SHOOT' | 'FIGHT' | null>(null)
-  const [heightTargetUid, setHeightTargetUid] = useState<string | null>(null)
+  const [hoverTargetUid, setHoverTargetUid] = useState<string | null>(null)
+  const [pendingTerrainChoice, setPendingTerrainChoice] = useState<{ attacker: MatchToken; target: MatchToken } | null>(null)
   const [moveOrigin, setMoveOrigin] = useState<Point | null>(null) // 移动起点（arm 时捕获，confirm/cancel 前不变）
   const [movePreview, setMovePreview] = useState<boolean>(false) // 拖动后待确认
   const [showDataCardUid, setShowDataCardUid] = useState<string | null>(null)
   const [showDungeonMaster, setShowDungeonMaster] = useState(false)
   const [showFullLog, setShowFullLog] = useState<boolean>(false)
 
-  useEffect(() => { setPreviewPosition(null); setPendingMove(null); setMoveOrigin(null); setMovePreview(false) }, [selected])
+  useEffect(() => { setPreviewPosition(null); setMoveRoute(null); setPendingMove(null); setMoveOrigin(null); setMovePreview(false); setDestinationHeight(0); setHoverTargetUid(null) }, [selected])
   const active = tokens.find((t) => t.uid === selected) ?? null
   const selectedOp = active ? turn.operatives[active.uid] : undefined
   const activated = active ? turn.activeOpId === active.uid : false
@@ -140,7 +147,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         : !activated
           ? `${active.name}：先激活才能行动`
           : pendingMove
-            ? `${active.name} · ${pendingMove === 'MOVE' ? '转移' : pendingMove === 'DASH' ? '冲刺' : pendingMove === 'FALL_BACK' ? '后撤' : '冲锋'} 已选：拖拽特工移动（再点取消）`
+            ? `${active.name} · ${pendingMove === 'MOVE' ? '转移' : pendingMove === 'DASH' ? '冲刺' : pendingMove === 'FALL_BACK' ? '后撤' : '冲锋'}：${moveRoute ? `${moveRoute.cost}/${actionMaxDist(active.uid, pendingMove)}″${moveRoute.ok ? ' · 可确认' : ` · ${moveRoute.reason ?? '落点不可达'}`}` : '拖拽特工到绿色可达区域'}`
             : pendingAttack
               ? `${active.name} · ${pendingAttack === 'SHOOT' ? '射击' : '近战'} 已选：点敌方目标（再点取消）`
               : `${active.name} 已激活：选命令 + 选行动`
@@ -182,6 +189,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     onCancelMove: cancelMove,
     onPickAttack: (k: 'SHOOT' | 'FIGHT') => {
       setPreviewPosition(null)
+      setHoverTargetUid(null)
       setPendingAttack((prev) => (prev === k ? null : k))
       setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
     },
@@ -207,6 +215,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (action === 'CHARGE') return m + 2
     return m // MOVE / FALL_BACK
   }
+  function horizontalAllowance(uid: string, action: ActionType, currentHeight: number): number {
+    const difference = heightMode === 'elevation' ? destinationHeight - currentHeight : 0
+    const verticalCost = difference > 0 ? Math.max(2, Math.ceil(difference)) : difference < 0 ? Math.max(0, Math.ceil(-difference - 2)) : 0
+    return Math.max(0, actionMaxDist(uid, action) - verticalCost)
+  }
 
   // ===== 目标控制（1.16）— 读 store.controlOf（P7：store 当下 tokens） =====
   const objControl: ObjControl[] = mapPack ? mapPack.objectives.map((o) => {
@@ -219,20 +232,31 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const showViz = active && activated && active.side === turn.activePlayer && !interacting
   const viz = showViz ? attackViz(active!.uid) : { range: 0, controlRing: null, ownCover: null, targets: [] }
   // 移动范围指示器（武装移动行动时显示，优先于武器射程环）
-  const moveRing = active && pendingMove && moveOrigin ? { center: moveOrigin, r: actionMaxDist(active.uid, pendingMove) } : null
-  const rangeRing = moveRing ?? (showViz ? { center: active!.pos, r: viz.range } : null)
+  const moveRing = heightMode === 'elevation' && active && pendingMove && moveOrigin ? { center: moveOrigin, r: horizontalAllowance(active.uid, pendingMove, active.height ?? 0) } : null
+  const rangeRing = pendingMove && heightMode !== 'elevation' ? null : moveRing ?? (showViz ? { center: active!.pos, r: viz.range } : null)
+  const planarReach = useMemo(() => mapPack && heightMode !== 'elevation' && active && pendingMove && moveOrigin && !maplessMode
+    ? createPlanarReachability({
+        map: mapPack, from: moveOrigin, radius: active.baseRadius,
+        allowance: actionMaxDist(active.uid, pendingMove), action: pendingMove as 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE', side: active.side,
+        obstacles: tokens.filter(t => t.uid !== active.uid && t.alive && t.placed).map(t => ({ pos: t.pos, radius: t.baseRadius, side: t.side })),
+      }) : null,
+    [mapPack, heightMode, active, pendingMove, moveOrigin, maplessMode, tokens, effectiveMoveOf])
   const controlRing = viz.controlRing
   const ownCover = viz.ownCover
   const losLines: LosLine[] = viz.targets.map((tg) => {
     const tok = tokens.find((t) => t.uid === tg.uid)
     if (!tok) return null
     return {
+      uid: tg.uid,
       target: tg.pos,
-      stroke: tg.obscured ? '#6b7280' : tg.losFinal ? '#39d98a' : '#ff5c5c',
+      stroke: !tg.losFinal ? '#ff5c5c' : !tg.shootable ? '#f59e0b' : tg.obscured ? '#c084fc' : '#39d98a',
       dash: tg.obscured ? '2 4' : tg.losAmbiguous ? '4 3' : 'none',
-      opacity: tg.obscured ? 0.4 : 0.7,
+      opacity: 0.8,
+      fromHeight: heightMode === 'elevation' ? active?.height ?? 0 : undefined,
+      toHeight: heightMode === 'elevation' ? tok.height ?? 0 : undefined,
     }
-  }).filter((x): x is LosLine => x !== null)
+  }).filter((x): x is NonNullable<typeof x> => x !== null)
+  const hoverTarget = tokens.find(t => t.uid === hoverTargetUid && t.side !== active?.side) ?? null
 
   // ===== 一击交互（1.13 T4）— dispatch intent =====
   function onClickToken(t: MatchToken) {
@@ -249,7 +273,6 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     }
     // 已装填射击/近战 → 直接走该 kind
     if (pendingAttack) {
-      if (pendingAttack === 'SHOOT' && heightMode === 'elevation') { setHeightTargetUid(t.uid); return }
       runKind(active, t, pendingAttack === 'SHOOT' ? 'SHOOT' : 'MELEE')
       setPendingAttack(null)
       return
@@ -263,21 +286,31 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       setPendingAsk({ attacker, target })
       return
     }
-    if (heightMode === 'elevation') { setHeightTargetUid(target.uid); setPendingAttack('SHOOT'); return }
     runKind(attacker, target, 'SHOOT')
   }
 
   function runKind(attacker: MatchToken, target: MatchToken, kind: 'SHOOT' | 'MELEE') {
+    if (kind === 'SHOOT' && heightMode === 'elevation' && !maplessMode && mapPack &&
+      useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'TERRAIN_CHOICE') === undefined &&
+      sharedCoverObscuredTerrain(
+        geometryPlacement(attacker, heightMode),
+        geometryPlacement(target, heightMode),
+        geometryBoard(mapPack, heightMode),
+      )) {
+      setPendingTerrainChoice({ attacker, target })
+      return
+    }
     // 预校验射程和LOS，如果超出射程，不弹骰子界面直接提示且不扣除AP
     const legality = useMatchStore.getState().checkAttackLegality({ attackerUid: attacker.uid, targetUid: target.uid, kind })
     if (!legality.ok) {
+      useMatchStore.getState().clearOverride(`${attacker.uid}>${target.uid}>TERRAIN_CHOICE`)
       setIntercept({ title: '无法攻击', reasons: legality.missing ?? [] })
       return
     }
 
     // 行动消费 AP（SHOOT→SHOOT，MELEE→FIGHT）；不通过则拦截
     const actR = doAction(attacker.uid, kind === 'SHOOT' ? 'SHOOT' : 'FIGHT')
-    if (!actR.ok) { setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
+    if (!actR.ok) { useMatchStore.getState().clearOverride(`${attacker.uid}>${target.uid}>TERRAIN_CHOICE`); setIntercept({ title: '行动不可用', reasons: [actR.reason ?? '未知'] }); return }
 
     // 获取攻击者的武器和属性，唤出 DiceInterface
     const atkData = getMatchOperativeData(attacker.uid)
@@ -305,33 +338,35 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     }
 
     let defModifiers: string[] = []
-    let defRetainedDice: any[] = [] // Using any[] to bypass import DiceRoll issues if not imported, or just cast
+    let defRetainedDice: import('../../dice/source').DiceRoll[] = []
+    let atkRetainedDice: import('../../dice/source').DiceRoll[] = []
 
     if (kind === 'SHOOT') {
-      const coverType = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'COVER_TYPE')
-      const isVantage = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'VANTAGE')
-      const isObscured = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'OBSCURED')
-      const atkFloor = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'ATTACKER_FLOOR') as number || 0
-      const defFloor = useMatchStore.getState().overrideValue(attacker.uid, target.uid, 'DEFENDER_FLOOR') as number || 0
-
-      if (isVantage) {
-        const diff = atkFloor - defFloor
-        const heightText = diff === 1 ? '1层/2"' : `${diff}层/${diff * 2}"`
-        if (coverType === 'HEAVY') {
-          defModifiers.push(`制高点 (高出 ${heightText}): 目标处于重型掩体中，制高点无法抵消掩护豁免和隐蔽(Conceal)状态。`)
-        } else {
-          defModifiers.push(`制高点 (高出 ${heightText}): 目标未受重型掩体保护，忽略其掩护豁免及隐蔽(Conceal)状态。`)
-        }
+      const coverType = attackCoverType(attacker.uid, target.uid)
+      const vantage = vantageBonus(attacker.uid, target.uid)
+      const match = useMatchStore.getState()
+      const board = mapPack ? geometryBoard(mapPack, heightMode) : { terrain: [], operatives: [] }
+      const geometry = validateTarget(
+        geometryPlacement(attacker, heightMode),
+        geometryPlacement(target, heightMode),
+        weapon.profile.range ?? Math.hypot(mapPack?.bounds.w ?? 30, mapPack?.bounds.h ?? 22), board, [attacker.pos],
+        { findingOverrides: match.findingOverridesFor(attacker.uid, target.uid), terrainChoice: match.overrideValue(attacker.uid, target.uid, 'TERRAIN_CHOICE') === 'OBSCURED' ? 'OBSCURED' : 'COVER' },
+      )
+      const isObscured = geometry.findings.find(f => f.kind === 'OBSCURED')?.finalValue ?? false
+      const hasCover = geometry.findings.find(f => f.kind === 'COVER')?.finalValue ?? false
+      const accurateWeapon = Number(weapon.profile.weaponRules.find(r => /^Accurate \d+/i.test(r))?.match(/\d+/)?.[0] ?? 0)
+      const accurate = Math.min(2, accurateWeapon + (target.order === 'ENGAGE' ? vantage : 0))
+      atkRetainedDice = Array.from({ length: Math.min(weapon.profile.attacks, accurate) }, () => ({ nat: context.hitTarget as 1 | 2 | 3 | 4 | 5 | 6, grade: 'NORMAL', isRetained: true }))
+      if (vantage) defModifiers.push(`制高点高出 ${vantage * 2}"：${target.order === 'ENGAGE' ? `攻击方获得精准 ${vantage}。` : '可射击轻掩护中的隐匿目标；其掩护豁免增强。'}`)
+      const retainsCover = hasCover && !weapon.profile.weaponRules.some(r => /^saturate$/i.test(r))
+      if (retainsCover) {
+        const enhanced = vantage > 0 && coverType === 'LIGHT' && target.order === 'CONCEAL'
+        defRetainedDice = Array.from({ length: Math.min(defCount, enhanced ? 2 : 1) }, () => ({ nat: defContext.hitTarget as 1 | 2 | 3 | 4 | 5 | 6, grade: 'NORMAL', isRetained: true }))
+        if (enhanced) defModifiers.push('高点对轻掩护隐匿目标：可保留 1 个关键豁免或 2 个普通豁免；当前预选 2 个普通豁免，可在骰子界面调整。')
       }
-      
-      const retainsCover = (coverType === 'HEAVY') || (coverType === 'LIGHT' && !isVantage)
-      if (retainsCover && !weapon.profile.weaponRules.some(r => /^saturate$/i.test(r))) {
-        defRetainedDice.push({ nat: defContext.hitTarget, grade: 'NORMAL', isRetained: true })
-      }
-
-      if (coverType === 'LIGHT') defModifiers.push(`轻微掩体 (Light Cover): 投骰前或投骰后，可保留1个普通掩护豁免。${retainsCover ? '已自动保留。' : '但被制高点抵消。'}`)
-      if (coverType === 'HEAVY') defModifiers.push(`重型掩体 (Heavy Cover): 可保留1个普通掩护豁免。提供掩体同时能阻挡视线(Obscuring)。${retainsCover ? '已自动保留。' : ''}`)
-      if (isObscured) defModifiers.push("遮挡 (Obscured): 目标通常不可被射击 (简化模式下强制允许)。")
+      if (coverType === 'LIGHT' && hasCover) defModifiers.push('轻型掩护：可保留掩护豁免。')
+      if (coverType === 'HEAVY' && hasCover) defModifiers.push('重型掩护：可保留掩护豁免；隐匿目标仍不可被高点射击。')
+      if (isObscured) defModifiers.push('遮蔽：目标仍可射击；结算时优先弃 1 枚普通成功，所有关键命中降为普通命中。若需自行指定，确认伤害时可裁定。')
     }
 
     setPendingAsk(null)
@@ -341,6 +376,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       atkContext: context,
       atkTheme: atkPack?.faction.theme?.dice || { baseColor: '#1e1e1e', pipColor: '#e0e0e0' },
       atkDamage: { normal: weapon.profile.normalDamage, critical: weapon.profile.criticalDamage },
+      atkRetainedDice,
       defCount,
       defContext,
       defTheme: defPack?.faction.theme?.dice || { baseColor: '#444', pipColor: '#fff' },
@@ -360,13 +396,17 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
 
   function onPointerMove(p: Point) {
     if (dragging && moveOrigin && pendingMove) {
-      // 硬 clamp 到「起点为圆心、行动最大距离为半径」的圆内（确认前可反复拖）
-      const max = actionMaxDist(dragging, pendingMove)
+      // 保留最大距离硬限制；统一高度时展示由障碍物和底座决定的实际可达区域。
+      const max = active ? horizontalAllowance(dragging, pendingMove, active.height ?? 0) : actionMaxDist(dragging, pendingMove)
       const dx = p.x - moveOrigin.x, dy = p.y - moveOrigin.y
       const dist = Math.hypot(dx, dy)
       const cl = dist > max ? { x: moveOrigin.x + (dx / dist) * max, y: moveOrigin.y + (dy / dist) * max } : p
-      setPreviewPosition({uid:dragging,pos:clampPos(cl)})
-      setHoverInch(`${pendingMove === 'DASH' ? '冲刺' : pendingMove === 'CHARGE' ? '冲锋' : pendingMove === 'FALL_BACK' ? '后撤' : '转移'} ${Math.min(dist, max).toFixed(1)}/${max}"`)
+      const destination = clampPos(cl)
+      setPreviewPosition({uid:dragging,pos:destination})
+      const total = actionMaxDist(dragging, pendingMove)
+      const projected = planarReach ? planarReach.routeTo(destination) : mapPack && active ? evaluateElevationMove({ map: mapPack, from: moveOrigin, to: destination, fromHeight: active.height ?? 0, toHeight: heightMode === 'elevation' ? destinationHeight : 0, radius: active.baseRadius, allowance: total, action: pendingMove as 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE' }) : null
+      setMoveRoute(planarReach ? projected as PlanarRoute : null)
+      setHoverInch(`${pendingMove === 'DASH' ? '冲刺' : pendingMove === 'CHARGE' ? '冲锋' : pendingMove === 'FALL_BACK' ? '后撤' : '转移'} ${projected?.cost ?? Math.ceil(Math.min(dist, max))}/${total}″${projected && !projected.ok ? ` · ${projected.reason ?? '请调整落点'}` : planarReach && (projected as PlanarRoute)?.path.length > 2 ? ' · 已规划绕行' : ''}`)
     }
   }
   function onPointerUp() {
@@ -374,7 +414,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       const t = tokens.find((x) => x.uid === dragging)
       if (t && moveOrigin && pendingMove) {
         const d = previewPosition ? Math.hypot(previewPosition.pos.x - moveOrigin.x, previewPosition.pos.y - moveOrigin.y) : 0
-        if (d > 0.1) setMovePreview(true) // 待确认：不立即消费 AP，可再拖
+        if (d > 0.1 || (heightMode === 'elevation' && destinationHeight !== (t.height ?? 0))) setMovePreview(true) // 待确认：不立即消费 AP，可再拖
       }
       setDragging(null)
       setHoverInch(null)
@@ -385,26 +425,42 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     if (!active || !pendingMove || !moveOrigin) return
     const t = previewPosition?.uid === active.uid ? {...active,pos:previewPosition.pos} : active
     const isMapless = useMatchStore.getState().maplessMode
+    const targetHeight = heightMode === 'elevation' ? destinationHeight : 0
     
     if (!isMapless) {
+      if (mapPack) {
+        const verdict = planarReach ? planarReach.routeTo(t.pos) : evaluateElevationMove({ map: mapPack, from: moveOrigin, to: t.pos, fromHeight: active.height ?? 0, toHeight: targetHeight, radius: t.baseRadius, allowance: actionMaxDist(t.uid, pendingMove)!, action: pendingMove as 'MOVE' | 'DASH' | 'FALL_BACK' | 'CHARGE' })
+        if (!verdict.ok) { setIntercept({ title: '移动路径不可通行', reasons: [verdict.reason ?? '请重新选择落点'] }); return }
+      }
+      if (!planarReach) {
       const distance = Math.hypot(t.pos.x - moveOrigin.x, t.pos.y - moveOrigin.y)
       const steps = Math.max(1,Math.ceil(distance / 0.1))
+      const rising = targetHeight > (active.height ?? 0)
+      const falling = targetHeight < (active.height ?? 0)
+      const transitionPlatform = mapPack?.platforms?.find(p => p.height === (rising ? targetHeight : active.height ?? 0) && pointInPolygon(rising ? t.pos : moveOrigin, p.polygon))
       for(let i=1;i<=steps;i++) {
         const p={x:moveOrigin.x+(t.pos.x-moveOrigin.x)*i/steps,y:moveOrigin.y+(t.pos.y-moveOrigin.y)*i/steps}
-        if(mapPack && (p.x < t.baseRadius || p.y < t.baseRadius || p.x > mapPack.bounds.w-t.baseRadius || p.y > mapPack.bounds.h-t.baseRadius || circleHitsBlockingTerrain(p,t.baseRadius,mapPack.terrain))) {
+        const insidePlatform = transitionPlatform ? pointInPolygon(p, transitionPlatform.polygon) : false
+        const pathHeight = rising ? (insidePlatform ? targetHeight : active.height ?? 0) : falling ? (insidePlatform ? active.height ?? 0 : targetHeight) : targetHeight
+        if(mapPack && (p.x < t.baseRadius || p.y < t.baseRadius || p.x > mapPack.bounds.w-t.baseRadius || p.y > mapPack.bounds.h-t.baseRadius)) {
           setIntercept({title:'移动路径不可通行',reasons:['请沿无墙体的直线路径移动，并保持底座完全位于战场内']});return
         }
-        if(pendingMove !== 'CHARGE' && pendingMove !== 'FALL_BACK' && tokens.some(e=>e.alive && e.placed && e.side!==t.side && Math.hypot(e.pos.x-p.x,e.pos.y-p.y)<=e.baseRadius+t.baseRadius+1)) {
+        if (tokens.some(e => e.alive && e.placed && e.side !== t.side && Math.abs((e.height ?? 0) - pathHeight) < 1 && circlesOverlap(p, t.baseRadius, e.pos, e.baseRadius))) {
+          setIntercept({ title: '移动路径不可通行', reasons: ['底座不能穿过敌方特工'] }); return
+        }
+        if(pendingMove !== 'CHARGE' && pendingMove !== 'FALL_BACK' && tokens.some(e=>e.alive && e.placed && e.side!==t.side && Math.abs((e.height ?? 0) - pathHeight) <= 1 && Math.hypot(e.pos.x-p.x,e.pos.y-p.y)<=e.baseRadius+t.baseRadius+1)) {
           setIntercept({title:'移动进入敌方控制范围',reasons:['转移与冲刺不能穿过敌方控制范围；接敌请使用冲锋']});return
         }
       }
+      }
       if (pendingMove === 'CHARGE') {
-        const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
+        const inEng = tokens.some((e) => e.alive && e.placed && e.side !== t.side && Math.abs((e.height ?? 0) - targetHeight) <= 1 && Math.hypot(e.pos.x - t.pos.x, e.pos.y - t.pos.y) <= t.baseRadius + e.baseRadius + 1)
         if (!inEng) { setIntercept({ title: '冲锋非法', reasons: ['冲锋须结束在敌方 1" 控制范围内'] }); return }
       }
-      if (pendingMove === 'FALL_BACK' && tokens.some(e => e.alive && e.placed && e.side !== t.side && Math.hypot(e.pos.x-t.pos.x,e.pos.y-t.pos.y)<=e.baseRadius+t.baseRadius+1)) {setIntercept({title:'后撤尚未脱离',reasons:['后撤必须结束在所有敌方控制范围以外']});return}
-      const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
-      const wall = mapPack ? circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain) : false
+      if (pendingMove === 'FALL_BACK' && tokens.some(e => e.alive && e.placed && e.side !== t.side && Math.abs((e.height ?? 0) - targetHeight) <= 1 && Math.hypot(e.pos.x-t.pos.x,e.pos.y-t.pos.y)<=e.baseRadius+t.baseRadius+1)) {setIntercept({title:'后撤尚未脱离',reasons:['后撤必须结束在所有敌方控制范围以外']});return}
+      const overlap = tokens.filter((o) => o.alive && o.placed && o.uid !== t.uid && Math.abs((o.height ?? 0) - targetHeight) < 1).find((o) => circlesOverlap(t.pos, t.baseRadius, o.pos, o.baseRadius))
+      const destinationPlatform = mapPack?.platforms?.find(p => p.height === targetHeight && pointInPolygon(t.pos, p.polygon))
+      const wall = mapPack ? circleHitsBlockingTerrain(t.pos, t.baseRadius, mapPack.terrain.filter(feature => targetHeight === 0 || feature.pieceId !== destinationPlatform?.pieceId)) : false
       if (overlap || wall) {
         setIntercept({ title: overlap ? '与特工重叠' : '与墙体重叠', reasons: [`${t.name} ${overlap ? `与 ${overlap.name} 底座重叠` : '压在阻拦地形上'}`] })
         return
@@ -414,13 +470,17 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     const destination = { ...t.pos }
     // Validate action and capture undo at its committed origin, not the drag preview.
     const r = doAction(t.uid, pendingMove)
-    if (r.ok) {moveToken(t.uid, destination);setPreviewPosition(null)}
+    if (r.ok) {
+      moveToken(t.uid, destination, targetHeight)
+      if (targetHeight !== (active.height ?? 0)) pushLog('turn', `${t.name} ${targetHeight > (active.height ?? 0) ? '攀爬上高台' : '从高台跳落'}：${active.height ?? 0}″ → ${targetHeight}″`)
+      setPreviewPosition(null)
+    }
     if (!r.ok) { setIntercept({ title: '行动不可用', reasons: [r.reason ?? '未知'] }); return }
-    setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+    setPendingMove(null); setMoveOrigin(null); setMovePreview(false); setDestinationHeight(0); setMoveRoute(null)
   }
   function cancelMove() {
     setPreviewPosition(null)
-    setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+    setPendingMove(null); setMoveOrigin(null); setMovePreview(false); setDestinationHeight(0); setMoveRoute(null)
   }
   /** 选移动行动：切换行动时先把上一次预览回退到真实起点，避免累计距离。 */
   function pickMove(a: ActionType) {
@@ -428,19 +488,19 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     const truePos = movePreview && moveOrigin ? moveOrigin : active?.pos ?? null
     if (pendingMove === a) { // 再点当前行动 → 取消（回退预览）
       setPreviewPosition(null)
-      setPendingMove(null); setMoveOrigin(null); setMovePreview(false)
+      setPendingMove(null); setMoveOrigin(null); setMovePreview(false); setMoveRoute(null)
       return
     }
-    setPreviewPosition(null) // 切换：回退旧预览
+    setPreviewPosition(null); setMoveRoute(null) // 切换：回退旧预览
     const isMapless = useMatchStore.getState().maplessMode
-    setMoveOrigin(truePos); setMovePreview(Boolean(isMapless)); setPendingMove(a)
+    setMoveOrigin(truePos); setMovePreview(Boolean(isMapless)); setPendingMove(a); setDestinationHeight(active?.height ?? 0)
   }
 
   if (!mapPack && !maplessMode) return <div className="empty-state">请先在对局页面选择战场。</div>
   return (
     <div className="play-view">
       <StatusStrip prompt={promptStr} isError={!!intercept} onConfirm={confirmCasualties} onQueryRule={onQueryRule} onEndTP={() => scoreAndEndTP()} />
-      {!maplessMode && <p className="map-mode-indicator">{heightMode === 'elevation' ? '高低差已启用 · 射击前选择双方楼层' : '统一高度 · 所有单位按同一高度裁定'}<span>门可通行；隔门近战待实现，现由玩家裁定</span></p>}
+      {!maplessMode && <p className="map-mode-indicator">{heightMode === 'elevation' ? '高低差已启用 · 按立体地图裁定射击' : '统一高度 · 所有单位按同一高度裁定'}{heightMode === 'elevation' && active && <strong className="selected-height-readout">当前选中：{active.name} · {(active.height ?? 0) > 0 ? '上层' : '地面'} {active.height ?? 0}″</strong>}<span>门可通行；隔门近战待实现，现由玩家裁定</span></p>}
       <VolkusTerrainPanel mapId={mapPack?.mapId ?? null} />
       {!maplessMode && <BoardLegend />}
       {showViz && <FindingStrip active={active!} targets={viz.targets} />}
@@ -528,6 +588,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
               />
             ) : (
               <>
+                {heightMode === 'elevation' && pendingAttack === 'SHOOT' && active && <div className="elevation-target-preview" aria-live="polite">
+                  <span className="elevation-preview-title">射击高度预览</span>
+                  <span>{active.name} <b>{(active.height ?? 0) > 0 ? '上层' : '地面'} {active.height ?? 0}″</b></span>
+                  <span className="elevation-preview-arrow">{hoverTarget ? (hoverTarget.height ?? 0) > (active.height ?? 0) ? '↗' : (hoverTarget.height ?? 0) < (active.height ?? 0) ? '↘' : '→' : '→'}</span>
+                  <span>{hoverTarget ? <>{hoverTarget.name} <b>{(hoverTarget.height ?? 0) > 0 ? '上层' : '地面'} {hoverTarget.height ?? 0}″</b></> : '悬停目标查看高度，点击射击'}</span>
+                </div>}
                 <div
                   ref={viewportRef}
                   className="board-viewport"
@@ -541,12 +607,17 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                   <div style={{ transform: `scale(${viewport.scale})`, transformOrigin: '0 0' }}>
                     <Board
                       mapPack={mapPack!}
+                      showPlatforms={heightMode === 'elevation'}
+                      shotFocus={heightMode === 'elevation' && pendingAttack === 'SHOOT'}
+                      shotTargetUid={hoverTargetUid}
                       terrain={mapPack!.terrain}
-                      tokens={tokens.map(t => previewPosition?.uid === t.uid ? {...t,pos:previewPosition.pos} : t)}
+                      tokens={tokens.map(t => previewPosition?.uid === t.uid ? {...t,pos:previewPosition.pos,height:destinationHeight} : t)}
                       objectives={mapPack!.objectives}
                       phase="play"
                       selected={selected}
                       rangeRing={rangeRing}
+                      movementReach={planarReach?.cells}
+                      movementPath={moveRoute ? { points: moveRoute.path, valid: moveRoute.ok } : null}
                       controlRing={controlRing}
                       ownCover={ownCover}
                       losLines={losLines}
@@ -563,13 +634,19 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                         if (!pendingMove) { setIntercept({ title: '未选行动', reasons: ['先在行动菜单选 转移/冲刺/后撤/冲锋'] }); return }
                         setDragging(t.uid, t.pos)
                       }}
+                      onTokenHover={(uid) => setHoverTargetUid(uid && tokens.some(t => t.uid === uid && t.side !== active?.side) ? uid : null)}
                       onTokenDoubleClick={(t) => rotateToken(t.uid)}
                       onTokenClick={onClickToken}
                     />
                   </div>
                 </div>
-                {hoverInch && <div className="inch-readout">{hoverInch}</div>}
-                <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选行动（转移/冲刺/…）→ 拖特工移动 · 射击/近战点敌方目标 · 双击旋转</p>
+                {(hoverInch || moveRoute) && <div className="inch-readout">{hoverInch ?? `${moveRoute!.ok ? '✓ 可达' : '× 不可达'} · 路径消耗 ${moveRoute!.cost}/${active && pendingMove ? actionMaxDist(active.uid, pendingMove) : 0}″${moveRoute!.reason ? ` · ${moveRoute!.reason}` : ''}`}</div>}
+                {heightMode === 'elevation' && pendingMove && active && <div className="elevation-move-picker" aria-label="移动目标高度">
+                  <span>目标高度 · 当前 {active.height ?? 0}″</span>
+                  {[0, ...new Set(mapPack?.platforms?.map(p => p.height) ?? [])].map(height => <button key={height} type="button" disabled={pendingMove === 'DASH' && height > (active.height ?? 0)} className={destinationHeight === height ? 'selected' : ''} onClick={() => { setDestinationHeight(height); if (height !== (active.height ?? 0)) setMovePreview(true) }}>{height === 0 ? '地面 0″' : `高台 ${height}″`}</button>)}
+                  <small>攀爬计入移动距离；冲刺不能攀爬。当前地图标注了要塞首层和大型废墟上层；要塞 B 的最高层与火力台仍按实物现场裁定。</small>
+                </div>}
+                <p className="muted" style={{ margin: '4px 0 0 0' }}>激活 → 选命令 → 选移动行动 → 拖特工到绿色可达区域；路径会自动绕墙并计费 · 射击/近战点敌方目标 · 双击旋转</p>
               </>
             )}
           </div>
@@ -617,14 +694,36 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
       {pendingAsk && (
         <div className="chips-ask">
           <span>{pendingAsk.attacker.name} 控制范围内有 {pendingAsk.target.name}：</span>
-          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); if (heightMode === 'elevation') { setHeightTargetUid(target.uid); setPendingAttack('SHOOT') } else runKind(attacker, target, 'SHOOT') }}>射击 ▸</button>
+          <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'SHOOT') }}>射击 ▸</button>
           <button className="primary" onClick={() => { const { attacker, target } = pendingAsk; setPendingAsk(null); runKind(attacker, target, 'MELEE') }}>近战 ▸</button>
           <button onClick={() => setPendingAsk(null)}>取消</button>
+        </div>
+      )}
+      {pendingTerrainChoice && (
+        <div className="overlay-backdrop" style={{ zIndex: 9998, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div role="dialog" aria-modal="true" aria-label="选择地形效果" style={{ maxWidth: 440, padding: 24, borderRadius: 12, background: '#1d2423', border: '1px solid #a89969' }}>
+            <h3>防守方选择地形效果</h3>
+            <p>{pendingTerrainChoice.target.name} 从同一块重型地形获得掩护和遮蔽。规则要求此射击序列只选其中一项。</p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {(['COVER', 'OBSCURED'] as const).map(choice => <button className="primary" key={choice} onClick={() => {
+                const { attacker, target } = pendingTerrainChoice
+                useMatchStore.getState().setOverride(`${attacker.uid}>${target.uid}>TERRAIN_CHOICE`, choice)
+                setPendingTerrainChoice(null)
+                runKind(attacker, target, 'SHOOT')
+              }}>{choice === 'COVER' ? '选择掩护' : '选择遮蔽'}</button>)}
+              <button onClick={() => setPendingTerrainChoice(null)}>取消</button>
+            </div>
+          </div>
         </div>
       )}
       {combatCollect && (
         <div className="overlay-backdrop" style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', background: '#111', padding: '0', borderRadius: '12px', border: '1px solid #333', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', width: '95vw', maxWidth: '1000px', height: '95vh', maxHeight: '900px', display: 'flex', flexDirection: 'column' }}>
+            {heightMode === 'elevation' && !maplessMode && combatCollect.kind === 'SHOOT' && <div className="combat-elevation-banner">
+              <span>{combatCollect.attacker.name} · {(combatCollect.attacker.height ?? 0) > 0 ? '上层' : '地面'} {combatCollect.attacker.height ?? 0}″</span>
+              <strong>{(combatCollect.target.height ?? 0) > (combatCollect.attacker.height ?? 0) ? '↗' : (combatCollect.target.height ?? 0) < (combatCollect.attacker.height ?? 0) ? '↘' : '→'} 高差 {Math.abs((combatCollect.target.height ?? 0) - (combatCollect.attacker.height ?? 0))}″</strong>
+              <span>{combatCollect.target.name} · {(combatCollect.target.height ?? 0) > 0 ? '上层' : '地面'} {combatCollect.target.height ?? 0}″</span>
+            </div>}
             <CombatResolver
               mode={combatCollect.kind}
               attackerName={combatCollect.attacker.name}
@@ -640,6 +739,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                 onClick: () => setShowDataCardUid(combatCollect.attacker.uid)
               }}
               attackerCount={combatCollect.atkCount}
+              attackerRetainedDice={combatCollect.atkRetainedDice}
               attackerContext={combatCollect.atkContext}
               attackerTheme={combatCollect.atkTheme}
               attackerDamage={(combatCollect as any).atkDamage}
@@ -675,9 +775,11 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                   defRolls: result.defRolls,
                   manualAllocation: result.manualAllocation
                 })
+                useMatchStore.getState().clearOverride(`${attacker.uid}>${target.uid}>TERRAIN_CHOICE`)
                 if (!r.ok) setIntercept({ title: '结算失败', reasons: r.missing ?? [] })
               }}
               onCancel={() => {
+                useMatchStore.getState().clearOverride(`${combatCollect.attacker.uid}>${combatCollect.target.uid}>TERRAIN_CHOICE`)
                 undoAction()
                 setCombatCollect(null)
               }}
@@ -747,18 +849,17 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
         🎲
       </button>
 
-      {(maplessMode || (heightMode === 'elevation' && pendingAttack === 'SHOOT')) && pendingAttack && active && (
+      {maplessMode && pendingAttack && active && (
         <TargetSelectionModal
           attackerUid={active.uid}
           kind={pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT'}
           heightOnly={!maplessMode}
-          initialTargetUid={heightTargetUid}
-          onClose={() => { setPendingAttack(null); setHeightTargetUid(null) }}
+          initialTargetUid={null}
+          onClose={() => { setPendingAttack(null) }}
           onConfirm={(targetUid) => {
             const t = tokens.find((x) => x.uid === targetUid)
             if (t) {
               setPendingAttack(null)
-              setHeightTargetUid(null)
               runKind(active, t, pendingAttack === 'FIGHT' ? 'MELEE' : 'SHOOT')
             }
           }}
@@ -885,7 +986,7 @@ function FindingStrip({
   targets,
 }: {
   active: MatchToken
-  targets: { uid: string; pos: Point; losFinal: boolean; losAmbiguous: boolean }[]
+  targets: { uid: string; pos: Point; losFinal: boolean; losAmbiguous: boolean; obscured: boolean; cover: boolean; shootable: boolean; reasons: string[] }[]
 }) {
   const setOverride = useMatchStore((s) => s.setOverride)
   const clearOverride = useMatchStore((s) => s.clearOverride)
@@ -907,9 +1008,9 @@ function FindingStrip({
             key={tg.uid}
             className={`chip finding ${tg.losAmbiguous ? 'ambiguous' : ''} ${overridden ? 'flipped' : ''}`}
             onClick={() => (overridden ? clearOverride(key) : setOverride(key, !displayed))}
-            title={tg.losAmbiguous ? '⚠ 可翻转（咨询式，1 击翻转假设，不弹框）' : 'CLEAR（可手动翻转）'}
+            title={`${tg.reasons.length ? tg.reasons.join('；') : '目标资格通过'}。点击可翻转视线判定。`}
           >
-            {tg.losAmbiguous ? '⚠ ' : ''}{tok.name} LOS={displayed ? '可见' : '阻挡'}{overridden ? ' ⟲' : ''}
+            {tg.losAmbiguous ? '⚠ ' : ''}{tok.name} · {tg.shootable ? '可选目标' : '不可选'} · {displayed ? '可见' : '阻挡'}{tg.cover ? ' · 掩护' : ''}{tg.obscured ? ' · 遮蔽' : ''}{overridden ? ' ⟲' : ''}
           </button>
         )
       })}

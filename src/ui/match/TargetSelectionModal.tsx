@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useMatchStore, packOfFaction } from '../../state/matchStore'
+import { useMatchStore, packOfFaction, geometryBoard, geometryPlacement } from '../../state/matchStore'
 import { UnitPortrait } from '../components/UnitPortrait/UnitPortrait'
 import { getAvatarUrl } from '../../utils/avatars'
+import { sharedCoverObscuredTerrain, validateTarget } from '../../geometry'
 
 export function TargetSelectionModal({
   attackerUid,
@@ -21,12 +22,15 @@ export function TargetSelectionModal({
   const tokens = useMatchStore((s) => s.tokens)
   const heightMode = useMatchStore((s) => s.heightMode)
   const setOverride = useMatchStore((s) => s.setOverride)
+  const clearOverride = useMatchStore((s) => s.clearOverride)
+  const mapPack = useMatchStore((s) => s.mapPack)
   const attacker = tokens.find((t) => t.uid === attackerUid)
 
   const [coverType, setCoverType] = useState<'NONE' | 'LIGHT' | 'HEAVY'>('NONE')
   const [isObscured, setIsObscured] = useState(false)
-  const [attackerFloor, setAttackerFloor] = useState<number>(0)
-  const [defenderFloor, setDefenderFloor] = useState<number>(0)
+  // 此弹窗用于无地图模式；没有可自动计算的地形时默认由玩家裁定。
+  const [manualTerrain, setManualTerrain] = useState(true)
+  const [terrainChoice, setTerrainChoice] = useState<'COVER' | 'OBSCURED'>('COVER')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(initialTargetUid)
 
   if (!attacker) return null
@@ -43,21 +47,33 @@ export function TargetSelectionModal({
 
     // Set overrides for cover, obscured, and vantage
     if (kind === 'SHOOT') {
-      if (!heightOnly) {
+      if (!heightOnly && manualTerrain) {
         setOverride(`${attackerUid}>${selectedTarget}>COVER`, coverType !== 'NONE')
         setOverride(`${attackerUid}>${selectedTarget}>COVER_TYPE`, coverType)
         setOverride(`${attackerUid}>${selectedTarget}>OBSCURED`, isObscured)
+      } else if (!heightOnly) {
+        for (const key of ['COVER', 'COVER_TYPE', 'OBSCURED']) clearOverride(`${attackerUid}>${selectedTarget}>${key}`)
       }
-      // Vantage is generally defined as attacker being on a higher floor
-      setOverride(`${attackerUid}>${selectedTarget}>VANTAGE`, heightMode === 'elevation' && attackerFloor > defenderFloor)
-      setOverride(`${attackerUid}>${selectedTarget}>ATTACKER_FLOOR`, heightMode === 'elevation' ? attackerFloor : 0)
-      setOverride(`${attackerUid}>${selectedTarget}>DEFENDER_FLOOR`, heightMode === 'elevation' ? defenderFloor : 0)
+      if (!heightOnly) setOverride(`${attackerUid}>${selectedTarget}>TERRAIN_CHOICE`, terrainChoice)
     }
 
     onConfirm(selectedTarget)
   }
 
   const selectedToken = selectedTarget ? enemies.find((t) => t.uid === selectedTarget) : null
+  const conflictingTerrain = !!(heightMode === 'elevation' && attacker && selectedToken && mapPack && sharedCoverObscuredTerrain(
+    geometryPlacement(attacker, heightMode),
+    geometryPlacement(selectedToken, heightMode),
+    geometryBoard(mapPack, heightMode),
+  ))
+  const autoFindings = attacker && selectedToken && mapPack ? validateTarget(
+    geometryPlacement(attacker, heightMode),
+    geometryPlacement(selectedToken, heightMode),
+    Math.hypot(mapPack.bounds.w, mapPack.bounds.h),
+    geometryBoard(mapPack, heightMode), [attacker.pos], { terrainChoice },
+  ).findings : []
+  const autoCover = autoFindings.find(f => f.kind === 'COVER')?.finalValue ?? false
+  const autoObscured = autoFindings.find(f => f.kind === 'OBSCURED')?.finalValue ?? false
 
   return (
     <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -104,46 +120,10 @@ export function TargetSelectionModal({
             </h4>
 
             {heightMode === 'uniform' && <p className="muted" style={{ margin: '0 0 14px' }}>统一高度：双方均按地面高度处理，不触发制高点修正。</p>}
-            {heightMode === 'elevation' && <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem', flex: 1 }}>
-                <span style={{ marginBottom: '4px', color: 'var(--text-muted)' }}>进攻方楼层 (Vantage)</span>
-                <select
-                  value={attackerFloor}
-                  disabled={!selectedToken}
-                  onChange={(e) => setAttackerFloor(Number(e.target.value))}
-                  style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#333', border: '1px solid #555', color: '#fff' }}
-                >
-                  <option value={0}>地面 (0层)</option>
-                  <option value={1}>高点 (1层 / 2")</option>
-                  <option value={2}>高点 (2层 / 4")</option>
-                </select>
-              </label>
-
-              <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem', flex: 1 }}>
-                <span style={{ marginBottom: '4px', color: 'var(--text-muted)' }}>目标楼层</span>
-                <select
-                  value={defenderFloor}
-                  disabled={!selectedToken}
-                  onChange={(e) => setDefenderFloor(Number(e.target.value))}
-                  style={{ padding: '8px', borderRadius: '4px', backgroundColor: '#333', border: '1px solid #555', color: '#fff' }}
-                >
-                  <option value={0}>地面 (0层)</option>
-                  <option value={1}>高点 (1层 / 2")</option>
-                  <option value={2}>高点 (2层 / 4")</option>
-                </select>
-              </label>
-            </div>}
-
-            {/* 制高点提示：预留固定高度，切换楼层不改变弹窗尺寸 */}
-            {heightMode === 'elevation' && <div style={{ minHeight: '52px', marginBottom: '10px' }}>
-              {attackerFloor > defenderFloor && (
-                <div style={{ fontSize: '0.8rem', color: atkThemeColor, padding: '6px 8px', backgroundColor: `rgba(${atkUiTheme.primaryRgb}, 0.1)`, borderRadius: '4px' }}>
-                  <strong>制高点 (Vantage Point) 生效</strong>: 进攻方比目标高，若目标具有隐蔽(Conceal)且在轻微掩体中，其将被视为处于交战(Engage)状态。
-                </div>
-              )}
-            </div>}
-
-            {!heightOnly && <div style={{ marginBottom: '14px' }}>
+            {!heightOnly && <label style={{ display: 'block', marginBottom: '12px' }}><input type="checkbox" checked={manualTerrain} onChange={e => setManualTerrain(e.target.checked)} /> 人工裁定掩护与遮蔽（无地图时默认开启）</label>}
+            {!heightOnly && selectedToken && !manualTerrain && <p className="muted">地图预判：{autoCover ? '有掩护' : '无掩护'} · {autoObscured ? '受遮蔽' : '未受遮蔽'}。实体模型视线有异议时可开启人工裁定。</p>}
+            {!heightOnly && conflictingTerrain && !manualTerrain && <fieldset style={{ marginBottom: '12px' }}><legend>同一地形同时提供掩护和遮蔽：防守方选择</legend><label><input type="radio" name="terrain-choice" checked={terrainChoice === 'COVER'} onChange={() => setTerrainChoice('COVER')} /> 掩护</label><label style={{ marginLeft: 16 }}><input type="radio" name="terrain-choice" checked={terrainChoice === 'OBSCURED'} onChange={() => setTerrainChoice('OBSCURED')} /> 遮蔽</label></fieldset>}
+            {!heightOnly && manualTerrain && <div style={{ marginBottom: '14px' }}>
               <span style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>掩体类型 (Cover)</span>
               <div style={{ display: 'flex', gap: '20px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -160,9 +140,9 @@ export function TargetSelectionModal({
                 </label>
               </div>
             </div>}
-            {!heightOnly && <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            {!heightOnly && manualTerrain && <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <input type="checkbox" disabled={!selectedToken} checked={isObscured} onChange={(e) => setIsObscured(e.target.checked)} style={{ marginRight: '8px', width: '16px', height: '16px' }} />
-              <span>目标被遮挡 (Obscured)</span>
+              <span>目标受遮蔽（可射击，但命中削弱）</span>
             </label>}
           </div>
         )}

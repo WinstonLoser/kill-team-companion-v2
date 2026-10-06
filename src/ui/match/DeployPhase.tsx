@@ -229,7 +229,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   return (
     <div className="deploy-phase">
       <div className="team-wargear-pair">{(['a', 'b'] as const).map(side => <TeamWargearSummary key={side} side={side} team={tokens.filter(token => token.side === side)} />)}</div>
-      <p className="map-mode-indicator">{heightMode === 'elevation' ? '高低差已启用 · 后续射击选择双方楼层' : '统一高度 · 所有单位按同一高度裁定'}<span>{mapPack.mapId === 'volkus-ambull-01' ? deploymentMode === 'expanded' ? '双方约定：要塞部署区（自定义）' : 'Lite 规则：沿己方边缘 3″ 部署' : '底座须完整处于己方部署区内'}</span></p>
+      <p className="map-mode-indicator">{heightMode === 'elevation' ? '高低差已启用 · 部署在地面，行动时可攀爬高台' : '统一高度 · 所有单位按同一高度裁定'}<span>{mapPack.mapId === 'volkus-ambull-01' ? deploymentMode === 'expanded' ? '双方约定：要塞部署区（自定义）' : 'Lite 规则：沿己方边缘 3″ 部署' : '底座须完整处于己方部署区内'}</span></p>
       <VolkusTerrainPanel mapId={mapPack.mapId} />
       {/* 先手权未定：掷骰门禁 */}
       {!deployInitiative || !deployDice ? (

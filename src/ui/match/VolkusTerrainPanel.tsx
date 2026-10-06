@@ -5,7 +5,7 @@ export function VolkusTerrainPanel({ mapId }: { mapId: string | null }) {
   return <details className="volkus-rules-panel">
     <summary>沃库斯地形速查 <span>建筑、门、瓦砾与现场裁定</span></summary>
     <div className="volkus-rules-content">
-      <p>图中 A–N 对应地形模型。平面墙体、掩护与可穿越门已标出；高低差模式可在射击时选择双方楼层。顶盖、窗户、攀爬及要塞特殊互动仍按实体模型现场裁定。</p>
+      <p>图中 A–N 对应地形模型。高低差模式下，墙体、瓦砾和上层顶盖参与立体视线、掩护与遮蔽预判；移动可攀爬已标出的高台。模型头部姿态、窗户及要塞特殊互动仍由玩家按实物裁定。</p>
       <div className="volkus-rules-grid">
         {VOLKUS_TERRAIN_REFERENCE.map((rule) => <article key={rule.pieces}>
           <strong>{rule.pieces} · {rule.name}</strong><small>{rule.terrainClass}</small>
@@ -14,7 +14,7 @@ export function VolkusTerrainPanel({ mapId }: { mapId: string | null }) {
       </div>
       <strong>巷战规则提醒</strong>
       <ul>{VOLKUS_CITYFIGHT_REFERENCE.map((rule) => <li key={rule}>{rule}</li>)}</ul>
-      <p className="muted">这些提醒不自动改变骰值或行动合法性；遇到立体视线、门战等情况，由玩家现场裁定。</p>
+      <p className="muted">地形高度按地图模型近似记录；立体射线为辅助判定，实体模型视线可在目标选择时人工裁定。门战仍由玩家现场裁定。</p>
     </div>
   </details>
 }

@@ -66,6 +66,7 @@ describe('matchStore checkAction', () => {
   it('激活后 MOVE → ok', () => {
     const s = useMatchStore.getState()
     s.enterStrategy()
+    s.recordInitiativeRoll(4, 2)
     s.confirmInitiative('a')
     s.strategyAct('a','pass'); s.strategyAct('b','pass')
     s.activate('a1', 'a')

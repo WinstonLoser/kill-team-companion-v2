@@ -14,6 +14,8 @@ export interface ResolutionContext {
   defenderEffects?: Effect[]
   dice: DiceSource
   hasCover: boolean
+  obscured?: boolean
+  coverRetainCount?: number
   geometry?: ShootGeometry
   predicate?: PredicateContext
   pipelineId: string

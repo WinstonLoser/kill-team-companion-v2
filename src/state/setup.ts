@@ -30,7 +30,7 @@ export function buildMatchTokens(mapless = false): MatchToken[] {
       return {
         uid: `${side}${index + 1}`, side, factionId: pack.faction.id, opId,
         name: `${op.name.split(' / ').pop()} · ${side.toUpperCase()}${index + 1}`,
-        pos: { x: -1, y: -1 }, facing: 0, baseRadius: op.base.diameterMm / 50.8,
+        pos: { x: -1, y: -1 }, height: 0, facing: 0, baseRadius: op.base.diameterMm / 50.8,
         wounds: op.stats.wounds, maxWounds: op.stats.wounds, markers: [],
         alive: true, placed: mapless, order: 'CONCEAL' as const,
         weapons: [...(r.loadout[key] ?? [])],
