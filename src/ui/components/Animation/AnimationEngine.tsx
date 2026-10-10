@@ -57,7 +57,8 @@ function AnimationNode({ anim, onFinish }: { anim: AnimationRequest, onFinish: (
   const visual = factionVisual(anim.factionId)
 
   return (
-    <div className={`anim-node ${phase} ${typeClass}`} data-faction={anim.factionId} data-motif={visual.motif} style={{ '--fx-color': visual.accent } as React.CSSProperties}>
+    <div className={`anim-node ${phase} ${typeClass}`} data-faction={anim.factionId} style={{ '--fx-color': visual.accent } as React.CSSProperties}>
+      {visual.iconUrl && <img className="anim-emblem" src={visual.iconUrl} alt="" aria-hidden="true" />}
       <div 
         className="anim-portrait"
         style={{ 

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { UnitPortrait, type UnitPortraitProps } from '../UnitPortrait/UnitPortrait'
 import { DiceIcon } from '../Dice/DiceIcon'
+import { StatusBadge } from '../StatusBadge/StatusBadge'
+import './DamageResolutionPanel.css'
 import { useLocaleStore } from '../../../state/localeStore'
 
 export interface DamageResolutionPanelProps {
@@ -54,7 +56,7 @@ export function DamageResolutionPanel({
     confirmCasualties: locale === 'zh' ? '确认伤亡' : 'Confirm Casualties',
     attacker: locale === 'zh' ? '攻击方' : 'Attacker',
     defender: locale === 'zh' ? '防守方' : 'Defender',
-    damageTaken: locale === 'zh' ? '造成伤害' : 'Damage Taken',
+    damageTaken: locale === 'zh' ? '承受伤害' : 'Damage Taken',
     remainingWounds: locale === 'zh' ? '剩余血量' : 'Remaining Wounds',
     addStatus: locale === 'zh' ? '添加状态' : 'Add Status',
     confirmResult: locale === 'zh' ? '确认结果' : 'Confirm Result',
@@ -73,7 +75,7 @@ export function DamageResolutionPanel({
     const finalWounds = Math.max(0, portrait.currentWounds - damage)
     const themeColor = portrait.themeColorRgb ? `rgb(${portrait.themeColorRgb})` : (side === 'atk' ? '#ff5a00' : '#4ade80')
     return (
-      <div style={{ flex: 1, minWidth: 0, background: '#222', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', border: `2px solid ${themeColor}` }}>
+      <div className={`damage-side ${damage > 0 ? 'has-damage' : ''}`} style={{ flex: 1, minWidth: 0, background: '#222', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', border: `2px solid ${themeColor}` }}>
         <h3 style={{ margin: 0, color: themeColor, fontSize: '1.1rem' }}>{side === 'atk' ? t.attacker : t.defender}</h3>
         
         <UnitPortrait {...portrait} currentWounds={finalWounds} scale={1.0} />
@@ -95,10 +97,14 @@ export function DamageResolutionPanel({
           <div style={{ color: '#aaa', fontSize: '0.9rem' }}>{t.damageTaken}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button className="secondary" onClick={() => setDamage(Math.max(0, damage - 1))} style={{ width: '40px', height: '40px', fontSize: '1.2rem', padding: 0 }}>-</button>
-            <span style={{ fontSize: '2rem', fontWeight: 'bold', color: damage > 0 ? '#ff5c5c' : '#fff', minWidth: '40px', textAlign: 'center' }}>{damage}</span>
+            <span key={damage} className="damage-number" style={{ fontSize: '2rem', fontWeight: 'bold', color: damage > 0 ? '#ff5c5c' : '#fff', minWidth: '40px', textAlign: 'center' }}>{damage}</span>
             <button className="secondary" onClick={() => setDamage(damage + 1)} style={{ width: '40px', height: '40px', fontSize: '1.2rem', padding: 0 }}>+</button>
           </div>
           <div style={{ color: '#888', fontSize: '0.8rem' }}>{t.remainingWounds}: {finalWounds} / {portrait.maxWounds}</div>
+          <div className="damage-preview-track" role="img" aria-label={`${portrait.currentWounds} → ${finalWounds} / ${portrait.maxWounds} W`}>
+            <span className="damage-preview-before" style={{ width: `${Math.min(100, portrait.currentWounds / Math.max(1, portrait.maxWounds) * 100)}%` }} />
+            <span className="damage-preview-after" style={{ width: `${Math.min(100, finalWounds / Math.max(1, portrait.maxWounds) * 100)}%` }} />
+          </div>
         </div>
 
         <div style={{ width: '100%' }}>
@@ -118,7 +124,7 @@ export function DamageResolutionPanel({
                   fontWeight: markers.includes(m) ? 'bold' : 'normal'
                 }}
               >
-                {m}
+                <StatusBadge marker={m} />
               </button>
             ))}
           </div>
@@ -129,11 +135,11 @@ export function DamageResolutionPanel({
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <div style={{ width: '95vw', maxWidth: '850px', backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #444', boxShadow: '0 8px 32px rgba(0,0,0,0.8)' }}>
+      <div className="damage-resolution-card" style={{ width: '95vw', maxWidth: '850px', backgroundColor: '#1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid #444', boxShadow: '0 8px 32px rgba(0,0,0,0.8)' }}>
         
         <h2 style={{ margin: 0, color: '#fff', textAlign: 'center', fontSize: '1.5rem' }}>{t.confirmCasualties}</h2>
         
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'nowrap' }}>
+        <div className="damage-sides" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           {renderSide(attackerPortrait, atkDamage, setAtkDamage, atkNats, atkRolls, atkMarkers, 'atk')}
           {renderSide(defenderPortrait, defDamage, setDefDamage, defNats, defRolls, defMarkers, 'def')}
         </div>

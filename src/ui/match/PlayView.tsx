@@ -21,6 +21,7 @@ import { VolkusTerrainPanel } from './VolkusTerrainPanel'
 import { evaluateElevationMove } from '../../geometry/elevationMove'
 import { createPlanarReachability, type PlanarRoute } from '../../geometry/planarMove'
 import { useVisualFxStore } from '../../state/visualFxStore'
+import { StatusBadge } from '../components/StatusBadge/StatusBadge'
 
 // 对局主界面（1.13-1.16）。AR-9：UI 只 dispatch intent + 读 store，不直接调引擎/几何/骰源。
 // 一击结算经 matchStore.resolveAttack；几何可视化经 store.attackViz；翻转经 store.setOverride。
@@ -972,7 +973,7 @@ function ActiveOperativeFocus({
           {active.markers && active.markers.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
               {active.markers.map((m) => (
-                <span key={m} style={{ fontSize: '0.7rem', padding: '1px 6px', borderRadius: '3px', background: 'rgba(255,255,255,0.1)', color: '#ccc' }}>{m}</span>
+                <StatusBadge key={m} marker={m} />
               ))}
             </div>
           )}

@@ -1,0 +1,15 @@
+.damage-resolution-card { position: relative; overflow: auto; max-height: 96vh; background-image: repeating-linear-gradient(90deg,transparent 0 31px,#deb77908 32px 33px),linear-gradient(160deg,#222923,#171c1a 58%,#29221e); }
+.damage-resolution-card::before { content: 'CASUALTY REPORT / 伤亡裁定'; position: absolute; top: 8px; right: 12px; color: #b8a984; font-size: .59rem; font-weight: 800; letter-spacing: .14em; pointer-events: none; }
+.damage-side { position: relative; box-shadow: inset 0 0 22px #0005; transition: box-shadow .25s ease; }
+.damage-sides .damage-side { flex: 1 1 300px !important; }
+.damage-side .unit-portrait-container { min-width: 0; width: 100%; }
+.damage-side.has-damage { box-shadow: inset 0 0 28px #bd44341f,0 0 13px #b75b3830; }
+.damage-number { display: inline-block; font-variant-numeric: tabular-nums; }
+.damage-side.has-damage .damage-number { animation: damage-count .36s cubic-bezier(.2,1.4,.5,1) both; text-shadow: 0 0 13px #e75e4e9a; }
+.damage-preview-track { position: relative; width: 100%; height: 8px; overflow: hidden; border: 1px solid #555; border-radius: 8px; background: #0f1513; }
+.damage-preview-before,.damage-preview-after { position: absolute; left: 0; top: 0; height: 100%; transition: width .42s cubic-bezier(.2,.8,.3,1); }
+.damage-preview-before { background: repeating-linear-gradient(135deg,#a23f38 0 5px,#d36554 6px 10px); }
+.damage-preview-after { background: linear-gradient(90deg,#75ae83,#b9cf78); box-shadow: 0 0 8px #abd97b; }
+@keyframes damage-count { from { transform: scale(1.35) translateY(-4px); opacity: .5; } to { transform: scale(1) translateY(0); opacity: 1; } }
+@media (max-width: 680px) { .damage-resolution-card { padding: 12px !important; } .damage-sides { gap: 7px !important; } .damage-side { padding: 8px !important; } }
+.motion-reduced .damage-number,.motion-reduced .damage-preview-before,.motion-reduced .damage-preview-after { animation: none !important; transition: none !important; }

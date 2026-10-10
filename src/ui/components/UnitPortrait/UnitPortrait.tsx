@@ -1,5 +1,6 @@
 import React from 'react'
 import { t } from '../../../utils/i18n'
+import { StatusBadge } from '../StatusBadge/StatusBadge'
 import './UnitPortrait.css'
 
 export interface UnitPortraitProps {
@@ -83,7 +84,7 @@ export function UnitPortrait({
           <h2 className="up-name">{t(name, locale)}</h2>
           <div className="up-tags">
             {statuses.map(s => (
-              <span key={s} className="up-status-tag">{t(s, locale)}</span>
+              <StatusBadge key={s} marker={s} />
             ))}
           </div>
         </div>
