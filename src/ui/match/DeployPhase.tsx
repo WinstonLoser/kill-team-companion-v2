@@ -19,6 +19,10 @@ function clampPos(p: Point, bounds: { w: number; h: number }): Point {
   return { x: Math.max(0.5, Math.min(bounds.w - 0.5, p.x)), y: Math.max(0.5, Math.min(bounds.h - 0.5, p.y)) }
 }
 
+function defaultBoardZoom(boardWidth: number): number {
+  return Math.min(2.2, Math.max(1.3, Math.floor((window.innerWidth - 48) / boardWidth * 100) / 100))
+}
+
 interface DeployTurn { side: Side; count: number; round: number }
 
 /** 按规则生成分批部署序列：每轮先手方先手，各方各放 ceil(N/3)。 */
@@ -93,7 +97,7 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
   const seq = deployInitiative ? buildSequence(totalA, totalB, deployInitiative) : []
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [hoverPos, setHoverPos] = useState<Point | null>(null)
-  const [boardZoom, setBoardZoom] = useState(1.3)
+  const [boardZoom, setBoardZoom] = useState(() => defaultBoardZoom(bounds.w * SCALE))
   // 兼容热更新前只保存棋子位置、未保存批次归属的在途部署。
   useEffect(() => {
     if (totalPlaced === 0 || !seq.length || Object.values(batchUids).some((uids) => uids.length)) return
@@ -139,6 +143,16 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
     : tokens.some((token) => token.placed && circlesOverlap(previewPos, selectedToken.baseRadius, token.pos, token.baseRadius)) ? '与已部署特工重叠'
     : ''
   const previewValid = previewIssue === ''
+  const progressText = !deployZoneChoice ? '等待先手方选择降落区' : allPlaced && isLastBatch
+    ? '部署完成 · 可开始转折点 1'
+    : cur ? `第 ${round + 1} 轮 · 轮到 ${deploySide!.toUpperCase()} 方 · 本批 ${needThisTurn} 名（已放 ${placedThisBatch}）${batchDone ? ' · 本批已满' : ''}` : '—'
+  const nextText = !deployZoneChoice ? '先选择己方降落区' : allPlaced && isLastBatch
+    ? '双方已完成部署' : batchDone ? '本批已满，点「完成本批部署」交对方' : `已选择：${selectedToken?.name ?? '—'}`
+  const placementText = intercept ? `⚠ ${intercept.title} · ${intercept.reasons.join('；')}`
+    : !deployZoneChoice ? '选择降落区后，在地图上放置特工'
+    : batchDone ? '本批已放满；确认前仍可调整本批棋子'
+    : selectedToken && previewPos ? previewValid ? `✓ ${selectedToken.name} 可放置于此` : `× ${previewIssue}`
+    : selectedToken ? `移动到地图上，预览 ${selectedToken.name} 的底座落点` : '选择特工后在地图上部署'
 
   function tryPlace(side: Side, p: Point) {
     if (!deployZoneChoice) return
@@ -259,19 +273,11 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
             先手骰 A={deployDice.a} B={deployDice.b} → <strong>{deployInitiative.toUpperCase()} 方先手</strong>
             {canReroll && <button className="mini-btn" onClick={() => rollDeployInitiative()} title="重掷（放下第一名后锁定）">重掷</button>}
           </span>
-          <span className="deploy-step">
-            {!deployZoneChoice ? '等待先手方选择降落区' : allPlaced && isLastBatch
-              ? `部署完成 · 可开始转折点 1`
-              : cur
-                ? `第 ${round + 1} 轮 · 轮到 ${deploySide!.toUpperCase()} 方 · 本批 ${needThisTurn} 名（已放 ${placedThisBatch}）${batchDone ? ' · 本批已满' : ''}`
-                : '—'}
+          <span className="deploy-step" title={progressText}>{progressText}</span>
+          <span className="deploy-next" title={nextText}>
+            <span className={`deploy-next-dot ${deploySide ?? ''}`} />
+            <span>{nextText}</span>
           </span>
-          {deployZoneChoice && deploySide && !(allPlaced && isLastBatch) && (
-            <span className="deploy-next">
-              <span className={`deploy-next-dot ${deploySide}`} />
-              {batchDone ? <>本批已满，点「完成本批部署」交对方</> : <>已选择：<strong>{selectedToken?.name ?? '—'}</strong></>}
-            </span>
-          )}
         </div>
         </>
       )}
@@ -294,7 +300,8 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
         <p className="muted">{batchDone ? '本批已放满，确认前仍可拖动或双击调整本批棋子。' : '选中一名特工，再点击棋盘中的己方降落区。'}</p>
       </div>}
 
-      <div className="row">
+      <div className="deploy-actions">
+        <div className="deploy-action-buttons">
         <button className="primary" disabled={!allPlaced || !deployZoneChoice || turnPointer < seq.length - 1} onClick={onBeginPlay} title={allPlaced ? '开始转折点 1' : `待部署：A×${totalA - placedA} B×${totalB - placedB}`}>
           开始转折点 1 ▶
         </button>
@@ -317,27 +324,23 @@ export function DeployPhase({ onBeginPlay }: { onBeginPlay: () => void }) {
         >
           ⟳ 重置部署
         </button>
-        <span className="muted">待部署 A×{totalA - placedA} B×{totalB - placedB} · 仅当前批可拖动或旋转 · 回退会撤销上一批及当前批落子</span>
-      </div>
-
-      {intercept && (
-        <div className="intercept-card">
-          <strong>⚠ {intercept.title}</strong>
-          <button className="intercept-close" onClick={() => setIntercept(null)}>✕</button>
-          <ul>{intercept.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
         </div>
-      )}
+        <span className="muted deploy-action-summary" title="仅当前批可拖动或旋转；回退会撤销上一批及当前批落子">待部署 A×{totalA - placedA} B×{totalB - placedB} · 仅当前批可拖动或旋转 · 回退会撤销上一批及当前批落子</span>
+      </div>
 
       <div className="deploy-map-toolbar">
         <BoardLegend />
         <div className="deploy-map-zoom" aria-label="地图缩放">
           <button type="button" disabled={boardZoom <= 1} onClick={() => setBoardZoom((zoom) => Math.max(1, Math.round((zoom - 0.15) * 100) / 100))} aria-label="缩小地图">−</button>
           <span>{Math.round(boardZoom * 100)}%</span>
-          <button type="button" disabled={boardZoom >= 1.6} onClick={() => setBoardZoom((zoom) => Math.min(1.6, Math.round((zoom + 0.15) * 100) / 100))} aria-label="放大地图">＋</button>
-          <button type="button" onClick={() => setBoardZoom(1.3)}>重置</button>
+          <button type="button" disabled={boardZoom >= 2.2} onClick={() => setBoardZoom((zoom) => Math.min(2.2, Math.round((zoom + 0.15) * 100) / 100))} aria-label="放大地图">＋</button>
+          <button type="button" onClick={() => setBoardZoom(defaultBoardZoom(bounds.w * SCALE))}>重置</button>
         </div>
       </div>
-      {deployZoneChoice && selectedToken && !batchDone && <p className={`deploy-placement-hint ${previewPos ? previewValid ? 'valid' : 'invalid' : ''}`}>{previewPos ? previewValid ? `✓ ${selectedToken.name} 可放置于此` : `× ${previewIssue}` : `移动到棋盘上，预览 ${selectedToken.name} 的底座落点`}</p>}
+      <div className={`deploy-feedback ${intercept ? 'invalid' : previewPos ? previewValid ? 'valid' : 'invalid' : ''}`} role={intercept ? 'alert' : 'status'} aria-live={intercept ? 'assertive' : 'off'}>
+        <span title={placementText}>{placementText}</span>
+        {intercept && <button type="button" onClick={() => setIntercept(null)} aria-label="关闭部署提示">✕</button>}
+      </div>
       <div className="deploy-board-scroll">
         <div className="deploy-board-size" style={{ width: bounds.w * SCALE * boardZoom, height: bounds.h * SCALE * boardZoom }}>
           <div className="deploy-board-stage" style={{ width: bounds.w * SCALE, height: bounds.h * SCALE, transform: `scale(${boardZoom})` }}>

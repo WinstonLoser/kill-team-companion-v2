@@ -527,6 +527,18 @@ button:focus-visible,select:focus-visible,input:focus-visible  {
   background:#29303a;
   
 }
+.team-unit.exhausted:not(.selected) {
+  border-color:#303946;
+  background:#1a2028;
+  opacity:.72;
+}
+.team-unit.exhausted .unit-select img {
+  filter:grayscale(1);
+}
+.team-unit.exhausted:not(.selected) .unit-info strong,
+.team-unit.exhausted:not(.selected) .unit-wounds {
+  color:#aab5bf;
+}
 .team-unit.incapacitated {
   opacity:.6;
   

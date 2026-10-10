@@ -9,17 +9,22 @@ export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarPro
   return <div className="unit-panel">{(sideFilter ? [sideFilter] : ['a','b'] as const).map(side=>{
     const team=s.tokens.filter(t=>t.side===side)
     const ready=team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false).length
+    const listedTeam=[
+      ...team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready !== false),
+      ...team.filter(t=>t.alive && s.turn.operatives[t.uid]?.ready === false),
+      ...team.filter(t=>!t.alive),
+    ]
     return <section key={side} data-faction={team[0]?.factionId} className={`team-panel ${side} ${s.turn.activePlayer===side?'taking-turn':''}`}>
       <header className="team-heading"><div><strong>{side.toUpperCase()} 方阵容</strong><small>{ready} 待激活 / {team.filter(t=>t.alive).length} 存活</small></div><div className="team-resources"><span>CP <b>{s.turn.cp[side]}</b></span><span>VP <b>{s.vp[side]}</b></span></div></header>
       <TeamWargearSummary side={side} team={team} />
-      <div className="team-list">{team.map(t=>{
+      <div className="team-list">{listedTeam.map(t=>{
         const active=s.turn.activeOpId===t.uid
         const exhausted=s.turn.operatives[t.uid]?.ready===false
         const selected=s.selected===t.uid
         const canActivate=t.alive && t.placed && !exhausted && !s.turn.activeOpId && !s.lastShot && s.turn.activePlayer===side
-        const status=!t.alive?'已残废':active?(s.reactionUid===t.uid?'反应中':'行动中'):exhausted?'待机':'就绪'
+        const status=!t.alive?'已残废':active?(s.reactionUid===t.uid?'反应中':'行动中'):exhausted?'已行动':'就绪'
         const max=startWoundsOf(t.uid)
-        return <div key={t.uid} className={`team-unit ${selected?'selected':''} ${!t.alive?'incapacitated':''}`}>
+        return <div key={t.uid} className={`team-unit ${selected?'selected':''} ${exhausted && t.alive?'exhausted':''} ${!t.alive?'incapacitated':''}`}>
           <button className="unit-select" aria-label={`选择 ${t.name}`} aria-pressed={selected} onClick={()=>{s.setSelected(t.uid);s.setIntercept(null)}}>
             <img alt="" src={getAvatarUrl(t.factionId,t.opId)} />
             <span className="unit-info"><strong>{t.name}</strong><span>{t.order==='CONCEAL'?'隐匿':'交战'} · {status}</span>{t.markers.length > 0 && <span className="unit-statuses">{t.markers.map(marker => <StatusBadge key={marker} marker={marker} compact />)}</span>}<span className="health-track"><span style={{width:`${Math.max(0,t.wounds)/max*100}%`}} /></span></span>
