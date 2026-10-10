@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { FACTION_REGISTRY } from '../../src/data/packs'
 import { factionVisual } from '../../src/ui/visual/factionVisuals'
 import { useVisualFxStore } from '../../src/state/visualFxStore'
@@ -14,7 +15,10 @@ describe('对局视觉反馈', () => {
     const visuals = FACTION_REGISTRY.map(entry => factionVisual(entry.id))
     expect(new Set(visuals.map(visual => visual.accent)).size).toBe(5)
     expect(visuals.every(visual => visual.iconUrl?.endsWith('.png') && visual.label)).toBe(true)
-    expect(visuals.every(visual => existsSync(`public${visual.iconUrl}`))).toBe(true)
+    expect(visuals.every(visual => {
+      const assetPath = visual.iconUrl?.match(/assets\/.+$/)?.[0]
+      return assetPath && existsSync(resolve('public', assetPath))
+    })).toBe(true)
   })
 
   it('棋盘反馈按事件入列并自动清除；简化模式缩短停留', () => {

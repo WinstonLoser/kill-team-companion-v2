@@ -1,8 +1,8 @@
 // Kill Team 战棋助手 Service Worker（Story 4.2）
-// Stale-while-revalidate：缓存优先（离线可用），后台更新缓存。
+// 页面导航优先请求网络；静态资源 stale-while-revalidate（离线可用）。
 // 运行时缓存（非 app-shell 预缓存）：首次访问的每个 GET 资源被缓存；后续离线可从缓存恢复。
 // 注：无 content-hash 版本化（v1 可接受）；部署后旧 asset 经 activate 清理旧 cache key 时清除。
-const CACHE = 'kt-companion-v2';
+const CACHE = 'kt-companion-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
@@ -18,6 +18,20 @@ self.addEventListener('fetch', (e) => {
   try {
     if (new URL(e.request.url).origin !== self.location.origin) return;
   } catch { return }
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            e.waitUntil(caches.open(CACHE).then((cache) => cache.put(e.request, clone)));
+          }
+          return response;
+        })
+        .catch(() => caches.match(e.request).then((cached) => cached || Response.error())),
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((cached) => {
       const fetchPromise = fetch(e.request)
