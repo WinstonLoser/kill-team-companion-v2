@@ -3,7 +3,7 @@ import { DungeonMasterOverlay } from '../components/DungeonMaster/DungeonMasterO
 import { useMatchStore, getMatchOperativeData, combatWeapon, vantageBonus, attackCoverType, geometryBoard, geometryPlacement, type MatchToken } from '../../state/matchStore'
 import type { ActionType } from '../../state/turnStateMachine'
 import { circlesOverlap, circleHitsBlockingTerrain, pointInPolygon, validateTarget, sharedCoverObscuredTerrain, type Point } from '../../geometry'
-import { Board, BoardLegend, type LosLine, type ObjControl } from './Board'
+import { Board, BoardLegend, SCALE, type LosLine, type ObjControl } from './Board'
 import { StatusStrip } from './StatusStrip'
 import { UnitPanel } from './UnitPanel'
 import { ActionBar } from './ActionBar'
@@ -67,10 +67,12 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
   const effectiveAplOf = useMatchStore((s) => s.effectiveAplOf)
   const lastPinchDist = useRef(0)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const boardWidth = (mapPack?.bounds.w ?? 30) * SCALE
+  const boardHeight = (mapPack?.bounds.h ?? 22) * SCALE
 
   // Removed wheel zooming logic per user request.
 
-  // P1.5：容器尺寸变化时，自动缩放以填满水平空间
+  // 地图始终完整落在可视框内，避免只按宽度放大后裁掉下半部分。
   useEffect(() => {
     const el = viewportRef.current
     if (!el) return
@@ -78,10 +80,9 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (!entry) return
-      const width = entry.contentRect.width
-      const defaultW = (mapPack?.bounds.w ?? 30) * 20
-      if (width > 0 && defaultW > 0) {
-        const newScale = width / defaultW
+      const { width, height } = entry.contentRect
+      if (width > 0 && height > 0 && boardWidth > 0 && boardHeight > 0) {
+        const newScale = Math.min((width - 4) / boardWidth, (height - 4) / boardHeight)
         if (Math.abs(lastScale - newScale) > 0.001) {
           lastScale = newScale
           setViewport({ scale: newScale, offsetX: 0, offsetY: 0 })
@@ -90,7 +91,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [mapPack, setViewport])
+  }, [boardWidth, boardHeight, setViewport])
   const confirmCasualties = useMatchStore((s) => s.confirmCasualties)
   const diceSource = useMatchStore((s) => s.diceSource)
   const setIntercept = useMatchStore((s) => s.setIntercept)
@@ -614,7 +615,8 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                   onTouchEnd={(e) => { if (e.touches.length === 0) { lastPinchDist.current = 0; setInteracting(false) } /* P7：仅全指松开才清 */ }}
                   onTouchCancel={() => { lastPinchDist.current = 0; setInteracting(false) /* P6：OS 取消 */ }}
                 >
-                  <div style={{ transform: `scale(${viewport.scale})`, transformOrigin: '0 0' }}>
+                  <div className="board-fit-frame" style={{ width: boardWidth * viewport.scale, height: boardHeight * viewport.scale }}>
+                    <div className="board-fit-content" style={{ transform: `scale(${viewport.scale})` }}>
                     <Board
                       mapPack={mapPack!}
                       showPlatforms={heightMode === 'elevation'}
@@ -648,6 +650,7 @@ export function PlayView({ onQueryRule }: { onQueryRule: (hint: string) => void 
                       onTokenDoubleClick={(t) => rotateToken(t.uid)}
                       onTokenClick={onClickToken}
                     />
+                    </div>
                   </div>
                 </div>
                 {(hoverInch || moveRoute) && <div className="inch-readout">{hoverInch ?? `${moveRoute!.ok ? '✓ 可达' : '× 不可达'} · 路径消耗 ${moveRoute!.cost}/${active && pendingMove ? actionMaxDist(active.uid, pendingMove) : 0}″${moveRoute!.reason ? ` · ${moveRoute!.reason}` : ''}`}</div>}
