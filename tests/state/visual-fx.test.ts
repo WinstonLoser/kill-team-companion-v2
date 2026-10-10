@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { existsSync } from 'node:fs'
 import { FACTION_REGISTRY } from '../../src/data/packs'
 import { factionVisual } from '../../src/ui/visual/factionVisuals'
 import { useVisualFxStore } from '../../src/state/visualFxStore'
@@ -12,7 +13,8 @@ describe('对局视觉反馈', () => {
   it('五个可玩阵营均有独立视觉标识', () => {
     const visuals = FACTION_REGISTRY.map(entry => factionVisual(entry.id))
     expect(new Set(visuals.map(visual => visual.accent)).size).toBe(5)
-    expect(visuals.every(visual => visual.motif && visual.label)).toBe(true)
+    expect(visuals.every(visual => visual.iconUrl?.endsWith('.png') && visual.label)).toBe(true)
+    expect(visuals.every(visual => existsSync(`public${visual.iconUrl}`))).toBe(true)
   })
 
   it('棋盘反馈按事件入列并自动清除；简化模式缩短停留', () => {

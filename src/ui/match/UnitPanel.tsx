@@ -2,6 +2,7 @@ import { useMatchStore, packOfFaction } from '../../state/matchStore'
 import { ActionBar } from './ActionBar'
 import { getAvatarUrl } from '../../utils/avatars'
 import { TeamWargearSummary } from './TeamWargearSummary'
+import { StatusBadge } from '../components/StatusBadge/StatusBadge'
 
 export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarProps}:{startWoundsOf:(uid:string)=>number;sideFilter?:'a'|'b';onPortraitClick?:(uid:string)=>void;actionBarProps?:any}) {
   const s=useMatchStore()
@@ -21,7 +22,7 @@ export function UnitPanel({startWoundsOf,sideFilter,onPortraitClick,actionBarPro
         return <div key={t.uid} className={`team-unit ${selected?'selected':''} ${!t.alive?'incapacitated':''}`}>
           <button className="unit-select" aria-label={`选择 ${t.name}`} aria-pressed={selected} onClick={()=>{s.setSelected(t.uid);s.setIntercept(null)}}>
             <img alt="" src={getAvatarUrl(t.factionId,t.opId)} />
-            <span className="unit-info"><strong>{t.name}</strong><span>{t.order==='CONCEAL'?'隐匿':'交战'} · {status}</span><span className="health-track"><span style={{width:`${Math.max(0,t.wounds)/max*100}%`}} /></span></span>
+            <span className="unit-info"><strong>{t.name}</strong><span>{t.order==='CONCEAL'?'隐匿':'交战'} · {status}</span>{t.markers.length > 0 && <span className="unit-statuses">{t.markers.map(marker => <StatusBadge key={marker} marker={marker} compact />)}</span>}<span className="health-track"><span style={{width:`${Math.max(0,t.wounds)/max*100}%`}} /></span></span>
             <span className="unit-wounds">{t.wounds}<small>/{max}</small></span>
           </button>
           {selected && <div className="unit-controls"><button onClick={()=>onPortraitClick?.(t.uid)}>数据卡</button>{canActivate && <button className="primary" onClick={()=>s.activate(t.uid,t.side)}>激活该特工 ▶</button>}{s.canReact(t.uid) && <button className="primary" onClick={()=>s.react(t.uid)}>反应 · 1 AP</button>}</div>}

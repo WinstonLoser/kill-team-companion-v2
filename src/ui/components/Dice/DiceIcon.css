@@ -102,6 +102,9 @@
 .dice-rolling {
   animation: rollTumble 0.3s infinite linear;
 }
+.dice-rolling .dice-face { visibility: hidden; }
+.dice-rolling::after { content: '✦'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--dice-pip); font-size: 2.7rem; text-shadow: 0 0 12px currentColor; animation: dice-spark .22s steps(2,end) infinite; }
+@keyframes dice-spark { 50% { opacity: .35; transform: scale(.82); } }
 
 @keyframes rollTumble {
   0% { transform: rotate(0deg) scale(0.9); }

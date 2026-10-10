@@ -1,0 +1,9 @@
+.status-badge { --status-color: #c8d1ca; display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 2px 7px; border: 1px solid color-mix(in srgb,var(--status-color),transparent 42%); border-radius: 4px; background: color-mix(in srgb,var(--status-color),#16201e 87%); color: var(--status-color); font-size: .72rem; font-weight: 750; line-height: 1.2; white-space: nowrap; vertical-align: middle; }
+.status-badge svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.status-badge.compact { width: 21px; height: 21px; padding: 2px; justify-content: center; border-radius: 50%; box-shadow: 0 0 8px color-mix(in srgb,var(--status-color),transparent 68%); }
+.status-badge.compact svg { width: 13px; height: 13px; }
+.status-badge[data-kind="poison"],.status-badge[data-kind="cloud"] { --status-color: #b5d77a; }
+.status-badge[data-kind="injured"],.status-badge[data-kind="apl-down"] { --status-color: #ef8579; }
+.status-badge[data-kind="stunned"] { --status-color: #e6bc77; }
+.status-badge[data-kind="overwatch"],.status-badge[data-kind="apl-up"] { --status-color: #88cde5; }
+.status-badge[data-kind="mark"] { --status-color: #c5a4e3; }

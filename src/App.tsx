@@ -61,7 +61,7 @@ export function App() {
   return (
     <div className={`app motion-${motionMode}`}>
       <AnimationEngine />
-      {phaseNotice && <div key={phaseNotice.id} className="phase-notice" data-faction={phaseNotice.factionId} data-motif={phaseNotice.factionId ? factionVisual(phaseNotice.factionId).motif : '◆'} role="status"><span>TACTICAL BRIEFING</span><strong>{phaseNotice.title}</strong>{phaseNotice.detail && <small>{phaseNotice.detail}</small>}</div>}
+      {phaseNotice && <div key={phaseNotice.id} className="phase-notice" data-faction={phaseNotice.factionId} role="status">{phaseNotice.factionId && factionVisual(phaseNotice.factionId).iconUrl && <img className="phase-emblem" src={factionVisual(phaseNotice.factionId).iconUrl} alt="" aria-hidden="true" />}<span>TACTICAL BRIEFING</span><strong>{phaseNotice.title}</strong>{phaseNotice.detail && <small>{phaseNotice.detail}</small>}</div>}
       <header className="topbar">
         <h1><span className="brand-mark">KT</span><span>战棋助手<small>KILL TEAM COMPANION</small></span></h1>
         <div style={{ marginLeft: '1rem' }}>

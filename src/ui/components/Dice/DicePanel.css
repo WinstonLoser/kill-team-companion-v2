@@ -17,6 +17,18 @@
   width: 100%;
   justify-content: center;
 }
+.dice-tray-heading { position: relative; z-index: 1; align-self: stretch; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; max-width: 800px; width: 100%; margin: 0 auto 18px; padding-bottom: 7px; border-bottom: 1px solid rgba(var(--theme-primary-rgb,200,185,135),.33); color: #e6d1a4; font-weight: 800; letter-spacing: .12em; }
+.dice-tray-heading small { font-size: .7rem; color: #aabbb4; font-weight: 600; letter-spacing: .04em; }
+.dice-panel.is-rolling { box-shadow: 0 8px 32px #0008, inset 0 0 38px rgba(var(--theme-primary-rgb,200,185,135),.16); }
+.dice-entrance { display: flex; flex-direction: column; align-items: center; }
+.dice-entrance.is-landed[data-grade="CRITICAL"] { filter: drop-shadow(0 0 9px #e7af57); }
+.dice-entrance.is-landed[data-grade="NORMAL"] { filter: drop-shadow(0 0 5px rgba(var(--theme-primary-rgb,200,185,135),.45)); }
+.dice-entrance.is-landed.animated { animation: dice-land .34s cubic-bezier(.17,1.35,.5,1) both; }
+.dice-grade-label { margin-top: 3px; font-size: .68rem; font-weight: 800; letter-spacing: .12em; color: #b5c2bd; }
+.dice-entrance[data-grade="CRITICAL"] .dice-grade-label { color: #f4bf6e; }.dice-entrance[data-grade="FAIL"] .dice-grade-label { color: #8f9696; }
+@keyframes dice-land { from { transform: translateY(-18px) scale(1.12) rotate(-9deg); opacity: .4; } to { transform: translateY(0) scale(1) rotate(0); opacity: 1; } }
+.motion-reduced .dice-entrance,.motion-reduced .dice-icon,.motion-reduced .dice-rolling::after { animation: none !important; }
+@media (max-width: 680px) { .dice-panel { padding: 14px; } .dice-container { gap: 6px; min-height: 86px; } .dice-icon { width: 60px; height: 60px; border-radius: 10px; } .dice-face { padding: 7px; } .dice-dot { width: 9px; height: 9px; } .dice-panel-stats { gap: 7px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; } .stat-badge { padding: 7px 10px; font-size: .95rem; } .dice-action-area { margin-top: 18px; } .dice-confirm-btn { width: 100%; padding: 12px 20px; font-size: 1rem; } }
 
 .dice-panel::before {
   content: '';

@@ -10,7 +10,7 @@
 .phase-notice strong { display: block; margin: 6px 0 1px; font-size: 1.2rem; letter-spacing: .12em; }
 .phase-notice small { color: #bfc9bb; }
 .phase-notice[data-faction] { border-color: var(--faction-color,#d6bb80); box-shadow: 0 20px 45px #080e0bcc, inset 0 0 28px rgba(var(--faction-rgb,216,187,120),.16); }
-.phase-notice[data-faction]::before { content: attr(data-motif); top: 9px; left: auto; right: 15px; width: auto; height: auto; background: none; color: rgba(var(--faction-rgb,216,187,120),.45); font-size: 1.5rem; }
+.phase-emblem { position: absolute; top: 9px; right: 15px; width: 27px; height: 27px; object-fit: contain; opacity: .75; filter: drop-shadow(0 0 6px rgba(var(--faction-rgb,216,187,120),.5)); }
 @keyframes briefing-in { 0% { opacity: 0; transform: translate(-50%,-12px) scale(.97); } 15%,75% { opacity: 1; transform: translate(-50%,0) scale(1); } 100% { opacity: 0; transform: translate(-50%,8px); } }
 
 [data-faction="angels_of_death"] { --faction-rgb: 216,187,120; --faction-color: #d8bb78; --faction-pattern: repeating-linear-gradient(90deg,transparent 0 17px,#d8bb7819 18px 19px); }
@@ -18,10 +18,17 @@
 [data-faction="plague_marines"] { --faction-rgb: 167,200,110; --faction-color: #a7c86e; --faction-pattern: radial-gradient(circle at 82% 18%,#a7c86e24 0 2px,transparent 3px),radial-gradient(circle at 18% 72%,#a7c86e20 0 3px,transparent 4px); }
 [data-faction="chaos_cult"] { --faction-rgb: 223,128,121; --faction-color: #df8079; --faction-pattern: repeating-linear-gradient(115deg,transparent 0 22px,#df80791e 23px 24px); }
 [data-faction="warpcoven"] { --faction-rgb: 142,197,219; --faction-color: #8ec5db; --faction-pattern: radial-gradient(circle at 80% 20%,#8ec5db23,transparent 40%),repeating-conic-gradient(from 15deg at 85% 20%,transparent 0deg 29deg,#8ec5db19 30deg 31deg); }
-.faction-card[data-faction] { position: relative; isolation: isolate; overflow: hidden; border-color: rgba(var(--faction-rgb),.4); background-image: var(--faction-pattern),linear-gradient(135deg,#1d2827,#30352c); transition: transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
-.faction-card[data-faction]::after { content: attr(data-motif); position: absolute; right: 9px; top: 2px; font-size: 3.25rem; line-height: 1; color: rgba(var(--faction-rgb),.19); pointer-events: none; transition: transform .3s ease,color .3s ease; }
+.faction-card[data-faction] { position: relative; isolation: isolate; overflow: hidden; border-color: rgba(var(--faction-rgb),.45); background-color: #182123; transition: transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.faction-card[data-faction]::before { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(var(--faction-rgb),.22); border-radius: 7px; pointer-events: none; background: radial-gradient(circle at 4px 4px,rgba(var(--faction-rgb),.55) 0 1px,transparent 2px),radial-gradient(circle at calc(100% - 4px) 4px,rgba(var(--faction-rgb),.55) 0 1px,transparent 2px),radial-gradient(circle at 4px calc(100% - 4px),rgba(var(--faction-rgb),.55) 0 1px,transparent 2px),radial-gradient(circle at calc(100% - 4px) calc(100% - 4px),rgba(var(--faction-rgb),.55) 0 1px,transparent 2px); }
+.faction-card .faction-emblem { position: absolute; right: 9px; top: 30px; width: 50px; height: 50px; object-fit: contain; opacity: .8; pointer-events: none; filter: drop-shadow(0 0 6px rgba(var(--faction-rgb),.25)); transition: transform .3s ease,opacity .3s ease; }
+.faction-card strong { position: relative; z-index: 1; max-width: calc(100% - 42px); }
+.faction-card[data-faction="angels_of_death"] { background-image: linear-gradient(90deg,#0d1724a6,transparent 75%),linear-gradient(0deg,#947b443d 0 3px,transparent 3px),repeating-linear-gradient(90deg,transparent 0 23px,#7695aa24 24px 25px,#050c155e 27px 29px,transparent 31px 38px),linear-gradient(135deg,#243449,#172334 58%,#0e1927); }
+.faction-card[data-faction="legionaries"] { background-image: linear-gradient(90deg,#120d14a8,transparent 80%),repeating-linear-gradient(145deg,transparent 0 23px,#a13d4442 24px 25px,#07070a8c 27px 29px,transparent 31px 53px),linear-gradient(130deg,#30252e,#211d27 55%,#11151a); }
+.faction-card[data-faction="plague_marines"] { background-image: linear-gradient(90deg,#10170fa8,transparent 82%),radial-gradient(circle at 82% 19%,#b69a4c45 0 3px,transparent 9px),radial-gradient(circle at 61% 76%,#769a4b50 0 4px,transparent 12px),radial-gradient(circle at 20% 44%,#795c3538 0 2px,transparent 8px),repeating-linear-gradient(35deg,transparent 0 28px,#7f8e4d22 29px 31px,transparent 33px 58px),linear-gradient(135deg,#2a3321,#1c2c22 60%,#161e1b); }
+.faction-card[data-faction="chaos_cult"] { background-image: linear-gradient(90deg,#151019b5,transparent 80%),repeating-linear-gradient(112deg,transparent 0 18px,#ae4d5640 19px 20px,transparent 22px 38px),repeating-linear-gradient(155deg,transparent 0 50px,#0a090f85 52px 56px,transparent 59px 92px),linear-gradient(140deg,#352632,#241e2b 55%,#151722); }
+.faction-card[data-faction="warpcoven"] { background-image: linear-gradient(90deg,#101927af,transparent 80%),repeating-radial-gradient(circle at 80% 47%,transparent 0 16px,#80b8d13b 17px 18px,transparent 19px 35px),repeating-conic-gradient(from 12deg at 80% 47%,transparent 0deg 29deg,#8fc1dc2b 30deg 31deg),linear-gradient(135deg,#243447,#1b2a42 55%,#151b32); }
 .faction-card[data-faction]:hover:not(:disabled),.faction-card[data-faction].sel { transform: translateY(-2px); border-color: var(--faction-color); box-shadow: inset 0 0 18px rgba(var(--faction-rgb),.13),0 7px 22px #0006; }
-.faction-card[data-faction]:hover::after,.faction-card[data-faction].sel::after { transform: scale(1.1) rotate(-8deg); color: rgba(var(--faction-rgb),.42); }
+.faction-card[data-faction]:hover .faction-emblem,.faction-card[data-faction].sel .faction-emblem { transform: scale(1.1) rotate(-8deg); opacity: 1; }
 .recruit-card[data-faction].recruited { box-shadow: inset 0 0 0 1px rgba(var(--faction-rgb),.35),0 9px 25px #0005; }
 .recruit-card[data-faction].recruited .recruit-title { background-image: var(--faction-pattern); }
 .subfaction[data-faction="angels_of_death"] .tactic-selected { border-left: 3px solid #d8bb78; background: linear-gradient(90deg,#d8bb7820,transparent); }
@@ -39,6 +46,12 @@
 .board .token[data-faction] { outline: 1px solid rgba(var(--faction-rgb),.6); outline-offset: 1px; }
 .board .token[data-mark="mark_khorne"] { --mark-glow: #ee695e; }.board .token[data-mark="mark_nurgle"] { --mark-glow: #a7c86e; }.board .token[data-mark="mark_slaanesh"] { --mark-glow: #d8a2d4; }.board .token[data-mark="mark_tzeentch"] { --mark-glow: #7ac4e3; }.board .token[data-mark="mark_undivided"] { --mark-glow: #d1bd94; }
 .board .token[data-mark] { outline: 2px solid var(--mark-glow); box-shadow: 0 0 8px var(--mark-glow), inset 0 0 7px var(--mark-glow); }
+.token-statuses { position: absolute; z-index: 3; left: 50%; top: calc(100% + 2px); transform: translateX(-50%); display: flex; gap: 1px; pointer-events: none; filter: drop-shadow(0 2px 3px #08110f); }
+.token-statuses .status-badge.compact { width: 15px; height: 15px; min-width: 15px; min-height: 15px; padding: 1px; }
+.token-statuses .status-badge svg { width: 10px; height: 10px; }
+.token-status-more { height: 15px; padding: 0 2px; border-radius: 3px; background: #182321; color: #e3e8dc; font-size: 9px; line-height: 15px; }
+.unit-statuses { display: flex; flex-wrap: wrap; gap: 3px; }
+.up-tags { flex-wrap: wrap; justify-content: flex-end; }
 .board .token.fx-arriving { opacity: .27; }
 
 .board-fx-overlay,.board-terrain-focus { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: visible; }
@@ -52,7 +65,7 @@
 .board-fx-shot { fill: none; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 1000; animation: shot-trace var(--fx-duration) ease-out both; filter: drop-shadow(0 0 5px var(--fx-color)); }
 .board-fx-slash { fill: none; stroke-width: 5; stroke-linecap: round; animation: slash-reveal var(--fx-duration) ease-out both; filter: drop-shadow(0 0 5px var(--fx-color)); }
 .board-fx-label { paint-order: stroke; stroke: #101917; stroke-width: 3; font-size: 12px; font-weight: 800; animation: fx-label var(--fx-duration) ease-out both; }
-.board-fx-motif { paint-order: stroke; stroke: #111b18; stroke-width: 3; font-size: 20px; animation: fx-label var(--fx-duration) ease-out both; }
+.board-fx-emblem { filter: drop-shadow(0 0 5px var(--fx-color)); animation: fx-label var(--fx-duration) ease-out both; }
 .board-fx[data-faction="angels_of_death"] .board-fx-pulse { stroke-dasharray: 6 2; }
 .board-fx[data-faction="legionaries"] .board-fx-pulse { stroke-dasharray: 13 3 2 3; }
 .board-fx[data-faction="plague_marines"] .board-fx-pulse { stroke-dasharray: 2 5; stroke-width: 5; }
@@ -74,7 +87,7 @@
 .anim-node[data-faction="plague_marines"] .anim-portrait { box-shadow: 0 0 25px #729743, inset 0 0 23px #456523; }
 .anim-node[data-faction="chaos_cult"] .anim-portrait { border-radius: 42% 58% 55% 45%; }
 .anim-node[data-faction="warpcoven"] .anim-portrait { box-shadow: 0 0 28px #5089bb,inset 0 0 25px #513a8a; }
-.anim-node[data-faction]::after { content: attr(data-motif); position: absolute; top: -18px; right: -18px; color: var(--fx-color,#d7c18a); font-size: 3rem; text-shadow: 0 0 15px currentColor; }
+.anim-emblem { position: absolute; z-index: 2; top: -18px; right: -18px; width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 0 15px var(--fx-color,#d7c18a)); }
 .anim-node[data-faction] .anim-portrait::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: .7; }
 .anim-node.active[data-faction="angels_of_death"] .anim-portrait::before { background: linear-gradient(90deg,transparent 30%,#f4ddb0a0 49%,transparent 52%); animation: iron-scan 1s ease-out both; }
 .anim-node.active[data-faction="legionaries"] .anim-portrait::before { background: repeating-linear-gradient(135deg,transparent 0 20px,#e14d6280 21px 25px,transparent 26px 55px); animation: chaos-cut .8s ease-out both; }
@@ -87,7 +100,7 @@
 @keyframes flesh-shift { 0%,100% { transform: scale(.8) skew(0); opacity: 0; } 45% { transform: scale(1.2) skew(7deg,-5deg); opacity: .9; } }
 @keyframes rune-turn { from { transform: rotate(-50deg) scale(.7); opacity: 0; } 40% { opacity: .8; } to { transform: rotate(38deg) scale(1.45); opacity: 0; } }
 
-.motion-reduced .board-fx-route,.motion-reduced .board-fx-shot,.motion-reduced .board-fx-slash,.motion-reduced .board-fx-arrival,.motion-reduced .board-fx-pulse,.motion-reduced .board-fx-impact,.motion-reduced .board-fx-label,.motion-reduced .board-fx-motif,.motion-reduced .phase-notice,.motion-reduced .faction-card[data-faction]::after,.motion-reduced .token.sel::before,.motion-reduced .token.sel::after { animation: none !important; }
+.motion-reduced .board-fx-route,.motion-reduced .board-fx-shot,.motion-reduced .board-fx-slash,.motion-reduced .board-fx-arrival,.motion-reduced .board-fx-pulse,.motion-reduced .board-fx-impact,.motion-reduced .board-fx-label,.motion-reduced .board-fx-emblem,.motion-reduced .phase-notice,.motion-reduced .token.sel::before,.motion-reduced .token.sel::after { animation: none !important; }
 .motion-reduced .board-fx-traveller { display: none; }
 .motion-reduced .board .token.fx-arriving { opacity: 1; }
 .motion-reduced .anim-node,.motion-reduced .anim-node * { animation: none !important; transition: none !important; }

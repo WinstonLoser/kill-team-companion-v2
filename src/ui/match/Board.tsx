@@ -5,6 +5,7 @@ import type { MatchToken, Side } from '../../state/matchStore'
 import { getAvatarUrl } from '../../utils/avatars'
 import { useVisualFxStore } from '../../state/visualFxStore'
 import { factionVisual } from '../visual/factionVisuals'
+import { StatusBadge } from '../components/StatusBadge/StatusBadge'
 
 export const SCALE = 20 // 像素/英寸
 
@@ -259,7 +260,7 @@ export function Board({
             </>}
             {fx.kind === 'MELEE' && <path className="board-fx-slash" d={`M ${x - 15} ${y + 12} Q ${x + 2} ${y - 18} ${x + 18} ${y - 12}`} stroke={visual.accent} />}
             {['DEPLOY', 'RULE', 'DAMAGE', 'DOOR'].includes(fx.kind) && <circle className="board-fx-pulse" cx={x} cy={y} r={14} stroke={visual.accent} />}
-            {fx.kind === 'RULE' && <text className="board-fx-motif" x={x} y={y + 7} textAnchor="middle" fill={visual.accent}>{visual.motif}</text>}
+            {fx.kind === 'RULE' && visual.iconUrl && <image className="board-fx-emblem" href={visual.iconUrl} x={x - 15} y={y - 15} width={30} height={30} />}
             {fx.label && <text className="board-fx-label" x={x} y={y - 18} textAnchor="middle" fill={visual.accent}>{fx.label}</text>}
           </g>
         })}
@@ -313,7 +314,6 @@ export function Board({
               key={t.uid}
               className={`token ${t.side} ${isSel ? 'sel' : ''} ${showPlatforms ? (t.height ?? 0) > 0 ? 'on-upper' : 'on-ground' : ''} ${shotFocus && t.uid === shotTargetUid ? 'shot-target' : ''} ${t.alive ? '' : 'dead'} ${lockedTokenUids?.has(t.uid) ? 'deploy-locked' : ''} ${effects.some(fx => fx.kind === 'MOVE' && fx.uid === t.uid) ? 'fx-arriving' : ''}`}
               data-faction={t.factionId}
-              data-motif={factionVisual(t.factionId).motif}
               data-mark={t.selections?.find(selection => selection.startsWith('mark_'))}
               style={{
                 left: t.pos.x * SCALE,
@@ -351,6 +351,7 @@ export function Board({
                 {t.side.toUpperCase()}
               </span>
               {t.order && <span className={`token-order ${t.order === 'CONCEAL' ? 'conceal' : 'engage'}`} title={t.order === 'CONCEAL' ? '隐匿命令' : '交战命令'}>{t.order === 'CONCEAL' ? '隐' : '交'}</span>}
+              {t.markers.length > 0 && <span className="token-statuses">{t.markers.slice(0, 3).map(marker => <StatusBadge key={marker} marker={marker} compact />)}{t.markers.length > 3 && <span className="token-status-more">+{t.markers.length - 3}</span>}</span>}
               {showPlatforms && <span className="token-height" aria-label={`${(t.height ?? 0) > 0 ? '上层' : '地面'}，高度 ${t.height ?? 0} 英寸`}>{(t.height ?? 0) > 0 ? `上层 ${t.height}″` : '地面 0″'}</span>}
             </button>
           )
